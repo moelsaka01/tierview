@@ -1,12 +1,12 @@
 {
   "case_id": "tailscale-halfclose-shutdown",
   "arm": "tierview",
-  "arm_version": 2,
-  "batch": "2026-11-16T14-46-22",
-  "config_hash": "1e7dfed407d8",
+  "arm_version": 3,
+  "batch": "2026-11-16T15-16-52",
+  "config_hash": "3f0786b02d0a",
   "complete": true,
   "calls": 2,
-  "wall_ms": 59871,
+  "wall_ms": 50791,
   "review": {
     "version": 1,
     "findings": [
@@ -16,13 +16,13 @@
         "end_line": 1553,
         "side": "new",
         "severity": "medium",
-        "category": "concurrency",
-        "title": "Non-tcpCloser backend: EOF never propagates, forwarder can hang forever",
-        "explanation": "forwardTCP now waits for both copy directions to finish before returning. If the backend does not implement tcpCloser, client EOF is never passed on: no CloseWrite is sent to the backend. Most request/response servers then keep waiting for more input, so io.Copy(client, backend) never returns. The function stays blocked on the second receive from connClosed, and the backend fd, the client endpoint, the two goroutines and the port-mapper registration are held indefinitely. Before this change the first finished direction tore the whole connection down. The comment says the type assertion always succeeds, but ns.forwardDialFunc is an injectable DialFunc and can return any net.Conn. The ok result is checked but there is no fallback.",
-        "suggestion": "If backendIsTCPCloser is false, fall back to the old behaviour: once the first direction finishes, close backend (and client) fully instead of waiting for the second. Alternatively, require a tcpCloser and fail loudly if the backend is not one.",
+        "category": "bug",
+        "title": "Non-tcpCloser backend never gets EOF, so forwardTCP can hang forever",
+        "explanation": "The comment says backend is always a *net.TCPConn. That is not guaranteed: ns.forwardDialFunc is a pluggable netx.DialFunc and can return any net.Conn, such as a wrapped conn or a pipe. When the type assertion fails, finishing client->backend does not signal EOF to the backend: neither CloseWrite nor Close is called on it. Before this change, the first direction to finish made forwardTCP return, and the deferred backend.Close/client.Close tore everything down. Now the loop waits for the second direction too. A backend that waits for the client's EOF before replying or closing (common for request/response protocols) blocks io.Copy(client, backend) forever. That leaks the goroutines, both connections and the RegisterIPPortIdentity mapping.",
+        "suggestion": "If backendIsTCPCloser is false, fall back to the old behaviour: after the first direction finishes, close both backend and client (or just stop waiting for the second value), instead of waiting for both directions.",
         "evidence": "backendTCPCloser, backendIsTCPCloser := backend.(tcpCloser)",
-        "confidence": 0.5,
-        "id": "071279770239",
+        "confidence": 0.6,
+        "id": "0803e985e5f5",
         "hunk_id": "wgengine/netstack/netstack.go#2",
         "model": "claude-opus-5-5",
         "tier": 3,
@@ -31,36 +31,17 @@
       },
       {
         "file": "wgengine/netstack/netstack.go",
-        "start_line": 1548,
+        "start_line": 1518,
         "end_line": 1553,
         "side": "new",
         "severity": "medium",
-        "category": "concurrency",
-        "title": "No teardown when one side ends but the other stays open",
-        "explanation": "Before, any direction ending (EOF or error) closed both connections, so the function returned. Now it waits for both io.Copy calls. If the backend closes but the tailnet client never sends FIN (a peer that has gone away, or an app that ignores half-close), goroutine 1 stays blocked in client.Read. If the client finishes but the backend ignores the FIN, goroutine 2 stays blocked in backend.Read. After the dial, the HUp/ctx cancel path no longer affects the established backend conn, so nothing bounds how long resources stay held. Supporting half-close is correct TCP behaviour, but long-lived leaks of fds and port-mapper entries are now possible where they were not before.",
-        "suggestion": "Bound the wait for the second direction: after the first direction finishes, use a timeout or deadline, or close everything when either side reports an error (as opposed to a clean EOF).",
-        "evidence": "for range 2 {\n\t\terr = <-connClosed",
-        "confidence": 0.4,
-        "id": "10eed668ee93",
-        "hunk_id": "wgengine/netstack/netstack.go#2",
-        "model": "claude-opus-5-5",
-        "tier": 3,
-        "escalated_from": [],
-        "also_reported_by": []
-      },
-      {
-        "file": "wgengine/netstack/netstack.go",
-        "start_line": 1522,
-        "end_line": 1545,
-        "side": "new",
-        "severity": "low",
-        "category": "concurrency",
-        "title": "Half-close runs after signalling done, racing the deferred Close calls",
-        "explanation": "Each goroutine sends on connClosed before calling CloseWrite/CloseRead. When the second goroutine sends, the main loop exits and the deferred client.Close() and backend.Close() run at the same time as that goroutine's shutdown calls. The shutdown calls can then hit an already-closed conn and return errors such as \"use of closed network connection\", which get logged as spurious close errors. In the worst case a shutdown is skipped on a socket that is already closed. Teardown order is also nondeterministic.",
-        "suggestion": "Do the CloseWrite/CloseRead calls first and send to connClosed afterwards (join the copy error with the shutdown errors), so the main function only returns and runs its deferred Close calls after both goroutines have finished their shutdowns.",
-        "evidence": "connClosed <- err\n\t\terr = nil\n\t\tif backendIsTCPCloser {",
-        "confidence": 0.65,
-        "id": "0f4fc05cfbdb",
+        "category": "error-handling",
+        "title": "A copy error only half-closes the other side, so the proxy can stay open forever",
+        "explanation": "When io.Copy fails, for example because the client's netstack endpoint is reset/HUP or the backend sends a RST, the goroutine still does only a graceful half-close (CloseWrite/CloseRead) and the main loop keeps waiting for the other direction. The other io.Copy only stops when its source reaches EOF or one of its reads or writes fails. If the peer is idle (it neither sends data nor closes), forwardTCP blocks forever. Canceling ctx on HUP does not help, because ctx is only used for the dial. The old code tore down the whole connection on the first error. Now a reset or broken client can leave the backend socket, the netstack endpoint, two goroutines and the port-identity registration held indefinitely, which adds up to an fd/goroutine leak under churn.",
+        "suggestion": "If either direction returns a non-nil error, fully close both connections (backend.Close() and client.Close()) so the other io.Copy is unblocked. Use half-close only for a clean EOF. Consider also an idle timeout once the connection is half-closed.",
+        "evidence": "err = backendTCPCloser.CloseWrite()",
+        "confidence": 0.5,
+        "id": "26ab3a46b18b",
         "hunk_id": "wgengine/netstack/netstack.go#2",
         "model": "claude-opus-5-5",
         "tier": 3,
@@ -85,7 +66,7 @@
       },
       {
         "hunk_id": "wgengine/netstack/netstack.go#2",
-        "score": 65,
+        "score": 80,
         "tier": 3,
         "reasons": [
           {
@@ -100,7 +81,7 @@
           },
           {
             "signal": "boundary",
-            "weight": 10,
+            "weight": 25,
             "detail": "comparison operator changed"
           },
           {
@@ -132,12 +113,12 @@
           "escalated_in": 0,
           "requests": 1,
           "input_tokens": 2,
-          "cache_write_tokens": 2390,
+          "cache_write_tokens": 2384,
           "cache_read_tokens": 994,
           "output_tokens": 132,
-          "cache_write_1h_tokens": 2390,
-          "cost_usd": 0.010983399999999999,
-          "direct_api_cost_usd": 0.003892
+          "cache_write_1h_tokens": 2384,
+          "cost_usd": 0.0109594,
+          "direct_api_cost_usd": 0.00388
         },
         {
           "tier": 2,
@@ -162,25 +143,25 @@
           "escalated_in": 0,
           "requests": 1,
           "input_tokens": 2,
-          "cache_write_tokens": 7547,
+          "cache_write_tokens": 7556,
           "cache_read_tokens": 994,
-          "output_tokens": 3431,
-          "cache_write_1h_tokens": 7547,
-          "cost_usd": 0.1292028,
-          "direct_api_cost_usd": 0.094392
+          "output_tokens": 2712,
+          "cache_write_1h_tokens": 7556,
+          "cost_usd": 0.1148948,
+          "direct_api_cost_usd": 0.080048
         }
       ],
       "skipped_hunks": 0,
       "not_reviewed_hunks": 0,
-      "total_cost_usd": 0.1401862,
-      "total_direct_api_cost_usd": 0.09828400000000001,
+      "total_cost_usd": 0.1258542,
+      "total_direct_api_cost_usd": 0.08392799999999999,
       "baseline": {
         "model": "claude-fable-5-2",
         "method": "actual_tokens_at_baseline_prices",
-        "cost_usd": 0.30194160000000003,
-        "direct_api_cost_usd": 0.204352
+        "cost_usd": 0.27322959999999996,
+        "direct_api_cost_usd": 0.175616
       },
-      "savings_pct": 53.6,
+      "savings_pct": 53.9,
       "budget": {
         "max_cost_usd": null,
         "degraded": false
@@ -189,11 +170,9 @@
         "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
         "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
       ],
-      "wall_ms": 59871,
+      "wall_ms": 50791,
       "prices_as_of": "2026-11-16"
     }
   },
-  "judge_pending": [
-    "071279770239"
-  ]
+  "judge_pending": []
 }

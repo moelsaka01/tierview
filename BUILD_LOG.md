@@ -350,6 +350,34 @@ Frozen: config hash `8b8d0f208dd5`; tierview arm version 3, so the 5 tierview pi
 
 **Next.** Ask Mohamed to start the next batch: the dev re-runs (5 tierview v3 runs, the pending Opus judge call) and then the test split, about 6 to 7 batches of 20.
 
+**Batch 3 (2026-11-16, Mohamed: "Run next batch"; `--cases pilot` on `bench-config-v1`).** 11 `claude` calls (cap 20; 14 planned): 9 reviews and 2 Opus judge calls; no Fable, no errors. API-equivalent $0.76 via Claude Code. It re-ran the 5 tierview pilot cases on the frozen config (v3; the v2 runs moved to `runs-archive/`) and judged the pending findings.
+
+| case | arm | calls | tokens | via Claude Code | direct API | wall |
+|---|---|---:|---:|---:|---:|---:|
+| tailscale-halfclose-shutdown | judge (all-opus) | 1 | 3,507 | $0.025 | $0.025 | 12 s |
+| cilium-clean-fqdn-bootstrap | tierview | 1 | 3,964 | $0.005 | $0.006 | 11 s |
+| django-legend-attrs-mutation | tierview | 2 | 19,444 | $0.115 | $0.061 | 28 s |
+| dpdk-ntb-window-bound | tierview | 2 | 45,315 | $0.442 | $0.313 | 115 s |
+| nextjs-clean-default-export-errors | tierview | 2 | 11,166 | $0.073 | $0.039 | 27 s |
+| tailscale-halfclose-shutdown | tierview | 2 | 14,776 | $0.126 | $0.084 | 51 s |
+| tailscale-halfclose-shutdown | judge (tierview) | 1 | 3,676 | $0.026 | $0.026 | 13 s |
+
+Judge outcomes: all four ambiguous Tailscale findings (two all-opus, two tierview v3) were judged "no match" by Opus: they describe hangs when a backend never gets EOF or a copy error half-closes one side, not the `shutdown(SHUT_RD)` / ENOTCONN failure the fix addresses. So **no arm catches the Tailscale bug under judge v2**.
+
+**Pilot on the frozen config (5 dev cases: 3 buggy, 2 clean):**
+
+| arm | caught | FP / clean | calls / case | $ / case via Claude Code | $ / case direct API |
+|---|---|---:|---:|---:|---:|
+| tierview v3 | 1/3 (ntb) | 0 | 1.8 | $0.152 | $0.100 |
+| all-sonnet | 2/3 (ntb, Django legend) | 0 | 1.2 | $0.136 | $0.071 |
+| all-opus | 2/3 (ntb, Django legend) | 0 | 1.2 | $0.304 | $0.174 |
+
+- tierview missed the Django legend bug again: its hunk scores 0 (Tier 1, Sonnet low), Sonnet at low effort with no context did not flag it in either v2 or v3, while all-sonnet (Sonnet low, Tier 3 shape with file context) did. On this case the missing context, not the model, looks like the difference.
+- The tierview v1 run that caught it did so by Sonnet escalating; v1 vs v2 vs v3 show the same input getting different Tier 1 answers.
+- Calls per pilot run so far: 19 + 12 + 11 = 42 calls in three batches, including re-runs and judging.
+
+**Next.** Stop and report. Remaining: the other 5 dev cases (15 runs) and the 20 test cases (60 runs), about 4.2 review calls per case plus judge calls: about 6 to 7 batches of 20.
+
 ---
 
 *Template for each later phase:*

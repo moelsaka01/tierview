@@ -1,35 +1,36 @@
 {
   "split": "dev",
   "config_hash": [
-    "1e7dfed407d8"
+    "1e7dfed407d8",
+    "3f0786b02d0a"
   ],
   "arms": [
     {
       "arm": "tierview",
-      "runs": 0,
-      "buggy_runs": 0,
-      "clean_runs": 0,
-      "caught": 0,
-      "recall": 0,
+      "runs": 5,
+      "buggy_runs": 3,
+      "clean_runs": 2,
+      "caught": 1,
+      "recall": 0.3333333333333333,
       "recall_ci95": [
         0,
-        0
+        1
       ],
       "judge_pending_runs": 0,
       "fp_per_clean_case": 0,
       "clean_cases_with_fp": 0,
-      "unmatched_per_buggy_case": 0,
-      "mean_tokens_per_case": 0,
-      "mean_calls_per_case": 0,
-      "mean_cost_via_claude_code_usd": 0,
-      "mean_cost_direct_api_usd": 0,
-      "cost_per_bug_caught_via_claude_code_usd": null,
-      "cost_per_bug_caught_direct_api_usd": null,
-      "mean_fable_priced_via_claude_code_usd": 0,
-      "mean_fable_priced_direct_api_usd": 0,
-      "latency_p50_s": 0,
-      "latency_p90_s": 0,
-      "escalation_rate": null
+      "unmatched_per_buggy_case": 2.6666666666666665,
+      "mean_tokens_per_case": 18933,
+      "mean_calls_per_case": 1.8,
+      "mean_cost_via_claude_code_usd": 0.15223672,
+      "mean_cost_direct_api_usd": 0.1004664,
+      "cost_per_bug_caught_via_claude_code_usd": 0.6835586,
+      "cost_per_bug_caught_direct_api_usd": 0.458152,
+      "mean_fable_priced_via_claude_code_usd": 0.3443696,
+      "mean_fable_priced_direct_api_usd": 0.22320159999999997,
+      "latency_p50_s": 28.088,
+      "latency_p90_s": 115.051,
+      "escalation_rate": 0
     },
     {
       "arm": "all-sonnet",
@@ -69,10 +70,10 @@
         0,
         1
       ],
-      "judge_pending_runs": 1,
+      "judge_pending_runs": 0,
       "fp_per_clean_case": 0,
       "clean_cases_with_fp": 0,
-      "unmatched_per_buggy_case": 2.3333333333333335,
+      "unmatched_per_buggy_case": 3,
       "mean_tokens_per_case": 35274.8,
       "mean_calls_per_case": 1.2,
       "mean_cost_via_claude_code_usd": 0.30430312000000004,
@@ -140,11 +141,17 @@
       "escalation_rate": 0.0967741935483871
     }
   ],
-  "mcnemar_tierview_vs_all_opus": null,
+  "mcnemar_tierview_vs_all_opus": {
+    "both": 1,
+    "tierview_only": 0,
+    "opus_only": 1,
+    "neither": 1,
+    "p": 1
+  },
   "routing_recall": {
     "faulty_at_tier2plus": 3,
     "buggy_cases": 7,
-    "missed_bugs_routed_low": 0
+    "missed_bugs_routed_low": 1
   },
   "all_fable_calculated": {
     "via_claude_code_mean_usd": 0.60833832,

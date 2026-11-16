@@ -1,12 +1,12 @@
 {
   "case_id": "nextjs-clean-default-export-errors",
   "arm": "tierview",
-  "arm_version": 2,
-  "batch": "2026-11-16T14-46-22",
-  "config_hash": "1e7dfed407d8",
+  "arm_version": 3,
+  "batch": "2026-11-16T15-16-52",
+  "config_hash": "3f0786b02d0a",
   "complete": true,
   "calls": 2,
-  "wall_ms": 34465,
+  "wall_ms": 27115,
   "review": {
     "version": 1,
     "findings": [],
@@ -15,9 +15,20 @@
     "routing": [
       {
         "hunk_id": "packages/next/src/server/app-render/create-component-tree.tsx#1",
-        "score": 0,
-        "tier": 1,
-        "reasons": []
+        "score": 25,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "boundary",
+            "weight": 25,
+            "detail": "condition changed"
+          },
+          {
+            "signal": "merge",
+            "weight": 0,
+            "detail": "Tier 2 and Tier 3 run the same model: one call at high effort"
+          }
+        ]
       },
       {
         "hunk_id": "test/e2e/app-dir/undefined-default-export/undefined-default-export.test.ts#1",
@@ -54,16 +65,16 @@
           "tier": 1,
           "model": "claude-sonnet-5-5",
           "effort": "low",
-          "hunks": 2,
+          "hunks": 1,
           "escalated_in": 0,
           "requests": 1,
           "input_tokens": 2,
-          "cache_write_tokens": 618,
-          "cache_read_tokens": 3526,
-          "output_tokens": 307,
-          "cache_write_1h_tokens": 618,
-          "cost_usd": 0.0058986,
-          "direct_api_cost_usd": 0.007162
+          "cache_write_tokens": 2857,
+          "cache_read_tokens": 994,
+          "output_tokens": 149,
+          "cache_write_1h_tokens": 2857,
+          "cost_usd": 0.013021399999999999,
+          "direct_api_cost_usd": 0.004996
         },
         {
           "tier": 2,
@@ -84,39 +95,39 @@
           "tier": 3,
           "model": "claude-opus-5-5",
           "effort": "high",
-          "hunks": 0,
-          "escalated_in": 1,
+          "hunks": 1,
+          "escalated_in": 0,
           "requests": 1,
           "input_tokens": 2,
-          "cache_write_tokens": 5330,
+          "cache_write_tokens": 5327,
           "cache_read_tokens": 994,
-          "output_tokens": 543,
-          "cache_write_1h_tokens": 5330,
-          "cost_usd": 0.053706800000000006,
-          "direct_api_cost_usd": 0.027764
+          "output_tokens": 841,
+          "cache_write_1h_tokens": 5327,
+          "cost_usd": 0.0596428,
+          "direct_api_cost_usd": 0.033712
         }
       ],
       "skipped_hunks": 0,
       "not_reviewed_hunks": 0,
-      "total_cost_usd": 0.0596054,
-      "total_direct_api_cost_usd": 0.034926,
+      "total_cost_usd": 0.0726642,
+      "total_direct_api_cost_usd": 0.038708,
       "baseline": {
         "model": "claude-fable-5-2",
         "method": "actual_tokens_at_baseline_prices",
-        "cost_usd": 0.130104,
-        "direct_api_cost_usd": 0.084176
+        "cost_usd": 0.1709736,
+        "direct_api_cost_usd": 0.087408
       },
-      "savings_pct": 54.2,
+      "savings_pct": 57.5,
       "budget": {
         "max_cost_usd": null,
         "degraded": false
       },
       "warnings": [
         "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
-        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills.",
-        "calibration: 1 of 2 tier 1 hunk(s) escalated (50% > 30%)."
+        "Tier 2 and Tier 3 both run claude-opus-5-5, so they ran as one tier at high effort.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
       ],
-      "wall_ms": 34465,
+      "wall_ms": 27115,
       "prices_as_of": "2026-11-16"
     }
   },

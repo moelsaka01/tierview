@@ -1,12 +1,12 @@
 {
   "case_id": "django-legend-attrs-mutation",
   "arm": "tierview",
-  "arm_version": 2,
-  "batch": "2026-11-16T14-46-22",
-  "config_hash": "1e7dfed407d8",
+  "arm_version": 3,
+  "batch": "2026-11-16T15-16-52",
+  "config_hash": "3f0786b02d0a",
   "complete": true,
-  "calls": 1,
-  "wall_ms": 18257,
+  "calls": 2,
+  "wall_ms": 28088,
   "review": {
     "version": 1,
     "findings": [],
@@ -55,12 +55,12 @@
       },
       {
         "hunk_id": "tests/forms_tests/tests/test_forms.py#3",
-        "score": 10,
-        "tier": 1,
+        "score": 25,
+        "tier": 3,
         "reasons": [
           {
             "signal": "boundary",
-            "weight": 10,
+            "weight": 25,
             "detail": "comparison operator changed"
           },
           {
@@ -77,6 +77,11 @@
             "signal": "test_file",
             "weight": -15,
             "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "merge",
+            "weight": 0,
+            "detail": "Tier 2 and Tier 3 run the same model: one call at high effort"
           }
         ]
       },
@@ -273,23 +278,30 @@
     "receipt": {
       "backend": "claude-code",
       "cost_basis": "api_equivalent",
-      "calls": 1,
-      "model_substitutions": [],
+      "calls": 2,
+      "model_substitutions": [
+        {
+          "tier": 3,
+          "requested": "claude-fable-5-2",
+          "used": "claude-opus-5-5",
+          "reason": "Fable not enabled"
+        }
+      ],
       "tiers": [
         {
           "tier": 1,
           "model": "claude-sonnet-5-5",
           "effort": "low",
-          "hunks": 16,
+          "hunks": 15,
           "escalated_in": 0,
           "requests": 1,
           "input_tokens": 2,
-          "cache_write_tokens": 615,
-          "cache_read_tokens": 9515,
-          "output_tokens": 1651,
-          "cache_write_1h_tokens": 615,
-          "cost_usd": 0.0199255,
-          "direct_api_cost_usd": 0.032574
+          "cache_write_tokens": 7797,
+          "cache_read_tokens": 994,
+          "output_tokens": 1434,
+          "cache_write_1h_tokens": 7797,
+          "cost_usd": 0.0456314,
+          "direct_api_cost_usd": 0.027726
         },
         {
           "tier": 2,
@@ -310,38 +322,39 @@
           "tier": 3,
           "model": "claude-opus-5-5",
           "effort": "high",
-          "hunks": 0,
+          "hunks": 1,
           "escalated_in": 0,
-          "requests": 0,
-          "input_tokens": 0,
-          "cache_write_tokens": 0,
-          "cache_read_tokens": 0,
-          "output_tokens": 0,
-          "cache_write_1h_tokens": 0,
-          "cost_usd": 0,
-          "direct_api_cost_usd": 0
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 7914,
+          "cache_read_tokens": 994,
+          "output_tokens": 307,
+          "cache_write_1h_tokens": 7914,
+          "cost_usd": 0.0696588,
+          "direct_api_cost_usd": 0.03338
         }
       ],
       "skipped_hunks": 0,
       "not_reviewed_hunks": 0,
-      "total_cost_usd": 0.0199255,
-      "total_direct_api_cost_usd": 0.032574,
+      "total_cost_usd": 0.11529020000000001,
+      "total_direct_api_cost_usd": 0.061106,
       "baseline": {
         "model": "claude-fable-5-2",
         "method": "actual_tokens_at_baseline_prices",
-        "cost_usd": 0.077799,
-        "direct_api_cost_usd": 0.130296
+        "cost_usd": 0.3214456,
+        "direct_api_cost_usd": 0.177664
       },
-      "savings_pct": 74.4,
+      "savings_pct": 64.1,
       "budget": {
         "max_cost_usd": null,
         "degraded": false
       },
       "warnings": [
         "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "Tier 2 and Tier 3 both run claude-opus-5-5, so they ran as one tier at high effort.",
         "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
       ],
-      "wall_ms": 18257,
+      "wall_ms": 28088,
       "prices_as_of": "2026-11-16"
     }
   },
