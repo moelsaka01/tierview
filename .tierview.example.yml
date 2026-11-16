@@ -1,0 +1,17 @@
+# Copy to .tierview.yml in your repo. Everything is optional; defaults are in config/default-rules.yml.
+version: 1
+
+thresholds: { tier2: 30, tier3: 60 }
+
+budget: { max_cost_usd: 1.00 }
+
+ignore:
+  - "docs/**"
+
+rules:
+  - { paths: ["src/billing/**"], min_tier: 3 }   # always send billing code to the top model
+  - { paths: ["scripts/**"], max_tier: 1 }       # never spend more than Sonnet on scripts
+
+signals:
+  churn: { enabled: false }
+  auth: { weight: 45 }

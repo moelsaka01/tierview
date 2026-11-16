@@ -1,0 +1,240 @@
+# tierview default rules. A repo's .tierview.yml is merged over this file.
+# Spec: PLAN.md §4. Patterns are JavaScript regexes, matched case-insensitively.
+#   path             -> tested against the file path (forward slashes)
+#   content          -> tested against added and removed lines (without the +/- prefix)
+#   content_added    -> added lines only
+#   content_removed  -> removed lines only
+#   logic            -> implemented in src/tier0/signals.ts, no regex
+# Score = sum over categories of the largest matching weight in the category
+#         + structure points - reductions, clamped to 0..100.
+
+version: 1
+
+models:
+  tier1: { model: claude-sonnet-5-5, effort: low }
+  tier2: { model: claude-opus-5-5, effort: medium }
+  tier3: { model: claude-fable-5-2, effort: high }
+
+thresholds: { tier2: 30, tier3: 60 }
+
+escalation:
+  tier1_min_confidence: 0.7
+  tier2_min_confidence: 0.6
+  tier1_verify_severity: high      # findings at or above this go up a tier for confirmation
+  tier2_verify_severity: critical
+  max_rate: 0.3
+
+budget: { max_cost_usd: null }
+
+ignore: []
+rules: []
+
+file_kinds:   # first match wins, in this order
+  generated:
+    - '**/package-lock.json'
+    - '**/yarn.lock'
+    - '**/pnpm-lock.yaml'
+    - '**/Cargo.lock'
+    - '**/poetry.lock'
+    - '**/uv.lock'
+    - '**/go.sum'
+    - '**/composer.lock'
+    - '**/Gemfile.lock'
+    - '**/dist/**'
+    - '**/build/**'
+    - '**/vendor/**'
+    - '**/node_modules/**'
+    - '**/*.min.js'
+    - '**/*.min.css'
+    - '**/*.map'
+    - '**/*.snap'
+    - '**/__snapshots__/**'
+    - '**/*.pb.go'
+    - '**/*_pb2.py'
+    - '**/*.generated.*'
+  docs:
+    - '**/*.md'
+    - '**/*.mdx'
+    - '**/*.rst'
+    - '**/*.txt'
+    - 'docs/**'
+    - '**/LICENSE*'
+    - '**/CHANGELOG*'
+  test:
+    - '**/test/**'
+    - '**/tests/**'
+    - '**/__tests__/**'
+    - '**/spec/**'
+    - '**/*.test.*'
+    - '**/*.spec.*'
+    - '**/*_test.go'
+    - '**/*_test.py'
+    - '**/test_*.py'
+    - '**/*Test.java'
+    - '**/*Tests.cs'
+  config:
+    - '**/*.yml'
+    - '**/*.yaml'
+    - '**/*.toml'
+    - '**/*.ini'
+    - '**/*.json'
+    - '**/Dockerfile*'
+    - '**/*.tf'
+
+categories:
+  secrets:
+    weight: 40
+    path:
+      - '(^|/)\.env(\.|$)'
+      - 'credentials|secrets?(\.|/|$)'
+      - '\.(pem|key|p12|pfx)$'
+    content_added:
+      - 'AKIA[0-9A-Z]{16}'
+      - '-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----'
+      - '\b(api[_-]?key|secret|passwd|password|token)\b\s*[:=]\s*[''"][^''"]{8,}[''"]'
+      - '\b(sk|pk|ghp|gho|xox[bap])[-_][A-Za-z0-9_-]{16,}'
+
+  auth:
+    weight: 35
+    path:
+      - '(^|/)(auth\w*|login|logout|signin|signup|sessions?|oauth\d?|sso|saml|jwt|identity|passwords?)(/|[._-]|$)'
+    content:
+      - '\b(authenticat\w*|authoriz\w*|authn|authz)\b'
+      - '\b(jwt|oauth|saml|bearer|csrf|session[_ ]?(id|token)|refresh[_ ]?token|access[_ ]?token)\b'
+      - '\b(verify|check|compare|hash)_?(password|token|signature)\b'
+      - '\b(login|logout|sign_?in)\s*\('
+
+  crypto:
+    weight: 35
+    path:
+      - '(^|/)(crypto\w*|cipher|tls|ssl|certs?|keys?|signing)(/|[._-]|$)'
+    content:
+      - '\b(encrypt|decrypt|cipher|hmac|pbkdf2|bcrypt|scrypt|argon2|aes|rsa|ecdsa|ed25519)\w*\b'
+      - '\b(md5|sha1)\b'
+      - '\bECB\b'
+      - 'verify\s*=\s*False|rejectUnauthorized\s*:\s*false|InsecureSkipVerify\s*:\s*true'
+      - 'Math\.random\(\)|\brand\(\)|random\.random\(\)'
+      - '\b(nonce|iv|salt)\b\s*[:=]'
+
+  payment:
+    weight: 35
+    path:
+      - '(^|/)(payments?|billing|invoices?|checkout|ledger|refunds?|subscriptions?|wallet|pricing)(/|[._-]|$)'
+    content:
+      - '\b(payment|billing|invoice|checkout|refund|chargeback|ledger|stripe|paypal|braintree)\w*\b'
+      - '\b(amount|price|balance|total)_?(cents|minor|usd)?\b\s*[-+*/]?='
+
+  sql:
+    weight: 30
+    path:
+      - '\.sql$'
+    content:
+      - '\b(select|insert\s+into|update|delete\s+from)\b.{0,80}(\$\{|%s|\+\s*\w|\{\w+\}|\|\|)'
+      - 'f[''"].{0,40}\b(select|insert|update|delete)\b'
+      - '\.(execute|executemany|raw|query|exec)\s*\(\s*(f?[''"`]|\w+\s*\+)'
+      - '\b(drop|truncate|alter)\s+table\b'
+
+  migrations:
+    weight: 30
+    path:
+      - '(^|/)(migrations?|alembic|db/migrate|prisma/migrations|flyway|liquibase)(/|$)'
+      - '(^|/)schema\.(prisma|rb|sql|graphql)$'
+
+  deserialization:
+    weight: 30
+    content:
+      - '\bpickle\.(loads?|Unpickler)\b|\bmarshal\.loads?\b|\bcPickle\b'
+      - '\byaml\.(load|unsafe_load)\s*\('
+      - '\bunserialize\s*\(|\bObjectInputStream\b|\breadObject\s*\('
+      - '\beval\s*\(|\bexec\s*\(|\bnew\s+Function\s*\('
+      - '\bBinaryFormatter\b|\bXMLDecoder\b'
+
+  unsafe:
+    weight: 30
+    content:
+      - '\bunsafe\b'
+      - '\b(memcpy|memmove|strcpy|strcat|sprintf|gets|alloca)\s*\('
+      - 'shell\s*=\s*True|\bos\.system\s*\(|\bchild_process\b|\bexecSync\s*\('
+      - 'dangerouslySetInnerHTML|\binnerHTML\s*=|document\.write\s*\('
+      - '\bmalloc\s*\(|\bfree\s*\(|\brealloc\s*\('
+
+  tests_weakened:
+    weight: 30
+    content_added:
+      - '\b(it|test|describe)\.(skip|only)\s*\(|\bx(it|describe|test)\s*\('
+      - '@(pytest\.mark\.)?(skip|skipif|xfail)\b|@unittest\.skip'
+      - '\bt\.Skip(f|Now)?\s*\(|#\[ignore\]|@Disabled\b|@Ignore\b'
+    logic:
+      - deleted_test_file
+      - deleted_test_function
+
+  permissions:
+    weight: 25
+    path:
+      - '(^|/)(permissions?|rbac|acl|policy|policies|roles?|guards?)(/|[._-]|$)'
+    content:
+      - '\b(is_?admin|is_?superuser|has_?(role|permission|access)|can_?\w+|require_?(role|permission|admin))\b'
+      - '\b(chmod|chown|sudo|setuid|setgid)\b'
+      - 'Access-Control-Allow-Origin|\bcors\b'
+      - '\b(rbac|acl|iam)\b'
+
+  concurrency:
+    weight: 25
+    content:
+      - '\b(mutex|rwlock|semaphore|spinlock|atomic\w*|synchronized|volatile)\b'
+      - '\b(lock|unlock|acquire|release)\s*\('
+      - '\b(thread|threading|goroutine|pthread_\w+|ExecutorService|asyncio|tokio::spawn)\b'
+      - '^\s*go\s+\w|<-\s*\w|\bchan\b|\bselect\s*\{'
+      - '\b(race|deadlock)\b'
+    logic:
+      - await_added_or_removed
+
+  error_handling_removed:
+    weight: 20
+    content_removed:
+      - '^\s*(try\b|catch\b|except\b|finally\b|rescue\b)'
+      - 'if\s+err\s*!=\s*nil'
+      - '^\s*(assert\b|raise\b|throw\b|panic\()'
+      - '\b(validate|sanitize|escape)\w*\s*\('
+    content_added:
+      - 'except\s*:\s*pass|catch\s*(\(\w*\))?\s*\{\s*\}'
+      - '\.unwrap\(\)|\bas\s+any\b|@ts-ignore|# type: ignore|//\s*nolint'
+
+  infra:
+    weight: 20
+    path:
+      - '(^|/)Dockerfile'
+      - '(^|/)\.github/workflows/'
+      - '\.(tf|tfvars)$'
+      - '(^|/)(k8s|kubernetes|helm|charts|deploy|terraform|ansible)(/|$)'
+      - 'docker-compose.*\.ya?ml$'
+
+  assertions_removed:
+    weight: 20
+    logic:
+      - test_assertion_count_dropped
+
+  dependencies:
+    weight: 15
+    path:
+      - '(^|/)(package\.json|requirements[^/]*\.txt|pyproject\.toml|go\.mod|Cargo\.toml|pom\.xml|build\.gradle(\.kts)?|Gemfile)$'
+
+  boundary:
+    weight: 10
+    logic:
+      - comparison_operator_changed
+      - index_arithmetic_changed
+
+structure:
+  size: [[5, 0], [30, 5], [100, 10], [.inf, 15]]   # [max changed lines, points]
+  scatter: { max_files: 8, max_top_dirs: 3, points: 10 }
+  many_hunks_in_file: { more_than: 5, points: 5 }
+  churn: { enabled: true, days: 90, min_commits: 10, points: 10 }
+  hotspot: { enabled: true, days: 90, min_fix_commits: 2, points: 10, pattern: '\bfix(es|ed)?\b|bug|regress' }
+  deletion_only: { points: 5 }
+  diff_weakens_tests: { points: 10 }
+  no_tests_changed: { min_source_lines: 50, points: 5 }
+
+reductions:
+  test_file_without_test_signal: 15
+  docs_or_trivial_cap: 5     # docs files and comment/whitespace/import-only hunks

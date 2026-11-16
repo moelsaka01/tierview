@@ -1,0 +1,53 @@
+{
+  "name": "tierview",
+  "version": "0.0.1",
+  "description": "AI code review that escalates through Claude model tiers and prints a cost receipt.",
+  "license": "MIT",
+  "author": "Mohamed Elsaka",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/moelsaka01/tierview.git"
+  },
+  "type": "module",
+  "bin": {
+    "tierview": "dist/bin.js"
+  },
+  "files": [
+    "dist",
+    "config",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsup src/bin.ts --format esm --target node22 --clean",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check": "npm run typecheck && npm run test"
+  },
+  "keywords": [
+    "code-review",
+    "claude",
+    "anthropic",
+    "llm",
+    "model-routing",
+    "github-action",
+    "cli"
+  ],
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.8.0",
+    "commander": "^15.1.0",
+    "picomatch": "^4.0.7",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@types/picomatch": "^4.0.3",
+    "tsup": "^9.0.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
+  }
+}

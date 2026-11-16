@@ -1,0 +1,8 @@
+{
+  "calibrated": false,
+  "note": "Placeholders for --dry-run and the all-Fable baseline. Calibrate in P3-10 from real usage, then set calibrated to true.",
+  "chars_per_token": 3.0,
+  "system_prompt_tokens": 700,
+  "output_tokens_per_hunk": { "tier1": 250, "tier2": 700, "tier3": 2000 },
+  "escalation_reserve": 0.15
+}

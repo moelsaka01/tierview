@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+.env.*
+*.log
+# benchmark: cloned repos and raw model outputs stay local
+bench/repos/
+bench/results/raw/
