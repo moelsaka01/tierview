@@ -7,7 +7,7 @@ One entry per phase: which model did the work, at what effort, from what prompt,
 | 1 | Plan and scaffold | Fable 5.2 (high) | done 2026-11-16 |
 | 2 | Tier 0, config, dry-run | Sonnet 5.5 (medium) | done 2026-11-16 |
 | 3 | LLM tiers, escalation, receipt, backends | Opus 5.5 (high) | done 2026-11-16 |
-| 4 | Benchmark | Opus 5.5 (high) | in progress: dev split done; `bench-config-v2` frozen; test split not started |
+| 4 | Benchmark | Opus 5.5 (high) | in progress: dev split done; `bench-config-v2` frozen; test split 4 of 20 cases |
 | 5 | PR mode, SARIF, GitHub Action | Sonnet 5.5 | not started |
 | 6 | README and release | Sonnet 5.5 | not started |
 
@@ -445,6 +445,19 @@ McNemar tierview v4 vs all-opus: both 5, neither 2, no discordant pairs (p = 1).
 - On 7 dev bugs none of these differences in recall is measurable; the cost ordering is the clearer signal, and it does not favour the cascade on this split.
 
 **Next.** Stop and show Mohamed the dev table before the test split (20 cases, 60 runs, about 4 to 5 batches).
+
+**Test batch 1 (2026-11-16, Mohamed: "Run test batch 1"; `--cases test` on `bench-config-v2`, hash `4fe1abf9f1f3` checked before the run).** 20 `claude` calls (cap 20): 15 reviews and 5 Opus judge calls; no Fable, no errors. API-equivalent $1.63 via Claude Code. 4 of 20 test cases done (12 of 60 runs); stopped at the cap with 48 runs (about 97 planned calls) left.
+
+| case | tierview | all-sonnet | all-opus |
+|---|---|---|---|
+| ch-prefault-thread-startup (buggy, wide) | missed: 2 findings, Opus judge "no match" (2 calls, $0.334) | missed: 1 finding, judge "no match" (1, $0.158) | missed: 2 findings, judge "no match" (1, $0.351) |
+| cilium-mtu-portmap-warning (buggy) | **caught** by rule ("empty chaining mode is not treated as no chaining", on the faulty line) (2, $0.134) | missed: no findings (1, $0.053) | missed: 1 finding (IPsec not covered), judge "no match" (1, $0.124) |
+| cilium-clean-wireguard-margin | 0 findings (1, $0.051) | 0 (1, $0.051) | 0 (1, $0.107) |
+| django-clean-keytexttransform-mysql | 0 findings (2, $0.110) | 0 (1, $0.042) | **1 medium finding (FP)** (1, $0.119) |
+
+Judge calls: 5 (one per run with ambiguous findings), $0.093 together. Interim only; no metrics are computed on 4 test cases.
+
+**Next.** Test batch 2, started by Mohamed.
 
 ---
 

@@ -1,0 +1,256 @@
+{
+  "case_id": "ch-prefault-thread-startup",
+  "arm": "tierview",
+  "arm_version": 4,
+  "batch": "2026-11-16T15-48-54",
+  "config_hash": "4fe1abf9f1f3",
+  "complete": true,
+  "calls": 2,
+  "wall_ms": 77797,
+  "review": {
+    "version": 1,
+    "findings": [
+      {
+        "file": "vmm/src/prefault.rs",
+        "start_line": 123,
+        "end_line": 128,
+        "side": "new",
+        "severity": "low",
+        "category": "performance",
+        "title": "Concurrent thread total can still exceed machine_cores after scaling",
+        "explanation": "All regions are now prefaulted concurrently in one scope (previously sequentially, max 16 threads at a time). The cap rescales each region with cmp::max(1, threads * machine_cores / total), so every non-empty region keeps at least one thread. With more non-empty regions than cores (e.g. 6 regions on a 4-core / cgroup-limited host), more threads than cores run at once, all contending on mmap_lock and the hugetlb/page allocator locks. This defeats the stated budget.",
+        "suggestion": "Enforce the budget exactly, e.g. distribute machine_cores with largest-remainder rounding, or when regions outnumber cores, process the excess regions in a later batch instead of flooring each to 1.",
+        "evidence": "            plan.threads = cmp::max(1, plan.threads * machine_cores / total);",
+        "confidence": 0.55,
+        "id": "93333e1793fd",
+        "hunk_id": "vmm/src/prefault.rs#2",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      },
+      {
+        "file": "vmm/src/prefault.rs",
+        "start_line": 255,
+        "end_line": 257,
+        "side": "new",
+        "severity": "low",
+        "category": "test",
+        "title": "Unit test assumes sysfs NUMA node0 exists",
+        "explanation": "test_numa_node_cpu_set unwraps numa_node_cpu_set(0), which reads /sys/devices/system/node/node0/cpulist. On kernels without CONFIG_NUMA, or in sandboxes/containers without that sysfs path, the read fails and the test panics. That makes the suite fail on otherwise valid build hosts.",
+        "suggestion": "Skip the test when /sys/devices/system/node/node0/cpulist does not exist (return early) instead of unwrapping.",
+        "evidence": "        let (cpu_set, count) = numa_node_cpu_set(0).unwrap();",
+        "confidence": 0.5,
+        "id": "7fe705ad0d97",
+        "hunk_id": "vmm/src/prefault.rs#2",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      }
+    ],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "vmm/src/memory_manager.rs#1",
+        "score": 5,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "301 source lines, no test file"
+          }
+        ]
+      },
+      {
+        "hunk_id": "vmm/src/memory_manager.rs#2",
+        "score": 5,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "301 source lines, no test file"
+          }
+        ]
+      },
+      {
+        "hunk_id": "vmm/src/memory_manager.rs#3",
+        "score": 5,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "301 source lines, no test file"
+          }
+        ]
+      },
+      {
+        "hunk_id": "vmm/src/prefault.rs#1",
+        "score": 65,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "concurrency",
+            "weight": 25,
+            "detail": "`// Minimum bytes of work per prefault thread, so a small reg`"
+          },
+          {
+            "signal": "boundary",
+            "weight": 25,
+            "detail": "comparison operator changed"
+          },
+          {
+            "signal": "size",
+            "weight": 10,
+            "detail": "41 changed lines"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "301 source lines, no test file"
+          }
+        ]
+      },
+      {
+        "hunk_id": "vmm/src/prefault.rs#2",
+        "score": 100,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "unsafe",
+            "weight": 30,
+            "detail": "`unsafe {`"
+          },
+          {
+            "signal": "concurrency",
+            "weight": 25,
+            "detail": "`// Pass 3: split each region into one slice per assigned thr`"
+          },
+          {
+            "signal": "error_handling_removed",
+            "weight": 20,
+            "detail": "`let (cpu_set, count) = numa_node_cpu_set(0).unwrap();`"
+          },
+          {
+            "signal": "boundary",
+            "weight": 25,
+            "detail": "comparison operator changed"
+          },
+          {
+            "signal": "size",
+            "weight": 15,
+            "detail": "250 changed lines"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "301 source lines, no test file"
+          }
+        ]
+      },
+      {
+        "hunk_id": "vmm/src/vm_config.rs#1",
+        "score": 10,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "7 changed lines"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "301 source lines, no test file"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 2,
+      "model_substitutions": [
+        {
+          "tier": 3,
+          "requested": "claude-fable-5-2",
+          "used": "claude-opus-5-5",
+          "reason": "Fable not enabled"
+        }
+      ],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 4,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 18363,
+          "cache_read_tokens": 994,
+          "output_tokens": 365,
+          "cache_write_1h_tokens": 18363,
+          "cost_usd": 0.0772054,
+          "direct_api_cost_usd": 0.038168
+        },
+        {
+          "tier": 2,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "hunks": 2,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 18589,
+          "cache_read_tokens": 994,
+          "output_tokens": 5387,
+          "cache_write_1h_tokens": 18589,
+          "cost_usd": 0.25665879999999996,
+          "direct_api_cost_usd": 0.17768
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.33386419999999994,
+      "total_direct_api_cost_usd": 0.215848,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.8217416,
+        "direct_api_cost_usd": 0.508032
+      },
+      "savings_pct": 59.4,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 77795,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}

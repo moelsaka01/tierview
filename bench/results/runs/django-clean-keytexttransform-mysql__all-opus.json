@@ -1,0 +1,157 @@
+{
+  "case_id": "django-clean-keytexttransform-mysql",
+  "arm": "all-opus",
+  "arm_version": 1,
+  "batch": "2026-11-16T15-48-54",
+  "config_hash": "4fe1abf9f1f3",
+  "complete": true,
+  "calls": 1,
+  "wall_ms": 28843,
+  "review": {
+    "version": 1,
+    "findings": [
+      {
+        "file": "django/db/models/fields/json.py",
+        "start_line": 429,
+        "end_line": 432,
+        "side": "new",
+        "severity": "medium",
+        "category": "bug",
+        "title": "Checking output_field.model doesn't reliably tell whether lhs is a column",
+        "explanation": "The new check assumes that if the lhs's output_field is bound to a model, the lhs is a plain column, so MySQL's `->>` operator is safe to use. That assumption fails in two ways.\n\n1. Some non-column expressions still have a model-bound output_field, because their output field is taken from a source column. Examples are Coalesce(F('value'), ...), Subquery(...values('value')), Case/When over the field, or Func wrappers without an explicit output_field. For these, the else branch emits `(<expression> ->> %s)`. MySQL only allows `->>` directly on a column, so the query fails with a syntax error. This is the same kind of failure the patch is trying to fix.\n\n2. The check looks only at the immediate `self.lhs`. In a nested chain, preprocess_lhs walks down to the base expression, and that base is what `->>` is actually applied to. For KT('value__a__b'), the immediate lhs is an inner KeyTextTransform whose class-level `TextField()` has no model, so the code always falls back to JSON_UNQUOTE even when the base is a real column. That result is still correct, just inconsistent. The real gap is that the base expression is never checked.",
+        "suggestion": "Make the decision from the base expression that preprocess_lhs resolves (walk `self.lhs` down through KeyTransform instances to `previous`). Use `->>` only when that base is a `Col` (isinstance(previous, Col)). Otherwise fall back to JSON_UNQUOTE(JSON_EXTRACT(...)), which is always semantically equivalent.",
+        "evidence": "or getattr(self.lhs.output_field, \"model\", None) is None",
+        "confidence": 0.55,
+        "id": "f96c876158b0",
+        "hunk_id": "django/db/models/fields/json.py#1",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      }
+    ],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "django/db/models/fields/json.py#1",
+        "score": 30,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "boundary",
+            "weight": 25,
+            "detail": "comparison operator changed"
+          },
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "8 changed lines"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/model_fields/test_jsonfield.py#1",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "6 changed lines"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 1,
+      "model_substitutions": [],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 2,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 2,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 9363,
+          "cache_read_tokens": 994,
+          "output_tokens": 2207,
+          "cache_write_1h_tokens": 9363,
+          "cost_usd": 0.1192508,
+          "direct_api_cost_usd": 0.077176
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.1192508,
+      "total_direct_api_cost_usd": 0.077176,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.23830279999999998,
+        "direct_api_cost_usd": 0.154352
+      },
+      "savings_pct": 50,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 28843,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}
