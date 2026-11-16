@@ -234,7 +234,7 @@ describe("pipeline v2 in the benchmark", () => {
     expect(reqs[1]!.model).toBe(cfg.models.tier2.model);
     expect(reqs[1]!.effort).toBe("high");
     const r = readRun(dir, "dpdk-ntb-window-bound", "tierview")!;
-    expect(r.arm_version).toBe(3);
+    expect(r.arm_version).toBe(4);
     expect(r.review.receipt.tiers[1]!.requests).toBe(0);
     expect(r.review.receipt.baseline.method).toBe("actual_tokens_at_baseline_prices");
   });
@@ -256,5 +256,16 @@ describe("pipeline v2 in the benchmark", () => {
     const js = readFileSync(join(dir, "judgements.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l) as Judgement);
     expect(judgementsFor(js, runs.get("dpdk-ntb-window-bound|tierview@v1")!)).toEqual([]);
     expect(judgementsFor(js, runs.get("dpdk-ntb-window-bound|tierview")!).length).toBeGreaterThan(0);
+  });
+});
+
+describe("one call when nothing goes to Opus", () => {
+  it("tierview makes only the Sonnet call when no hunk is routed to Opus and Sonnet escalates nothing", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tv-bench-"));
+    const d = deps(dir, () => new FakeBackend(() => ({}), "claude-code", 1));
+    await runBatch({ cases: "cilium-clean-fqdn-bootstrap", arms: ["tierview"], maxCalls: 20 }, d);
+    const reqs = d.backends.flatMap((b) => b.requests);
+    expect(reqs.map((q) => q.tier)).toEqual([1]);
+    expect(readRun(dir, "cilium-clean-fqdn-bootstrap", "tierview")!.calls).toBe(1);
   });
 });

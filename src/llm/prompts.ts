@@ -30,9 +30,13 @@ const TIER: Record<LlmTier, string> = {
   3: `You are the Tier 3 reviewer, the final and most thorough tier, for high-risk hunks and for hunks the lower tiers escalated. You see the whole file when it is short, otherwise about 80 lines around the hunk and the start of the enclosing function. Some hunks carry prior findings from Tiers 1 and 2 with ids: verify or refute each one. List the ids you refute in refuted_prior; re-report a finding you confirm in your own findings. There is no tier above you, so needs_escalation is always false; express doubt through confidence instead.`,
 };
 
-/** The system prompt for a tier. Identical bytes on every call. */
-export function systemPrompt(tier: LlmTier): string {
-  return `${COMMON}\n\n${TIER[tier]}`;
+const TIER1_NO_CONTEXT = "You see each hunk with only the diff's own three lines of context.";
+const TIER1_WITH_CONTEXT = "You see each hunk with the same file context as Tier 3: the whole file when it is short, otherwise about 80 lines around the hunk and the start of the enclosing function.";
+
+/** The system prompt for a tier. Identical bytes on every call. Tier 1's says which context it gets (config tier1_context). */
+export function systemPrompt(tier: LlmTier, tier1Context: "none" | "tier3" = "none"): string {
+  const text = tier === 1 && tier1Context === "tier3" ? TIER[1].replace(TIER1_NO_CONTEXT, TIER1_WITH_CONTEXT) : TIER[tier];
+  return `${COMMON}\n\n${text}`;
 }
 
 export interface PrInfo {

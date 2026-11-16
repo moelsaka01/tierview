@@ -110,11 +110,11 @@ export async function runPipeline(x: PipelineInput): Promise<PipelineOutput> {
     const m = cfg.models[key(tier)];
     const blocks = new Map(ids.map((id) => {
       const s = state.get(id)!;
-      return [id, hunkBlock({ hunk: s.hunk, context: contextFor(s.hunk, tier, fileText(s.hunk.file)), prior: [] })] as const;
+      return [id, hunkBlock({ hunk: s.hunk, context: contextFor(s.hunk, tier, fileText(s.hunk.file), cfg.tier1_context), prior: [] })] as const;
     }));
     const packs = packHunks(ids.map((id) => state.get(id)!.hunk), limitsFor(backend.name, tier, cfg, est), (h) => estimateTokens(blocks.get(h.id)!, est));
     const maxTokens = backend.name === "api" ? cfg.backend.api.max_tokens : 32000;
-    const prefix = estimateTokens(systemPrompt(tier) + shared, est);
+    const prefix = estimateTokens(systemPrompt(tier, cfg.tier1_context) + shared, est);
     const worst = packs.reduce((a, p) => a + worstCase(prefix + p.reduce((b, h) => b + estimateTokens(blocks.get(h.id)!, est), 0), maxTokens, priceFor(m.model, prices)), 0);
     return { packs: packs.length, worst };
   }
@@ -127,11 +127,11 @@ export async function runPipeline(x: PipelineInput): Promise<PipelineOutput> {
     const results = new Map<string, { review: HunkReview | null; failure?: string }>();
     if (!ids.length) return results;
     const m = cfg.models[key(tier)];
-    const system = systemPrompt(tier);
+    const system = systemPrompt(tier, cfg.tier1_context);
     const blocks = new Map<string, string>();
     for (const id of ids) {
       const s = state.get(id)!;
-      blocks.set(id, hunkBlock({ hunk: s.hunk, context: contextFor(s.hunk, tier, fileText(s.hunk.file)), prior: s.findings }));
+      blocks.set(id, hunkBlock({ hunk: s.hunk, context: contextFor(s.hunk, tier, fileText(s.hunk.file), cfg.tier1_context), prior: s.findings }));
     }
     const hunks = ids.map((id) => state.get(id)!.hunk);
     // Packs holding the tier's own hunks go first, so a call cap cuts escalations before routed hunks.

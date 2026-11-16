@@ -65,9 +65,12 @@ export interface Plan {
 
 const key = (t: LlmTier) => `tier${t}` as "tier1" | "tier2" | "tier3";
 
+/** Estimated context tokens per hunk at a tier; Tier 1 with tier1_context: tier3 gets Tier 3's. */
+const ctxTokens = (tier: LlmTier, cfg: Config, est: Estimates) => est.context_tokens_per_hunk[key(tier === 1 && cfg.tier1_context === "tier3" ? 3 : tier)];
+
 function requestsFor(tier: LlmTier, hunks: ScoredHunk[], tokens: Map<string, number>, cfg: Config, est: Estimates, backend: Backend): number {
   if (hunks.length === 0) return 0;
-  const ctx = est.context_tokens_per_hunk[key(tier)];
+  const ctx = ctxTokens(tier, cfg, est);
   return packHunks(hunks, limitsFor(backend, tier, cfg, est), (h) => (tokens.get(h.id) as number) + (backend === "claude-code" ? ctx : 0)).length;
 }
 
@@ -90,7 +93,7 @@ function estimateTier(
   const shared = files * est.shared_context_tokens_per_file + all.length * est.shared_context_tokens_per_hunk;
   const perRequest = est.system_prompt_tokens + shared + (backend === "claude-code" ? est.claude_code_overhead_tokens_per_call : 0);
   let input = requests * perRequest;
-  for (const h of hunks) input += (tokens.get(h.id) as number) + est.context_tokens_per_hunk[key(tier)];
+  for (const h of hunks) input += (tokens.get(h.id) as number) + ctxTokens(tier, cfg, est);
   const output = Math.round(hunks.length * outputPerHunk);
   return {
     tier,

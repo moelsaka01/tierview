@@ -10,15 +10,15 @@ Routing (highest risk first)
 
 Estimated API-equivalent cost (claude-code backend; requests = claude calls; no caching discount, before escalations)
   tier  model              effort  hunks  requests  input tok  output tok   cost
-  1     claude-sonnet-5-5  low         2         1       3584         800  $0.02
+  1     claude-sonnet-5-5  low         2         1       6584         800  $0.02
   2     claude-opus-5-5    medium      0         0          0           0  $0.00
   3     claude-opus-5-5    high        2         1       6339        4000  $0.11
 
   skipped hunks:        1
-  estimated total:      $0.12 via Claude Code (+ up to $0.02 escalation allowance)
+  estimated total:      $0.13 via Claude Code (+ up to $0.02 escalation allowance)
   direct API:           $0.11 (without Claude Code's per-call overhead)
-  all-claude-fable-5-2: $0.27 via Claude Code, $0.24 direct API (the same estimated tokens at its rates)
-  estimated savings:    55.6%
+  all-claude-fable-5-2: $0.30 via Claude Code, $0.26 direct API (the same estimated tokens at its rates)
+  estimated savings:    57.2%
 
 Notes
   - Tier 3 will run on Opus 5.5 (Fable not enabled; --allow-fable to use Fable 5.2).

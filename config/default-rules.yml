@@ -26,6 +26,10 @@ escalation:
 
 budget: { max_cost_usd: null }
 
+# File context for Tier 1 (PLAN §5): none = the diff's own 3 lines; tier3 = the same as Tier 3 (whole file when short,
+# else ±80 lines and the enclosing function). bench-config-v2 (Phase 4, decided from dev results): tier3.
+tier1_context: tier3
+
 # The counterfactual every receipt prices: every reviewed hunk sent to this model as a Tier 3 request.
 receipt:
   baseline: { model: claude-fable-5-2, effort: high }

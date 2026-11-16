@@ -63,3 +63,30 @@ describe("Tier 2 / Tier 3 merge", () => {
     expect(d.moves.some((m) => m.includes("tier 3 -> 2"))).toBe(false);
   });
 });
+
+describe("bench-config-v2: Tier 1 gets Tier 3's file context", () => {
+  it("contextFor gives Tier 1 exactly Tier 3's block when tier1_context is tier3, and none otherwise", async () => {
+    const { contextFor } = await import("../src/tiers/context");
+    const h = hunk("src/a.ts", ["+x"]);
+    const file = Array.from({ length: 50 }, (_, i) => `line ${i + 1}`).join("\n");
+    expect(cfg.tier1_context).toBe("tier3");
+    expect(contextFor(h, 1, file, "tier3")).toEqual(contextFor(h, 3, file));
+    expect(contextFor(h, 1, file, "none")).toBeNull();
+    expect(contextFor(h, 1, file)).toBeNull();
+  });
+
+  it("the Tier 1 prompt says which context it gets; other tiers are unchanged", async () => {
+    const { systemPrompt } = await import("../src/llm/prompts");
+    expect(systemPrompt(1, "tier3")).toContain("same file context as Tier 3");
+    expect(systemPrompt(1, "tier3")).not.toContain("only the diff's own three lines");
+    expect(systemPrompt(1, "none")).toContain("only the diff's own three lines");
+    expect(systemPrompt(3, "tier3")).toBe(systemPrompt(3, "none"));
+  });
+
+  it("the dry run estimates Tier 1 with Tier 3's context tokens", () => {
+    const one = routeDiff([hunk("src/a.ts", ["+x"])], cfg);
+    const withCtx = estimatePlan(one, cfg, prices, est, "api");
+    const without = estimatePlan(one, { ...cfg, tier1_context: "none" }, prices, est, "api");
+    expect(withCtx.tiers[0]!.input_tokens - without.tiers[0]!.input_tokens).toBe(est.context_tokens_per_hunk.tier3 - est.context_tokens_per_hunk.tier1);
+  });
+});

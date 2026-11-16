@@ -39,8 +39,13 @@ export function enclosingStart(lines: string[], h: Hunk): number | null {
  * Context for a hunk at a tier. Tier 1 gets none (the diff's own context lines).
  * Returns null when the tier gets none or the file is unavailable (deleted, binary, PR without checkout).
  */
-export function contextFor(h: Hunk, tier: LlmTier, fileText: string | null): ContextBlock | null {
-  if (tier === 1 || fileText === null || h.status === "deleted") return null;
+export function contextFor(h: Hunk, tier: LlmTier, fileText: string | null, tier1Context: "none" | "tier3" = "none"): ContextBlock | null {
+  // Tier 1 gets no context, or (config tier1_context: tier3, bench-config-v2) exactly Tier 3's.
+  if (tier === 1) {
+    if (tier1Context !== "tier3") return null;
+    tier = 3;
+  }
+  if (fileText === null || h.status === "deleted") return null;
   const lines = splitLines(fileText);
   if (lines.length === 0) return null;
   const [s, e] = span(h);

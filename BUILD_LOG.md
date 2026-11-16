@@ -7,7 +7,7 @@ One entry per phase: which model did the work, at what effort, from what prompt,
 | 1 | Plan and scaffold | Fable 5.2 (high) | done 2026-11-16 |
 | 2 | Tier 0, config, dry-run | Sonnet 5.5 (medium) | done 2026-11-16 |
 | 3 | LLM tiers, escalation, receipt, backends | Opus 5.5 (high) | done 2026-11-16 |
-| 4 | Benchmark | Opus 5.5 (high) | in progress: pilot done (31 calls), routing and judge frozen (`bench-config-v1`), full run not started |
+| 4 | Benchmark | Opus 5.5 (high) | in progress: dev split done; `bench-config-v2` frozen; test split not started |
 | 5 | PR mode, SARIF, GitHub Action | Sonnet 5.5 | not started |
 | 6 | README and release | Sonnet 5.5 | not started |
 
@@ -407,6 +407,12 @@ What the dev split says (7 bugs; a pattern to test, not a result):
 Implication (not acted on; needs Mohamed's decision because the config is frozen and the test split must not be used for it): the weak link is Tier 1's missing context, not the router or the model. Giving Tier 1 the Tier 3 context shape would make tierview's Tier 1 equal to all-sonnet on those hunks; that is a design change (unfreeze, bump to `bench-config-v2`, re-run tierview on dev) and should be decided before the test split runs.
 
 **Next.** Stop and report. Remaining: 20 test cases (60 runs), about 4 batches of 20 at the measured 1.1 to 1.7 calls per run.
+
+**bench-config-v2 (2026-11-16). Decided from dev-split results, before any test-split run. Zero `claude` calls for the change.** Prompt: "Give Tier 1 the same file context as Tier 3, with no other changes. Also skip the Opus call entirely when no hunk was routed to Opus and Sonnet escalated nothing, so those runs cost one call like all-Sonnet. Bump to bench-config-v2 (new hash and tag), and record in PLAN.md and BUILD_LOG that this change was decided from dev results before any test run. Re-run tierview on the dev split only, then stop and show me the dev table before the test split."
+
+- Tier 1 context: config `tier1_context` (`none` | `tier3`, default `tier3`); `contextFor` gives Tier 1 exactly Tier 3's block; the estimator uses Tier 3's context tokens for Tier 1. One companion edit: the Tier 1 prompt said "You see each hunk with only the diff's own three lines of context", which would contradict the new input, so with `tier3` that sentence reads "the same file context as Tier 3: the whole file when it is short, otherwise about 80 lines around the hunk and the start of the enclosing function". The rest of the prompt, routing, models, efforts and escalation are unchanged.
+- Opus call skip: already the pipeline's behaviour (Tier 3 sends nothing when it has no routed or escalated hunk); now covered by a test (a clean case with nothing routed to Opus makes exactly 1 call). The dev runs with 2 calls all had hunks routed to Opus or escalated. The runner's planner still reserves an Opus call for a possible escalation; that is planning only and spends nothing.
+- Frozen: config hash `4fe1abf9f1f3`, git tag `bench-config-v2`; tierview arm version 4 (its dev runs are stale and re-run; the baseline arms do not depend on this setting). Dry-run snapshots regenerated (Tier 1 estimate now includes context tokens). 239 tests pass.
 
 ---
 
