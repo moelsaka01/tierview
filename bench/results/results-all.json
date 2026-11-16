@@ -1,0 +1,189 @@
+{
+  "split": "all",
+  "config_hash": [
+    "3f0786b02d0a",
+    "1e7dfed407d8",
+    "4fe1abf9f1f3"
+  ],
+  "arms": [
+    {
+      "arm": "tierview",
+      "runs": 30,
+      "buggy_runs": 20,
+      "clean_runs": 10,
+      "caught": 14,
+      "recall": 0.7,
+      "recall_ci95": [
+        0.5,
+        0.9
+      ],
+      "judge_pending_runs": 0,
+      "fp_per_clean_case": 0,
+      "clean_cases_with_fp": 0,
+      "unmatched_per_buggy_case": 1.1,
+      "mean_tokens_per_case": 34264.1,
+      "mean_calls_per_case": 1.8666666666666667,
+      "mean_cost_via_claude_code_usd": 0.19592872999999997,
+      "mean_cost_direct_api_usd": 0.13423466666666667,
+      "cost_per_bug_caught_via_claude_code_usd": 0.3379105071428571,
+      "cost_per_bug_caught_direct_api_usd": 0.2400301428571429,
+      "mean_fable_priced_via_claude_code_usd": 0.5586437,
+      "mean_fable_priced_direct_api_usd": 0.3549074666666667,
+      "latency_p50_s": 40.675,
+      "latency_p90_s": 85.233,
+      "escalation_rate": 0.034482758620689655
+    },
+    {
+      "arm": "all-sonnet",
+      "runs": 30,
+      "buggy_runs": 20,
+      "clean_runs": 10,
+      "caught": 9,
+      "recall": 0.45,
+      "recall_ci95": [
+        0.25,
+        0.65
+      ],
+      "judge_pending_runs": 0,
+      "fp_per_clean_case": 0,
+      "clean_cases_with_fp": 0,
+      "unmatched_per_buggy_case": 0.35,
+      "mean_tokens_per_case": 27601.233333333334,
+      "mean_calls_per_case": 1.1,
+      "mean_cost_via_claude_code_usd": 0.11257579333333331,
+      "mean_cost_direct_api_usd": 0.06006566666666666,
+      "cost_per_bug_caught_via_claude_code_usd": 0.28865731111111104,
+      "cost_per_bug_caught_direct_api_usd": 0.15533199999999997,
+      "mean_fable_priced_via_claude_code_usd": 0.45004998666666673,
+      "mean_fable_priced_direct_api_usd": 0.24026266666666665,
+      "latency_p50_s": 17.156,
+      "latency_p90_s": 28.656,
+      "escalation_rate": null
+    },
+    {
+      "arm": "all-opus",
+      "runs": 30,
+      "buggy_runs": 20,
+      "clean_runs": 10,
+      "caught": 12,
+      "recall": 0.6,
+      "recall_ci95": [
+        0.4,
+        0.8
+      ],
+      "judge_pending_runs": 0,
+      "fp_per_clean_case": 0.3,
+      "clean_cases_with_fp": 3,
+      "unmatched_per_buggy_case": 1.15,
+      "mean_tokens_per_case": 29091.9,
+      "mean_calls_per_case": 1.1,
+      "mean_cost_via_claude_code_usd": 0.25381382,
+      "mean_cost_direct_api_usd": 0.15001666666666663,
+      "cost_per_bug_caught_via_claude_code_usd": 0.49010744999999994,
+      "cost_per_bug_caught_direct_api_usd": 0.29380566666666663,
+      "mean_fable_priced_via_claude_code_usd": 0.5073435533333331,
+      "mean_fable_priced_direct_api_usd": 0.30003333333333326,
+      "latency_p50_s": 30.231,
+      "latency_p90_s": 69.266,
+      "escalation_rate": null
+    },
+    {
+      "arm": "tierview@v3",
+      "runs": 10,
+      "buggy_runs": 7,
+      "clean_runs": 3,
+      "caught": 3,
+      "recall": 0.42857142857142855,
+      "recall_ci95": [
+        0.14285714285714285,
+        0.8571428571428571
+      ],
+      "judge_pending_runs": 0,
+      "fp_per_clean_case": 0,
+      "clean_cases_with_fp": 0,
+      "unmatched_per_buggy_case": 1.4285714285714286,
+      "mean_tokens_per_case": 17697.1,
+      "mean_calls_per_case": 1.7,
+      "mean_cost_via_claude_code_usd": 0.14609924000000002,
+      "mean_cost_direct_api_usd": 0.09783699999999998,
+      "cost_per_bug_caught_via_claude_code_usd": 0.45589266666666667,
+      "cost_per_bug_caught_direct_api_usd": 0.3090833333333333,
+      "mean_fable_priced_via_claude_code_usd": 0.33141344000000006,
+      "mean_fable_priced_direct_api_usd": 0.21749359999999998,
+      "latency_p50_s": 29.968,
+      "latency_p90_s": 78.164,
+      "escalation_rate": 0.03773584905660377
+    },
+    {
+      "arm": "tierview@v1",
+      "runs": 4,
+      "buggy_runs": 2,
+      "clean_runs": 2,
+      "caught": 2,
+      "recall": 1,
+      "recall_ci95": [
+        1,
+        1
+      ],
+      "judge_pending_runs": 0,
+      "fp_per_clean_case": 0,
+      "clean_cases_with_fp": 0,
+      "unmatched_per_buggy_case": 3.5,
+      "mean_tokens_per_case": 24609.75,
+      "mean_calls_per_case": 2.25,
+      "mean_cost_via_claude_code_usd": 0.20216855,
+      "mean_cost_direct_api_usd": 0.13485250000000001,
+      "cost_per_bug_caught_via_claude_code_usd": 0.370258,
+      "cost_per_bug_caught_direct_api_usd": 0.255434,
+      "mean_fable_priced_via_claude_code_usd": 0.4647991,
+      "mean_fable_priced_direct_api_usd": 0.303262,
+      "latency_p50_s": 24.018,
+      "latency_p90_s": 168.853,
+      "escalation_rate": 0.1724137931034483
+    },
+    {
+      "arm": "tierview@v2",
+      "runs": 5,
+      "buggy_runs": 3,
+      "clean_runs": 2,
+      "caught": 2,
+      "recall": 0.6666666666666666,
+      "recall_ci95": [
+        0,
+        1
+      ],
+      "judge_pending_runs": 1,
+      "fp_per_clean_case": 0,
+      "clean_cases_with_fp": 0,
+      "unmatched_per_buggy_case": 3,
+      "mean_tokens_per_case": 19308.4,
+      "mean_calls_per_case": 1.8,
+      "mean_cost_via_claude_code_usd": 0.14339898,
+      "mean_cost_direct_api_usd": 0.0996632,
+      "cost_per_bug_caught_via_claude_code_usd": 0.29371195,
+      "cost_per_bug_caught_direct_api_usd": 0.21338000000000001,
+      "mean_fable_priced_via_claude_code_usd": 0.31560212000000004,
+      "mean_fable_priced_direct_api_usd": 0.2264096,
+      "latency_p50_s": 34.465,
+      "latency_p90_s": 107.153,
+      "escalation_rate": 0.0967741935483871
+    }
+  ],
+  "mcnemar_tierview_vs_all_opus": {
+    "both": 12,
+    "tierview_only": 2,
+    "opus_only": 0,
+    "neither": 6,
+    "p": 0.5
+  },
+  "routing_recall": {
+    "faulty_at_tier2plus": 12,
+    "buggy_cases": 20,
+    "missed_bugs_routed_low": 2
+  },
+  "all_fable_calculated": {
+    "via_claude_code_mean_usd": 0.5073435533333331,
+    "direct_api_mean_usd": 0.30003333333333326,
+    "note": "Calculated, not measured: the all-opus arm's actual tokens priced at Fable 5.2 rates. No Fable calls were made (PLAN §9)."
+  }
+}

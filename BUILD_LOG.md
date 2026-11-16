@@ -7,7 +7,7 @@ One entry per phase: which model did the work, at what effort, from what prompt,
 | 1 | Plan and scaffold | Fable 5.2 (high) | done 2026-11-16 |
 | 2 | Tier 0, config, dry-run | Sonnet 5.5 (medium) | done 2026-11-16 |
 | 3 | LLM tiers, escalation, receipt, backends | Opus 5.5 (high) | done 2026-11-16 |
-| 4 | Benchmark | Opus 5.5 (high) | in progress: dev split done; `bench-config-v2` frozen; test split 54 of 60 runs valid |
+| 4 | Benchmark | Opus 5.5 (high) | runs complete (190 calls); judge audit and RESULTS.md / chart to do |
 | 5 | PR mode, SARIF, GitHub Action | Sonnet 5.5 | not started |
 | 6 | README and release | Sonnet 5.5 | not started |
 
@@ -512,6 +512,38 @@ Test split so far: 43 of 60 runs valid. 17 runs left (about 39 planned calls): 2
 NBD is the largest diff (21 hunks, about 120k tokens with Tier 3 context), so every arm needed several calls under the 40k-token pack limit.
 
 Test split so far: 54 of 60 runs valid. 6 runs left (vmdk and Tetragon, all arms; about 14 planned calls): 1 batch.
+
+**Final test batch (2026-11-16, Mohamed: "Run final batch"; hash verified).** 13 `claude` calls: 8 reviews and 5 Opus judge calls; no failed calls, no Fable. API-equivalent $1.00 via Claude Code.
+
+| case | tierview | all-sonnet | all-opus |
+|---|---|---|---|
+| qemu-vmdk-int-overflow (buggy) | missed: 4 findings, the near ones (marker offset over-read, short read) judged no match (2 calls, $0.250) | missed (1, $0.102) | missed (1, $0.238) |
+| tetragon-domains-output-format (buggy, wide) | **caught** by rule, terms "exit, print" (2, $0.183) | **caught** by rule (1, $0.071) | **caught** by rule (1, $0.159) |
+
+All 90 runs (30 cases x 3 arms) are complete on their current versions; no pending judgements; no failed calls in any saved run.
+
+**Test split results (13 buggy, 7 clean; `bench-config-v2`, hash `4fe1abf9f1f3`; the headline numbers):**
+
+| arm | recall (95% CI) | FP / clean case (≥ medium) | clean cases with an FP | calls / case | $ / case via Claude Code | $ / case direct API | $ / bug caught (CC / direct) | p50 / p90 wall |
+|---|---|---:|---:|---:|---:|---:|---|---|
+| **tierview** | **9/13 = 69% (46–92%)** | 0.00 | 0/7 | 1.9 | $0.213 | $0.137 | $0.364 / $0.241 | 41 / 85 s |
+| all-sonnet | 4/13 = 31% (8–54%) | 0.00 | 0/7 | 1.1 | $0.113 | $0.060 | $0.408 / $0.218 | 17 / 23 s |
+| all-opus | 7/13 = 54% (23–85%) | 0.43 | 3/7 | 1.1 | $0.254 | $0.148 | $0.525 / $0.308 | 29 / 44 s |
+
+- McNemar, tierview vs all-opus (paired, 13 bugs): both 7, tierview only 2 (Cilium MTU, Django lookup), all-opus only 0, neither 4 (prefault, DPDK mem, LoongArch, vmdk); exact p = 0.5. **Not significant.**
+- Calculated all-Fable (all-opus tokens at Fable rates): $0.507 per case via Claude Code, $0.295 direct API. No Fable calls were made.
+- Routing recall on the test split: 9 of 13 faulty hunks reached Opus (dev: 3 of 7).
+- Unmatched findings per buggy case: tierview 1.08, all-sonnet 0.38, all-opus 0.85 (not false positives; see PLAN §9).
+
+What the test split says, with the intervals in mind:
+- tierview caught the most bugs (9 of 13) and raised no false positive on clean cases, at 16% less than all-opus per case via Claude Code (7% less direct API). Against all-opus the recall difference (2 discordant cases, both for tierview) is not significant.
+- all-sonnet is cheapest but caught 4 of 13, much worse than on dev (5 of 7): the dev split did not predict this, which is the reason the test split is the headline.
+- all-opus raised a medium-or-higher finding on 3 of 7 clean cases; tierview and all-sonnet on none.
+- Dev + test pooled (20 bugs, 10 clean, for reference only): tierview 14/20 (70%), all-opus 12/20 (60%), all-sonnet 9/20 (45%); FP clean cases 0/10, 3/10, 0/10.
+
+**Phase 4 usage, all batches:** 11 batches, 190 `claude` calls recorded in `usage.jsonl` (171 reviews, 19 Opus judge calls), about $20.36 API-equivalent via Claude Code; $0 billed (Pro plan usage). About 14 of those calls (test batch 3) returned only the usage-limit error. No Fable calls. (`direct_api_usd` is missing on the batch 1 lines, written before that field existed.)
+
+**Not done yet:** the hand audit of 20 judgements (P4-10, `bench/results/judge-audit.md`), and P4-11 (`bench/chart.ts`, `chart.svg`, `bench/results/RESULTS.md`). Both need no `claude` calls.
 
 ---
 

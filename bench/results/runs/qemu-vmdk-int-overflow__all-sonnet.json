@@ -1,0 +1,257 @@
+{
+  "case_id": "qemu-vmdk-int-overflow",
+  "arm": "all-sonnet",
+  "arm_version": 1,
+  "batch": "2026-11-16T19-36-22",
+  "config_hash": "4fe1abf9f1f3",
+  "complete": true,
+  "calls": 1,
+  "wall_ms": 21836,
+  "review": {
+    "version": 1,
+    "findings": [
+      {
+        "file": "block/vmdk.c",
+        "start_line": 876,
+        "end_line": 877,
+        "side": "new",
+        "severity": "medium",
+        "category": "bug",
+        "title": "Grain marker written without little-endian conversion",
+        "explanation": "The reader uses le32_to_cpu(marker->size), but the writer stores lba and size in host byte order. On big-endian hosts the written compressed grains cannot be read back, and the image is corrupt for other tools. The lba field is also 64-bit, so it needs cpu_to_le64.",
+        "suggestion": "Use data->lba = cpu_to_le64(sector_num); data->size = cpu_to_le32(buf_len);",
+        "evidence": "data->size = buf_len;",
+        "confidence": 0.6,
+        "id": "69fd575dffa8",
+        "hunk_id": "block/vmdk.c#2",
+        "model": "claude-sonnet-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      },
+      {
+        "file": "block/vmdk.c",
+        "start_line": 937,
+        "end_line": 937,
+        "side": "new",
+        "severity": "medium",
+        "category": "security",
+        "title": "Marker size bound ignores header; heap over-read",
+        "explanation": "With has_marker set, the compressed data starts sizeof(VmdkGrainMarker) bytes into cluster_buf, which holds buf_bytes bytes. The check allows data_len up to buf_bytes, so a crafted image can make uncompress() read past the end of the heap buffer.",
+        "suggestion": "Reject the size when data_len > buf_bytes - sizeof(VmdkGrainMarker) for marker extents.",
+        "evidence": "if (!data_len || data_len > buf_bytes) {",
+        "confidence": 0.6,
+        "id": "b9b80496111a",
+        "hunk_id": "block/vmdk.c#4",
+        "model": "claude-sonnet-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      }
+    ],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "block/vmdk.c#1",
+        "score": 10,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "10 changed lines"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "111 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "block/vmdk.c#2",
+        "score": 35,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "memory",
+            "weight": 25,
+            "detail": "`data = g_malloc(buf_len + sizeof(VmdkGrainMarker));`"
+          },
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "19 changed lines"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "111 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "block/vmdk.c#3",
+        "score": 30,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "memory",
+            "weight": 25,
+            "detail": "`g_free(data);`"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "111 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "block/vmdk.c#4",
+        "score": 95,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "unsafe",
+            "weight": 30,
+            "detail": "`memcpy(buf, uncomp_buf + offset_in_cluster, nb_sectors * 512`"
+          },
+          {
+            "signal": "boundary",
+            "weight": 25,
+            "detail": "comparison operator changed"
+          },
+          {
+            "signal": "memory",
+            "weight": 25,
+            "detail": "`cluster_buf = g_malloc(buf_bytes);`"
+          },
+          {
+            "signal": "size",
+            "weight": 10,
+            "detail": "62 changed lines"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "111 source lines, no test file"
+          }
+        ]
+      },
+      {
+        "hunk_id": "block/vmdk.c#5",
+        "score": 10,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "19 changed lines"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "111 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 1,
+      "model_substitutions": [],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 2,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 5,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 20754,
+          "cache_read_tokens": 994,
+          "output_tokens": 1861,
+          "cache_write_1h_tokens": 20754,
+          "cost_usd": 0.1017294,
+          "direct_api_cost_usd": 0.05791
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.1017294,
+      "total_direct_api_cost_usd": 0.05791,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.4067188,
+        "direct_api_cost_usd": 0.23164
+      },
+      "savings_pct": 75,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 21835,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}

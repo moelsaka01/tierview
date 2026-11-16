@@ -1,0 +1,201 @@
+{
+  "case_id": "tetragon-domains-output-format",
+  "arm": "tierview",
+  "arm_version": 4,
+  "batch": "2026-11-16T19-36-22",
+  "config_hash": "4fe1abf9f1f3",
+  "complete": true,
+  "calls": 2,
+  "wall_ms": 37806,
+  "review": {
+    "version": 1,
+    "findings": [
+      {
+        "file": "cmd/tetra/tracingpolicy/tracingpolicy.go",
+        "start_line": 268,
+        "end_line": 277,
+        "side": "new",
+        "severity": "low",
+        "category": "error-handling",
+        "title": "Invalid --output value silently prints nothing and exits 0",
+        "explanation": "The sibling `list` command checks `output` in PreRunE, but `domains` does not. A typo like `-o yaml` matches neither switch case, so the command prints nothing and still returns success.",
+        "suggestion": "Add the same PreRunE check used by tpListCmd (reject values other than \"json\" and \"text\"), or add a default case that returns an error.",
+        "evidence": "switch output {",
+        "confidence": 0.75,
+        "id": "3edcdb35f1a3",
+        "hunk_id": "cmd/tetra/tracingpolicy/tracingpolicy.go#1",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [
+          1
+        ],
+        "also_reported_by": []
+      },
+      {
+        "file": "cmd/tetra/tracingpolicy/tracingpolicy.go",
+        "start_line": 276,
+        "end_line": 276,
+        "side": "new",
+        "severity": "low",
+        "category": "bug",
+        "title": "Text output bypasses cobra writer and prints raw Go slice",
+        "explanation": "fmt.Println writes directly to os.Stdout and ignores cmd.SetOut, so tests and callers that redirect output can't capture it. The JSON branch uses cmd.Println, so the two branches are inconsistent. The text is also the Go slice format (e.g. `[grpc k8s]`), not readable CLI output.",
+        "suggestion": "Write one domain per line to cmd.OutOrStdout(), e.g. `for _, d := range res.Domains { cmd.Println(d) }`.",
+        "evidence": "fmt.Println(res.Domains)",
+        "confidence": 0.7,
+        "id": "eaa28e60224f",
+        "hunk_id": "cmd/tetra/tracingpolicy/tracingpolicy.go#1",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [
+          1
+        ],
+        "also_reported_by": []
+      },
+      {
+        "file": "cmd/tetra/tracingpolicy/tracingpolicy.go",
+        "start_line": 276,
+        "end_line": 276,
+        "side": "new",
+        "severity": "low",
+        "category": "bug",
+        "title": "Text output uses fmt.Println instead of cmd output writer",
+        "explanation": "fmt.Println writes straight to os.Stdout, so it bypasses cobra's SetOut. Tests can't capture the output, and it is inconsistent with the sibling list command, which uses cmd.OutOrStdout(). It also prints a Go slice format such as [a b].",
+        "suggestion": "Use fmt.Fprintln(cmd.OutOrStdout(), strings.Join(...)) or print one domain per line.",
+        "evidence": "fmt.Println(res.Domains)",
+        "confidence": 0.6,
+        "id": "a7f71d4ed08d",
+        "hunk_id": "cmd/tetra/tracingpolicy/tracingpolicy.go#1",
+        "model": "claude-sonnet-5-5",
+        "tier": 1,
+        "escalated_from": [],
+        "also_reported_by": []
+      }
+    ],
+    "refuted": [
+      {
+        "file": "cmd/tetra/tracingpolicy/tracingpolicy.go",
+        "start_line": 264,
+        "end_line": 266,
+        "side": "new",
+        "severity": "low",
+        "category": "error-handling",
+        "title": "Nil response yields misleading wrapped nil error",
+        "explanation": "If err is nil and res is nil, fmt.Errorf with %w of nil prints 'failed to list domains: %!w(<nil>)'. This matches the existing list command pattern, but it is still a flaw. Also, the output flag is not validated, so an invalid value silently prints nothing.",
+        "suggestion": "Handle err and nil res separately, and add a PreRunE that validates output is json or text.",
+        "evidence": "if err != nil || res == nil {\n\t\t\t\treturn fmt.Errorf(\"failed to list domains: %w\", err)",
+        "confidence": 0.5,
+        "id": "8705f9e84651",
+        "hunk_id": "cmd/tetra/tracingpolicy/tracingpolicy.go#1",
+        "model": "claude-sonnet-5-5",
+        "tier": 1,
+        "escalated_from": [],
+        "also_reported_by": []
+      }
+    ],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "cmd/tetra/tracingpolicy/tracingpolicy.go#1",
+        "score": 10,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 10,
+            "detail": "37 changed lines"
+          }
+        ]
+      },
+      {
+        "hunk_id": "cmd/tetra/tracingpolicy/tracingpolicy.go#2",
+        "score": 0,
+        "tier": 1,
+        "reasons": []
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 2,
+      "model_substitutions": [
+        {
+          "tier": 3,
+          "requested": "claude-fable-5-2",
+          "used": "claude-opus-5-5",
+          "reason": "Fable not enabled"
+        }
+      ],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 2,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 15824,
+          "cache_read_tokens": 994,
+          "output_tokens": 771,
+          "cache_write_1h_tokens": 15824,
+          "cost_usd": 0.07110939999999999,
+          "direct_api_cost_usd": 0.03715
+        },
+        {
+          "tier": 2,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "hunks": 0,
+          "escalated_in": 1,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 9799,
+          "cache_read_tokens": 994,
+          "output_tokens": 1667,
+          "cache_write_1h_tokens": 9799,
+          "cost_usd": 0.1119388,
+          "direct_api_cost_usd": 0.06812
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.1830482,
+      "total_direct_api_cost_usd": 0.10527,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.5079176,
+        "direct_api_cost_usd": 0.28484
+      },
+      "savings_pct": 64,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills.",
+        "calibration: 1 of 2 tier 1 hunk(s) escalated (50% > 30%)."
+      ],
+      "wall_ms": 37805,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}

@@ -1,0 +1,295 @@
+{
+  "case_id": "qemu-vmdk-int-overflow",
+  "arm": "all-opus",
+  "arm_version": 1,
+  "batch": "2026-11-16T19-36-22",
+  "config_hash": "4fe1abf9f1f3",
+  "complete": true,
+  "calls": 1,
+  "wall_ms": 43337,
+  "review": {
+    "version": 1,
+    "findings": [
+      {
+        "file": "block/vmdk.c",
+        "start_line": 777,
+        "end_line": 785,
+        "side": "new",
+        "severity": "high",
+        "category": "data-loss",
+        "title": "Compressed grain allocation can overlap previous grain's tail",
+        "explanation": "For compressed extents the file is no longer truncated to a cluster boundary. Each compressed grain is written with length buf_len + sizeof(VmdkGrainMarker), which usually isn't a multiple of 512. On the next allocation, bdrv_getlength() returns a length that isn't sector-aligned, and `*cluster_offset >>= 9` rounds it down. The new grain then starts inside the previous grain and overwrites its last bytes, which corrupts the earlier compressed data.",
+        "suggestion": "For compressed extents, round the allocation offset up to a sector boundary (for example DIV_ROUND_UP(len, 512)), or pad each written grain to a 512-byte multiple.",
+        "evidence": "        *cluster_offset >>= 9;",
+        "confidence": 0.65,
+        "id": "78b68c1d0e49",
+        "hunk_id": "block/vmdk.c#1",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      },
+      {
+        "file": "block/vmdk.c",
+        "start_line": 871,
+        "end_line": 879,
+        "side": "new",
+        "severity": "high",
+        "category": "bug",
+        "title": "Partial or unaligned compressed writes produce unreadable grains",
+        "explanation": "Only nb_sectors of data are compressed, and the result is written at cluster_offset + offset_in_cluster. vmdk_read_extent always reads the marker at cluster_offset and decompresses from there. A write that starts mid-cluster leaves no marker at cluster_offset, so the read decodes garbage. A write that covers less than a full cluster fails the read bounds check. Any later write to the rest of that cluster is refused because the cluster is already allocated. Either way, the guest's data can't be read back.",
+        "suggestion": "For compressed extents, require offset_in_cluster == 0 and a full-cluster write, or read-modify-write the whole cluster (fill the gaps from the backing file or with zeros) before compressing. Always write at cluster_offset.",
+        "evidence": "        if (compress(data->data, &buf_len, buf, nb_sectors << 9) != Z_OK ||",
+        "confidence": 0.6,
+        "id": "0b5b89acd502",
+        "hunk_id": "block/vmdk.c#2",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      },
+      {
+        "file": "block/vmdk.c",
+        "start_line": 932,
+        "end_line": 941,
+        "side": "new",
+        "severity": "medium",
+        "category": "security",
+        "title": "marker->size check allows heap over-read past cluster_buf",
+        "explanation": "When has_marker is set, compressed_data points to marker->data, which is sizeof(VmdkGrainMarker) bytes into cluster_buf. Yet data_len (taken from the untrusted image) is only checked against buf_bytes. A crafted image can set size close to buf_bytes, so uncompress() reads up to sizeof(VmdkGrainMarker) bytes past the end of the heap allocation.",
+        "suggestion": "When has_marker is set, check data_len > buf_bytes - sizeof(VmdkGrainMarker). Also cap the check at the number of bytes bdrv_pread actually returned.",
+        "evidence": "    if (!data_len || data_len > buf_bytes) {",
+        "confidence": 0.8,
+        "id": "83fce880dba3",
+        "hunk_id": "block/vmdk.c#4",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      },
+      {
+        "file": "block/vmdk.c",
+        "start_line": 876,
+        "end_line": 877,
+        "side": "new",
+        "severity": "medium",
+        "category": "bug",
+        "title": "Grain marker fields written in host byte order",
+        "explanation": "The on-disk marker is little-endian; the reader uses le32_to_cpu(marker->size). On big-endian hosts, lba and size are written in the wrong byte order, which produces invalid images and failed reads.",
+        "suggestion": "data->lba = cpu_to_le64(sector_num); data->size = cpu_to_le32(buf_len);",
+        "evidence": "        data->size = buf_len;",
+        "confidence": 0.75,
+        "id": "aba9a7eb8447",
+        "hunk_id": "block/vmdk.c#2",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      }
+    ],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "block/vmdk.c#1",
+        "score": 10,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "10 changed lines"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "111 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "block/vmdk.c#2",
+        "score": 35,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "memory",
+            "weight": 25,
+            "detail": "`data = g_malloc(buf_len + sizeof(VmdkGrainMarker));`"
+          },
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "19 changed lines"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "111 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "block/vmdk.c#3",
+        "score": 30,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "memory",
+            "weight": 25,
+            "detail": "`g_free(data);`"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "111 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "block/vmdk.c#4",
+        "score": 95,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "unsafe",
+            "weight": 30,
+            "detail": "`memcpy(buf, uncomp_buf + offset_in_cluster, nb_sectors * 512`"
+          },
+          {
+            "signal": "boundary",
+            "weight": 25,
+            "detail": "comparison operator changed"
+          },
+          {
+            "signal": "memory",
+            "weight": 25,
+            "detail": "`cluster_buf = g_malloc(buf_bytes);`"
+          },
+          {
+            "signal": "size",
+            "weight": 10,
+            "detail": "62 changed lines"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "111 source lines, no test file"
+          }
+        ]
+      },
+      {
+        "hunk_id": "block/vmdk.c#5",
+        "score": 10,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "19 changed lines"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "111 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 1,
+      "model_substitutions": [],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 2,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 5,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 20753,
+          "cache_read_tokens": 994,
+          "output_tokens": 3574,
+          "cache_write_1h_tokens": 20753,
+          "cost_usd": 0.2377108,
+          "direct_api_cost_usd": 0.150076
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.2377108,
+      "total_direct_api_cost_usd": 0.150076,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.4752228,
+        "direct_api_cost_usd": 0.300152
+      },
+      "savings_pct": 50,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 43336,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}
