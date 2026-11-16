@@ -1,0 +1,277 @@
+{
+  "case_id": "django-clean-migration-determinism",
+  "arm": "tierview",
+  "arm_version": 4,
+  "batch": "2026-11-16T15-57-37",
+  "config_hash": "4fe1abf9f1f3",
+  "complete": true,
+  "calls": 2,
+  "wall_ms": 47088,
+  "review": {
+    "version": 1,
+    "findings": [],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "django/db/migrations/loader.py#1",
+        "score": 30,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "migrations",
+            "weight": 30,
+            "detail": "path django/db/migrations/loader.py"
+          },
+          {
+            "signal": "merge",
+            "weight": 0,
+            "detail": "Tier 2 and Tier 3 run the same model: one call at high effort"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/migrations/test_loader.py#1",
+        "score": 15,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "migrations",
+            "weight": 30,
+            "detail": "path tests/migrations/test_loader.py"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/migrations/test_loader.py#2",
+        "score": 50,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "migrations",
+            "weight": 30,
+            "detail": "path tests/migrations/test_loader.py"
+          },
+          {
+            "signal": "concurrency",
+            "weight": 25,
+            "detail": "`[ ] 0001_squashed_initial <- replaces app1.0001`"
+          },
+          {
+            "signal": "size",
+            "weight": 10,
+            "detail": "64 changed lines"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "merge",
+            "weight": 0,
+            "detail": "Tier 2 and Tier 3 run the same model: one call at high effort"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/migrations/test_migrations_squashed_replaced_order/app1/0001_initial.py#1",
+        "score": 20,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "migrations",
+            "weight": 30,
+            "detail": "path tests/migrations/test_migrations_squashed_replaced_order/app"
+          },
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "9 changed lines"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/migrations/test_migrations_squashed_replaced_order/app1/0001_squashed_initial.py#1",
+        "score": 20,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "migrations",
+            "weight": 30,
+            "detail": "path tests/migrations/test_migrations_squashed_replaced_order/app"
+          },
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "13 changed lines"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/migrations/test_migrations_squashed_replaced_order/app1/0002_squashed_initial.py#1",
+        "score": 20,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "migrations",
+            "weight": 30,
+            "detail": "path tests/migrations/test_migrations_squashed_replaced_order/app"
+          },
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "16 changed lines"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/migrations/test_migrations_squashed_replaced_order/app2/0001_initial.py#1",
+        "score": 20,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "migrations",
+            "weight": 30,
+            "detail": "path tests/migrations/test_migrations_squashed_replaced_order/app"
+          },
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "11 changed lines"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/migrations/test_migrations_squashed_replaced_order/app2/0001_squashed_initial.py#1",
+        "score": 20,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "migrations",
+            "weight": 30,
+            "detail": "path tests/migrations/test_migrations_squashed_replaced_order/app"
+          },
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "13 changed lines"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 2,
+      "model_substitutions": [
+        {
+          "tier": 3,
+          "requested": "claude-fable-5-2",
+          "used": "claude-opus-5-5",
+          "reason": "Fable not enabled"
+        }
+      ],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 6,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 6382,
+          "cache_read_tokens": 994,
+          "output_tokens": 628,
+          "cache_write_1h_tokens": 6382,
+          "cost_usd": 0.0319114,
+          "direct_api_cost_usd": 0.016836
+        },
+        {
+          "tier": 2,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "hunks": 2,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 11071,
+          "cache_read_tokens": 994,
+          "output_tokens": 2033,
+          "cache_write_1h_tokens": 11071,
+          "cost_usd": 0.12943480000000002,
+          "direct_api_cost_usd": 0.080528
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.16134620000000002,
+      "total_direct_api_cost_usd": 0.097364,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.38611759999999995,
+        "direct_api_cost_usd": 0.2284
+      },
+      "savings_pct": 58.2,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "Tier 2 and Tier 3 both run claude-opus-5-5, so they ran as one tier at high effort.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 47085,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}

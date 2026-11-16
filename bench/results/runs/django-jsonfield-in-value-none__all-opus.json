@@ -1,0 +1,152 @@
+{
+  "case_id": "django-jsonfield-in-value-none",
+  "arm": "all-opus",
+  "arm_version": 1,
+  "batch": "2026-11-16T15-57-37",
+  "config_hash": "4fe1abf9f1f3",
+  "complete": true,
+  "calls": 1,
+  "wall_ms": 30369,
+  "review": {
+    "version": 1,
+    "findings": [
+      {
+        "file": "django/db/models/fields/json.py",
+        "start_line": 432,
+        "end_line": 446,
+        "side": "new",
+        "severity": "medium",
+        "category": "bug",
+        "title": "Any Value() in JSON key __in is now treated as JSON text, not just JSON Values",
+        "explanation": "The new condition matches every `expressions.Value`, whatever its output_field. Take a plain `Value(\"bar\")`, which resolves to CharField and compiles to `%s` with params ['bar']. Before this change it was compared as-is to the extracted key, and that worked. Now on SQLite, 'bar' is not in jsonfield_datatype_values, so the code emits `JSON_EXTRACT(%s, '$')` on the raw string 'bar', which is not valid JSON, and SQLite raises a malformed-JSON error. MySQL does the same and raises 'Invalid JSON text'. On Oracle the code wraps it in `JSON_OBJECT(... VALUE %s FORMAT JSON)`, which is also invalid JSON. So a query like `value__foo__in=[Value(\"bar\")]` worked before and now fails. Only Values whose output_field is a JSONField hold JSON-encoded params, so only those should take this path.",
+        "suggestion": "Limit the new branch to JSON-typed Values, e.g. `isinstance(param, expressions.Value) and isinstance(param.output_field, JSONField)`, and add a test with a non-JSON Value such as `Value(\"bar\")`.",
+        "evidence": "not hasattr(param, \"as_sql\") or isinstance(param, expressions.Value)",
+        "confidence": 0.65,
+        "id": "9f59704c0fcd",
+        "hunk_id": "django/db/models/fields/json.py#1",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      }
+    ],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "django/db/models/fields/json.py#1",
+        "score": 30,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "boundary",
+            "weight": 25,
+            "detail": "condition changed"
+          },
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "7 changed lines"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/model_fields/test_jsonfield.py#1",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 1,
+      "model_substitutions": [],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 2,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 2,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 9737,
+          "cache_read_tokens": 994,
+          "output_tokens": 2423,
+          "cache_write_1h_tokens": 9737,
+          "cost_usd": 0.1265628,
+          "direct_api_cost_usd": 0.082992
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.1265628,
+      "total_direct_api_cost_usd": 0.082992,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.2529268,
+        "direct_api_cost_usd": 0.165984
+      },
+      "savings_pct": 50,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 30369,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}

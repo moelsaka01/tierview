@@ -7,7 +7,7 @@ One entry per phase: which model did the work, at what effort, from what prompt,
 | 1 | Plan and scaffold | Fable 5.2 (high) | done 2026-11-16 |
 | 2 | Tier 0, config, dry-run | Sonnet 5.5 (medium) | done 2026-11-16 |
 | 3 | LLM tiers, escalation, receipt, backends | Opus 5.5 (high) | done 2026-11-16 |
-| 4 | Benchmark | Opus 5.5 (high) | in progress: dev split done; `bench-config-v2` frozen; test split 4 of 20 cases |
+| 4 | Benchmark | Opus 5.5 (high) | in progress: dev split done; `bench-config-v2` frozen; test split 26 of 60 runs |
 | 5 | PR mode, SARIF, GitHub Action | Sonnet 5.5 | not started |
 | 6 | README and release | Sonnet 5.5 | not started |
 
@@ -457,7 +457,17 @@ McNemar tierview v4 vs all-opus: both 5, neither 2, no discordant pairs (p = 1).
 
 Judge calls: 5 (one per run with ambiguous findings), $0.093 together. Interim only; no metrics are computed on 4 test cases.
 
-**Next.** Test batch 2, started by Mohamed.
+**Test batch 2 (2026-11-16, Mohamed: "Run test batch 2"; hash `4fe1abf9f1f3` verified by the command before running).** 19 `claude` calls (cap 20): 19 reviews, 0 judge calls (the rules decided every finding); no Fable, no errors. API-equivalent $2.02 via Claude Code. 14 more runs: test cases 5 to 8 complete, and 2 of 3 arms of `dpdk-hws-counter-double-free` (all-opus did not fit: 2 calls planned, 1 left). Total so far on the test split: 26 of 60 runs, 39 calls.
+
+| case | tierview | all-sonnet | all-opus |
+|---|---|---|---|
+| django-clean-migration-determinism | 0 findings (2 calls, $0.161) | 0 (1, $0.070) | 0 (1, $0.149) |
+| django-jsonfield-in-value-none (buggy) | **caught** (2, $0.214) | missed: no findings (1, $0.046) | **caught** (1, $0.127) |
+| django-lookup-rhs-iterator (buggy, wide) | **caught**: rule match with mechanism terms "empty, iterator" (2, $0.196) | missed: no findings (1, $0.081) | missed: no findings (1, $0.204) |
+| dpdk-clean-dpaa2-prefetch | 0 (2, $0.221) | 0 (1, $0.112) | **1 medium finding (FP)** (1, $0.260) |
+| dpdk-hws-counter-double-free (buggy) | **caught** (2, $0.124) | **caught** (1, $0.052) | next batch |
+
+**Next.** Test batch 3, started by Mohamed. 34 runs left, about 70 planned calls.
 
 ---
 

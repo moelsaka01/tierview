@@ -1,0 +1,142 @@
+{
+  "case_id": "dpdk-hws-counter-double-free",
+  "arm": "all-sonnet",
+  "arm_version": 1,
+  "batch": "2026-11-16T15-57-37",
+  "config_hash": "4fe1abf9f1f3",
+  "complete": true,
+  "calls": 1,
+  "wall_ms": 16485,
+  "review": {
+    "version": 1,
+    "findings": [
+      {
+        "file": "drivers/net/mlx5/mlx5_hws_cnt.c",
+        "start_line": 770,
+        "end_line": 770,
+        "side": "new",
+        "severity": "high",
+        "category": "bug",
+        "title": "Double free of mp_name when cpool was created before the error",
+        "explanation": "pcfg.name is mp_name, and mlx5_hws_cnt_pool_init presumably copies pcfg into cpool->cfg. On the error path, mlx5_hws_cnt_pool_destroy(sh, cpool) already runs mlx5_free((void *)cpool->cfg.name) whenever cpool is non-NULL. This applies to failures after pool_init succeeds, such as dcs_alloc, raw_data_alloc, action_create and the guest-port action_create. The added mlx5_free(mp_name) then frees the same buffer a second time. It is only needed when cpool is NULL, because destroy returns early in that case.",
+        "suggestion": "Free mp_name only when cpool == NULL, for example `if (cpool == NULL) mlx5_free(mp_name);`. Alternatively, make ownership explicit by clearing the pointer once the pool owns it.",
+        "evidence": "\tmlx5_free(mp_name);",
+        "confidence": 0.7,
+        "id": "3704f87678e3",
+        "hunk_id": "drivers/net/mlx5/mlx5_hws_cnt.c#2",
+        "model": "claude-sonnet-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      }
+    ],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "drivers/net/mlx5/mlx5_hws_cnt.c#1",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "drivers/net/mlx5/mlx5_hws_cnt.c#2",
+        "score": 25,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "memory",
+            "weight": 25,
+            "detail": "`mlx5_free(mp_name);`"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 1,
+      "model_substitutions": [],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 2,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 2,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 10122,
+          "cache_read_tokens": 994,
+          "output_tokens": 1128,
+          "cache_write_1h_tokens": 10122,
+          "cost_usd": 0.0518714,
+          "direct_api_cost_usd": 0.029316
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.0518714,
+      "total_direct_api_cost_usd": 0.029316,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.2072868,
+        "direct_api_cost_usd": 0.117264
+      },
+      "savings_pct": 75,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 16485,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}

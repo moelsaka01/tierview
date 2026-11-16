@@ -1,0 +1,144 @@
+{
+  "case_id": "dpdk-hws-counter-double-free",
+  "arm": "tierview",
+  "arm_version": 4,
+  "batch": "2026-11-16T15-57-37",
+  "config_hash": "4fe1abf9f1f3",
+  "complete": true,
+  "calls": 2,
+  "wall_ms": 49145,
+  "review": {
+    "version": 1,
+    "findings": [
+      {
+        "file": "drivers/net/mlx5/mlx5_hws_cnt.c",
+        "start_line": 768,
+        "end_line": 770,
+        "side": "new",
+        "severity": "high",
+        "category": "bug",
+        "title": "Double free of mp_name when cpool was allocated before the error",
+        "explanation": "pcfg.name is set to mp_name, and mlx5_hws_cnt_pool_init copies pcfg into cpool->cfg, so cpool->cfg.name == mp_name. mlx5_hws_cnt_pool_destroy (line 798) already calls mlx5_free(cpool->cfg.name). On any error after the pool is created (action_create, dcs_alloc or raw_data_alloc fails), destroy frees mp_name and then the new mlx5_free(mp_name) frees it again, corrupting the heap. The original leak only exists when cpool == NULL (svc_init fails or pool_init fails), and the new line fixes only that case.",
+        "suggestion": "Free the name only when the pool doesn't own it: `if (cpool == NULL) mlx5_free(mp_name);` before or instead of the unconditional free. Alternatively, set mp_name = NULL right after cpool is created successfully.",
+        "evidence": "\tmlx5_free(mp_name);",
+        "confidence": 0.82,
+        "id": "3f39484edda7",
+        "hunk_id": "drivers/net/mlx5/mlx5_hws_cnt.c#2",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      }
+    ],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "drivers/net/mlx5/mlx5_hws_cnt.c#1",
+        "score": 0,
+        "tier": 1,
+        "reasons": []
+      },
+      {
+        "hunk_id": "drivers/net/mlx5/mlx5_hws_cnt.c#2",
+        "score": 25,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "memory",
+            "weight": 25,
+            "detail": "`mlx5_free(mp_name);`"
+          },
+          {
+            "signal": "merge",
+            "weight": 0,
+            "detail": "Tier 2 and Tier 3 run the same model: one call at high effort"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 2,
+      "model_substitutions": [
+        {
+          "tier": 3,
+          "requested": "claude-fable-5-2",
+          "used": "claude-opus-5-5",
+          "reason": "Fable not enabled"
+        }
+      ],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 1,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 6176,
+          "cache_read_tokens": 994,
+          "output_tokens": 317,
+          "cache_write_1h_tokens": 6176,
+          "cost_usd": 0.027977400000000003,
+          "direct_api_cost_usd": 0.013314
+        },
+        {
+          "tier": 2,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "hunks": 1,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 5983,
+          "cache_read_tokens": 994,
+          "output_tokens": 2419,
+          "cache_write_1h_tokens": 5983,
+          "cost_usd": 0.0964508,
+          "direct_api_cost_usd": 0.067896
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.1244282,
+      "total_direct_api_cost_usd": 0.08121,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.30441359999999995,
+        "direct_api_cost_usd": 0.189048
+      },
+      "savings_pct": 59.1,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "Tier 2 and Tier 3 both run claude-opus-5-5, so they ran as one tier at high effort.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 49145,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}
