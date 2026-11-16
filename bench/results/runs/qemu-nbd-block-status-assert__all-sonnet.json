@@ -1,0 +1,540 @@
+{
+  "case_id": "qemu-nbd-block-status-assert",
+  "arm": "all-sonnet",
+  "arm_version": 1,
+  "batch": "2026-11-16T19-23-55",
+  "config_hash": "4fe1abf9f1f3",
+  "complete": true,
+  "calls": 3,
+  "wall_ms": 44365,
+  "review": {
+    "version": 1,
+    "findings": [],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "docs/interop/nbd.txt#1",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "nbd/server.c#1",
+        "score": 40,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "boundary",
+            "weight": 25,
+            "detail": "bounds check: if (client->mode >= NBD_MODE_EXTENDED && client->c"
+          },
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "scatter",
+            "weight": 10,
+            "detail": "7 files, 4 top-level dirs"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "nbd/server.c#2",
+        "score": 15,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "scatter",
+            "weight": 10,
+            "detail": "7 files, 4 top-level dirs"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "nbd/server.c#3",
+        "score": 75,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "boundary",
+            "weight": 25,
+            "detail": "bounds check: payload_len < sizeof(NBDBlockStatusPayload) ||"
+          },
+          {
+            "signal": "memory",
+            "weight": 25,
+            "detail": "`request->contexts = g_new0(NBDMetaContexts, 1);`"
+          },
+          {
+            "signal": "size",
+            "weight": 10,
+            "detail": "84 changed lines"
+          },
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "scatter",
+            "weight": 10,
+            "detail": "7 files, 4 top-level dirs"
+          }
+        ]
+      },
+      {
+        "hunk_id": "nbd/server.c#4",
+        "score": 20,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "13 changed lines"
+          },
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "scatter",
+            "weight": 10,
+            "detail": "7 files, 4 top-level dirs"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "nbd/server.c#5",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "8 changed lines"
+          },
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "scatter",
+            "weight": 10,
+            "detail": "7 files, 4 top-level dirs"
+          },
+          {
+            "signal": "cap",
+            "weight": -15,
+            "detail": "only comments, whitespace or import reordering: score capped at 5"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "nbd/server.c#6",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "scatter",
+            "weight": 10,
+            "detail": "7 files, 4 top-level dirs"
+          },
+          {
+            "signal": "cap",
+            "weight": -10,
+            "detail": "only comments, whitespace or import reordering: score capped at 5"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "nbd/trace-events#1",
+        "score": 10,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "scatter",
+            "weight": 10,
+            "detail": "7 files, 4 top-level dirs"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "qemu-nbd.c#1",
+        "score": 10,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "scatter",
+            "weight": 10,
+            "detail": "7 files, 4 top-level dirs"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/qemu-iotests/223.out#1",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/qemu-iotests/223.out#2",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/qemu-iotests/223.out#3",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/qemu-iotests/223.out#4",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/qemu-iotests/223.out#5",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/qemu-iotests/223.out#6",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/qemu-iotests/307.out#1",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/qemu-iotests/307.out#2",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/qemu-iotests/307.out#3",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/qemu-iotests/307.out#4",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/qemu-iotests/307.out#5",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/qemu-iotests/tests/nbd-qemu-allocation.out#1",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 3,
+      "model_substitutions": [],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 2,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 21,
+          "escalated_in": 0,
+          "requests": 3,
+          "input_tokens": 6,
+          "cache_write_tokens": 106840,
+          "cache_read_tokens": 6430,
+          "output_tokens": 2793,
+          "cache_write_1h_tokens": 106840,
+          "cost_usd": 0.45594499999999993,
+          "direct_api_cost_usd": 0.241882
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.45594499999999993,
+      "total_direct_api_cost_usd": 0.241882,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 1.822494,
+        "direct_api_cost_usd": 0.967528
+      },
+      "savings_pct": 75,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 44365,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}

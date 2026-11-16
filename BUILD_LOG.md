@@ -7,7 +7,7 @@ One entry per phase: which model did the work, at what effort, from what prompt,
 | 1 | Plan and scaffold | Fable 5.2 (high) | done 2026-11-16 |
 | 2 | Tier 0, config, dry-run | Sonnet 5.5 (medium) | done 2026-11-16 |
 | 3 | LLM tiers, escalation, receipt, backends | Opus 5.5 (high) | done 2026-11-16 |
-| 4 | Benchmark | Opus 5.5 (high) | in progress: dev split done; `bench-config-v2` frozen; test split 43 of 60 runs valid |
+| 4 | Benchmark | Opus 5.5 (high) | in progress: dev split done; `bench-config-v2` frozen; test split 54 of 60 runs valid |
 | 5 | PR mode, SARIF, GitHub Action | Sonnet 5.5 | not started |
 | 6 | README and release | Sonnet 5.5 | not started |
 
@@ -499,6 +499,19 @@ Test split so far: 30 of 60 runs valid (26 from batches 1 and 2, 4 from batch 3)
 | nextjs-devtools-touch-action (buggy) | **caught** by rule (2, $0.180) | next batch | next batch |
 
 Test split so far: 43 of 60 runs valid. 17 runs left (about 39 planned calls): 2 batches.
+
+**Test batch 5 (2026-11-16, Mohamed: "Run test batch 5"; hash verified).** 19 `claude` calls (cap 20): all reviews, 0 judge calls (rules decided every finding); no failed calls, no Fable. API-equivalent $3.08 via Claude Code (the NBD case alone: $2.05 over 10 calls).
+
+| case | tierview | all-sonnet | all-opus |
+|---|---|---|---|
+| nextjs-devtools-touch-action (buggy) | (batch 4: caught) | **caught** (1 call, $0.121) | **caught** (1, $0.250) |
+| qemu-colo-visitor-width (buggy) | **caught** (2, $0.144) | **caught** (1, $0.074) | **caught** (1, $0.180) |
+| qemu-loongarch-pte-nr (buggy) | missed: no findings (1, $0.062) | missed (1, $0.062) | missed (1, $0.140) |
+| qemu-nbd-block-status-assert (buggy) | **caught** (4, $0.640) | missed: no findings (3, $0.456) | **caught** (3, $0.951) |
+
+NBD is the largest diff (21 hunks, about 120k tokens with Tier 3 context), so every arm needed several calls under the 40k-token pack limit.
+
+Test split so far: 54 of 60 runs valid. 6 runs left (vmdk and Tetragon, all arms; about 14 planned calls): 1 batch.
 
 ---
 

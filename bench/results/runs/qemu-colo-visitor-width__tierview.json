@@ -1,0 +1,184 @@
+{
+  "case_id": "qemu-colo-visitor-width",
+  "arm": "tierview",
+  "arm_version": 4,
+  "batch": "2026-11-16T19-23-55",
+  "config_hash": "4fe1abf9f1f3",
+  "complete": true,
+  "calls": 2,
+  "wall_ms": 40522,
+  "review": {
+    "version": 1,
+    "findings": [
+      {
+        "file": "net/colo-compare.c",
+        "start_line": 1144,
+        "end_line": 1146,
+        "side": "new",
+        "severity": "medium",
+        "category": "bug",
+        "title": "max_queue_size setter reads uint64 but target and property are uint32",
+        "explanation": "The setter now parses a uint64, but max_queue_size is uint32_t, and the property is still registered as \"uint32\" with a uint32 getter. A value such as 4294967296 passes the non-zero check and is then truncated to 0 on assignment. A zero queue limit is the very thing the check is meant to reject. The setter and getter are also inconsistent.",
+        "suggestion": "Revert this hunk to uint32. Or, if a 64-bit limit is intended, change max_queue_size, the getter and the registered type to uint64 too.",
+        "evidence": "visit_type_uint64(v, name, &value, &local_err);",
+        "confidence": 0.7,
+        "id": "59a21639d5d4",
+        "hunk_id": "net/colo-compare.c#3",
+        "model": "claude-sonnet-5-5",
+        "tier": 1,
+        "escalated_from": [],
+        "also_reported_by": []
+      },
+      {
+        "file": "net/colo-compare.c",
+        "start_line": 1394,
+        "end_line": 1396,
+        "side": "new",
+        "severity": "medium",
+        "category": "bug",
+        "title": "compare_timeout setter still uses uint32 after switch to uint64",
+        "explanation": "The property type, the getter and the field are now uint64. compare_set_timeout still declares uint32_t value and calls visit_type_uint32. Any timeout above UINT32_MAX is rejected, so the widening has no effect. The property type string also disagrees with how the setter parses its input.",
+        "suggestion": "Change compare_set_timeout to use uint64_t value and visit_type_uint64.",
+        "evidence": "object_property_add(obj, \"compare_timeout\", \"uint64\",",
+        "confidence": 0.7,
+        "id": "8a5f94d119c3",
+        "hunk_id": "net/colo-compare.c#4",
+        "model": "claude-sonnet-5-5",
+        "tier": 1,
+        "escalated_from": [],
+        "also_reported_by": []
+      },
+      {
+        "file": "net/colo-compare.c",
+        "start_line": 1079,
+        "end_line": 1081,
+        "side": "new",
+        "severity": "low",
+        "category": "api-contract",
+        "title": "Getter widened to uint64 but compare_set_timeout still visits uint32",
+        "explanation": "This change makes the compare_timeout getter read and output a uint64. The matching setter, compare_set_timeout (lines 1089-1091 of the new file), still declares `uint32_t value` and calls visit_type_uint32. The property is now asymmetric. It can report any 64-bit value, but setting a value above UINT32_MAX fails with a range error. If the goal of this diff is to make compare_timeout 64-bit, which is what the getter change suggests, the setter was missed. Users then cannot configure timeouts that the field and getter now claim to support. If the property is still registered as \"uint32\", the getter's type also no longer matches the declared type. Nothing crashes, but the property contract is inconsistent.",
+        "suggestion": "Change compare_set_timeout to use `uint64_t value;` and `visit_type_uint64(v, name, &value, errp)`. Make sure the CompareState field and the object_property_add type string for \"compare_timeout\" are both uint64.",
+        "evidence": "visit_type_uint64(v, name, &value, errp);",
+        "confidence": 0.55,
+        "id": "9910580aa5e7",
+        "hunk_id": "net/colo-compare.c#2",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [
+          1
+        ],
+        "also_reported_by": []
+      }
+    ],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "net/colo-compare.c#1",
+        "score": 0,
+        "tier": 1,
+        "reasons": []
+      },
+      {
+        "hunk_id": "net/colo-compare.c#2",
+        "score": 0,
+        "tier": 1,
+        "reasons": []
+      },
+      {
+        "hunk_id": "net/colo-compare.c#3",
+        "score": 0,
+        "tier": 1,
+        "reasons": []
+      },
+      {
+        "hunk_id": "net/colo-compare.c#4",
+        "score": 0,
+        "tier": 1,
+        "reasons": []
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 2,
+      "model_substitutions": [
+        {
+          "tier": 3,
+          "requested": "claude-fable-5-2",
+          "used": "claude-opus-5-5",
+          "reason": "Fable not enabled"
+        }
+      ],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 4,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 14707,
+          "cache_read_tokens": 994,
+          "output_tokens": 1452,
+          "cache_write_1h_tokens": 14707,
+          "cost_usd": 0.0734514,
+          "direct_api_cost_usd": 0.041726
+        },
+        {
+          "tier": 2,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "hunks": 0,
+          "escalated_in": 1,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 5082,
+          "cache_read_tokens": 994,
+          "output_tokens": 1466,
+          "cache_write_1h_tokens": 5082,
+          "cost_usd": 0.0701828,
+          "direct_api_cost_usd": 0.045232
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.1436342,
+      "total_direct_api_cost_usd": 0.08695800000000001,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.4337736,
+        "direct_api_cost_usd": 0.257368
+      },
+      "savings_pct": 66.9,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 40521,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}

@@ -1,0 +1,193 @@
+{
+  "case_id": "nextjs-devtools-touch-action",
+  "arm": "all-opus",
+  "arm_version": 1,
+  "batch": "2026-11-16T19-23-55",
+  "config_hash": "4fe1abf9f1f3",
+  "complete": true,
+  "calls": 1,
+  "wall_ms": 24640,
+  "review": {
+    "version": 1,
+    "findings": [
+      {
+        "file": "packages/next/src/next-devtools/dev-overlay/components/errors/dev-tools-indicator/draggable.tsx",
+        "start_line": 146,
+        "end_line": 146,
+        "side": "new",
+        "severity": "medium",
+        "category": "bug",
+        "title": "Removing touch-action: none breaks pointer dragging on touch devices",
+        "explanation": "The draggable element no longer sets touch-action: none. On touch devices the browser now treats a finger drag as a pan or scroll, so it fires pointercancel and stops sending pointermove events once the gesture starts. useDrag has no pointercancel handler, so the drag stops mid-gesture and the press state is left dangling. The user-select: none that was always set is also gone; it is now applied only after the 5px threshold.",
+        "suggestion": "Keep touch-action: none on the draggable element, either inline or in a CSS rule for this element, and consider handling pointercancel by calling cancel().",
+        "evidence": "<div {...props} {...drag} ref={ref}>",
+        "confidence": 0.5,
+        "id": "5fb5627ea384",
+        "hunk_id": "packages/next/src/next-devtools/dev-overlay/components/errors/dev-tools-indicator/draggable.tsx#1",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      }
+    ],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "packages/next/src/next-devtools/dev-overlay/components/errors/dev-tools-indicator/draggable.tsx#1",
+        "score": 30,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "boundary",
+            "weight": 25,
+            "detail": "comparison operator changed"
+          },
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "12 changed lines"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "packages/next/src/next-devtools/dev-overlay/components/errors/dev-tools-indicator/draggable.tsx#2",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "packages/next/src/next-devtools/dev-overlay/components/errors/dev-tools-indicator/draggable.tsx#3",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "packages/next/src/next-devtools/dev-overlay/components/overview/segment-explorer.css#1",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "deletion_only",
+            "weight": 5,
+            "detail": "only deletions"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "packages/next/src/next-devtools/dev-overlay/components/overview/segment-explorer.css#2",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "deletion_only",
+            "weight": 5,
+            "detail": "only deletions"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 1,
+      "model_substitutions": [],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 2,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 5,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 27296,
+          "cache_read_tokens": 994,
+          "output_tokens": 1548,
+          "cache_write_1h_tokens": 27296,
+          "cost_usd": 0.2495348,
+          "direct_api_cost_usd": 0.135728
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.2495348,
+      "total_direct_api_cost_usd": 0.135728,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.4988708,
+        "direct_api_cost_usd": 0.271456
+      },
+      "savings_pct": 50,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 24639,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}

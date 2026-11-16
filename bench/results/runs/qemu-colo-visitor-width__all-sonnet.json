@@ -1,0 +1,180 @@
+{
+  "case_id": "qemu-colo-visitor-width",
+  "arm": "all-sonnet",
+  "arm_version": 1,
+  "batch": "2026-11-16T19-23-55",
+  "config_hash": "4fe1abf9f1f3",
+  "complete": true,
+  "calls": 1,
+  "wall_ms": 18421,
+  "review": {
+    "version": 1,
+    "findings": [
+      {
+        "file": "net/colo-compare.c",
+        "start_line": 1394,
+        "end_line": 1394,
+        "side": "new",
+        "severity": "medium",
+        "category": "api-contract",
+        "title": "compare_timeout setter still parses uint32 despite uint64 property",
+        "explanation": "The property type, the field and the getter are now uint64. compare_set_timeout still calls visit_type_uint32, so values of 2^32 or more are rejected. The widening is therefore incomplete, and the advertised type does not match the accepted range.",
+        "suggestion": "Change compare_set_timeout to use uint64_t value and visit_type_uint64.",
+        "evidence": "object_property_add(obj, \"compare_timeout\", \"uint64\",",
+        "confidence": 0.65,
+        "id": "77d34d038fc4",
+        "hunk_id": "net/colo-compare.c#4",
+        "model": "claude-sonnet-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      },
+      {
+        "file": "net/colo-compare.c",
+        "start_line": 1144,
+        "end_line": 1146,
+        "side": "new",
+        "severity": "medium",
+        "category": "bug",
+        "title": "uint64 value silently truncated into uint32 max_queue_size",
+        "explanation": "set_max_queue_size now reads a 64-bit value, but max_queue_size is uint32_t, and the property is still registered as \"uint32\" with a uint32 getter. A value of 2^32 or more is accepted and truncated. It can become 0, which bypasses the positive-value check, or a small value. Before this change the visitor rejected out-of-range input.",
+        "suggestion": "Revert to visit_type_uint32. If 64-bit is intended, make max_queue_size uint64_t and update the getter and property type.",
+        "evidence": "visit_type_uint64(v, name, &value, &local_err);",
+        "confidence": 0.6,
+        "id": "7fce112c3982",
+        "hunk_id": "net/colo-compare.c#3",
+        "model": "claude-sonnet-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      }
+    ],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "net/colo-compare.c#1",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "net/colo-compare.c#2",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "net/colo-compare.c#3",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "net/colo-compare.c#4",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 1,
+      "model_substitutions": [],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 2,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 4,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 14745,
+          "cache_read_tokens": 994,
+          "output_tokens": 1439,
+          "cache_write_1h_tokens": 14745,
+          "cost_usd": 0.0734734,
+          "direct_api_cost_usd": 0.041672
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.0734734,
+      "total_direct_api_cost_usd": 0.041672,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.2936948,
+        "direct_api_cost_usd": 0.166688
+      },
+      "savings_pct": 75,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 18421,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}
