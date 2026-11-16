@@ -247,7 +247,24 @@ Mohamed approved the case list unchanged and asked for: a limitations section in
 
 **Deviations.** 6. The judge is rule-first with Opus for ambiguous cases (Mohamed's decision), not Sonnet `medium` for every finding near the fault. 7. The benchmark runs from saved diffs, so churn and hotspot signals are off in every arm; tierview on a real checkout would score some hunks higher. 8. The receipt estimator prices API-shaped requests, while the all-Opus arm runs through Claude Code (about 2,100 overhead tokens per call), so its measured error includes that overhead; the write-up must say so.
 
-**Next.** Pilot batch 1 (`node .bench-build/run.js --cases pilot`), only when Mohamed starts it.
+**Pilot batch 1 (2026-11-16, started by Mohamed: "Run pilot batch 1").** 19 `claude` calls (cap 20), 0 judge calls (the rules decided every finding), no Fable, no errors. 12 of the 15 pilot runs complete; the 3 Tailscale runs (about 5 + 2 + 2 calls planned) did not fit and wait for batch 2. API-equivalent $2.80 in total; $0 billed (plan usage). Ledger: `bench/results/usage.jsonl`, `batches.jsonl`, `judgements.jsonl`, `runs/`.
+
+| case | arm | calls | tokens | API-eq | wall |
+|---|---|---:|---:|---:|---:|
+| cilium-clean-fqdn-bootstrap | tierview / all-sonnet / all-opus | 1 / 1 / 1 | 3,968 / 12,485 / 13,486 | $0.017 / $0.048 / $0.124 | 10 / 14 / 23 s |
+| django-legend-attrs-mutation | tierview / all-sonnet / all-opus | 2 / 2 / 2 | 18,835 / 74,066 / 74,522 | $0.117 / $0.294 / $0.597 | 42 / 59 / 38 s |
+| dpdk-ntb-window-bound | tierview / all-sonnet / all-opus | 4 / 1 / 1 | 66,226 / 58,515 / 62,404 | $0.623 / $0.245 / $0.568 | 169 / 28 / 74 s |
+| nextjs-clean-default-export-errors | tierview / all-sonnet / all-opus | 2 / 1 / 1 | 9,410 / 8,610 / 9,393 | $0.051 / $0.032 / $0.080 | 24 / 10 / 20 s |
+
+What the 4 complete pilot cases show (far too few for any claim):
+- All three arms caught both bugs; no arm raised a finding of medium or higher on the two clean cases (all-opus raised one "low").
+- Mean API-equivalent cost per case: tierview $0.20, all-sonnet $0.15, all-opus $0.34. On `dpdk-ntb-window-bound` tierview cost more than all-opus: 4 calls (Tier 1, Tier 2, then escalations to Tier 2 and Tier 3), each carrying Claude Code's overhead and growing context.
+- Calculated all-Fable per case: receipt estimate $0.72; all-opus tokens at Fable prices $0.47. The receipt estimator looks high.
+- **"Unmatched" is not "false".** On `dpdk-ntb-window-bound` the arms raised 6 to 7 findings in `ntb.c` that the rules marked "no match" (no faulty line there). Several describe the Rx bug that a second fix of the same commit repaired (`e79842a253`, "raw/ntb: fix Rx of incomplete packets"), which the manual pass left out by keeping one fix per bug commit. This does not change recall. It does mean that unmatched counts on buggy cases must not be read as false positives (PLAN §9 already says so).
+
+Projection from measured calls per case (tierview 2.3, each baseline 1.3, judge about 0): about 5 calls per case for the three arms. Pilot batch 2 needs about 9 calls. The other 25 cases need about 125 calls, so roughly 7 more batches of 20, before any re-runs.
+
+**Next.** Pilot batch 2 (the 3 Tailscale runs), then stop and ask Mohamed before the full run (P4-08).
 
 ---
 

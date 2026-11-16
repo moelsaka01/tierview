@@ -1,0 +1,335 @@
+{
+  "case_id": "dpdk-ntb-window-bound",
+  "arm": "all-sonnet",
+  "batch": "2026-11-16T14-15-03",
+  "config_hash": "1e7dfed407d8",
+  "complete": true,
+  "calls": 1,
+  "wall_ms": 28260,
+  "review": {
+    "version": 1,
+    "findings": [
+      {
+        "file": "drivers/raw/ntb/ntb.c",
+        "start_line": 672,
+        "end_line": 686,
+        "side": "new",
+        "severity": "medium",
+        "category": "bug",
+        "title": "Partially sent multi-segment packet is published without EOP",
+        "explanation": "If the loop exits through goto end_of_tx part-way through a packet's segments, the earlier segments have already been copied. last_used has advanced and tx_used entries have been added, but nb_tx_free was not decremented. When nb_tx > 0, used_cnt is published including those segments with no EOP flag. The peer then sees a truncated packet that is never completed. When nb_tx == 0, last_used still advances without being published. This leaves the local and remote ring state inconsistent.",
+        "suggestion": "Roll back last_used and nb_mbufs to their values at the start of the packet before jumping to end_of_tx. Alternatively, check that enough descriptors are available for all segments before copying.",
+        "evidence": "*txq->used_cnt = txq->last_used;",
+        "confidence": 0.5,
+        "id": "f459e370fbcc",
+        "hunk_id": "drivers/raw/ntb/ntb.c#1",
+        "model": "claude-sonnet-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      },
+      {
+        "file": "drivers/raw/ntb/ntb.c",
+        "start_line": 755,
+        "end_line": 758,
+        "side": "new",
+        "severity": "medium",
+        "category": "bug",
+        "title": "mbuf alloc failure mid-packet leaves ring state inconsistent and drops data",
+        "explanation": "If the refill allocation fails, the code jumps to end_of_rx after last_used has advanced past the current segment. nb_rx is not incremented for that packet, so the caller never receives it and the consumed mbuf leaks. If nb_rx is 0, nothing is published: the descriptors already consumed are never refilled and avail_cnt is not updated. The ring then stalls or loses entries.",
+        "suggestion": "Allocate the replacement mbuf before consuming the segment. On failure, restore last_used or stop cleanly without consuming it.",
+        "evidence": "NTB_LOG(ERR, \"recv alloc mbuf failed.\");",
+        "confidence": 0.45,
+        "id": "7c1754b98857",
+        "hunk_id": "drivers/raw/ntb/ntb.c#2",
+        "model": "claude-sonnet-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      },
+      {
+        "file": "drivers/raw/ntb/ntb_hw_intel.c",
+        "start_line": 175,
+        "end_line": 175,
+        "side": "new",
+        "severity": "low",
+        "category": "bug",
+        "title": "Off-by-one in ioremap range check",
+        "explanation": "The window is [base, base+size), but the check uses <=. An address equal to base+size is accepted and mapped one byte past the BAR. The result is an out-of-bounds write. There is also no check that addr+len stays inside the window.",
+        "suggestion": "Use `addr < hw->peer_mw_base[i] + hw->mw_size[i]`.",
+        "evidence": "addr <= hw->peer_mw_base[i] + hw->mw_size[i]) {",
+        "confidence": 0.6,
+        "id": "f619d4257c9d",
+        "hunk_id": "drivers/raw/ntb/ntb_hw_intel.c#1",
+        "model": "claude-sonnet-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      }
+    ],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "doc/guides/rawdevs/ntb.rst#1",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 10,
+            "detail": "48 changed lines"
+          },
+          {
+            "signal": "cap",
+            "weight": -5,
+            "detail": "documentation file: score capped at 5"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "doc/guides/rawdevs/ntb.rst#2",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "10 changed lines"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "drivers/raw/ntb/ntb.c#1",
+        "score": 55,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "concurrency",
+            "weight": 25,
+            "detail": "`volatile struct ntb_desc *tx_item;`"
+          },
+          {
+            "signal": "boundary",
+            "weight": 10,
+            "detail": "comparison operator changed"
+          },
+          {
+            "signal": "size",
+            "weight": 15,
+            "detail": "136 changed lines"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "266 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "drivers/raw/ntb/ntb.c#2",
+        "score": 55,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "concurrency",
+            "weight": 25,
+            "detail": "`volatile struct ntb_used *rx_item;`"
+          },
+          {
+            "signal": "boundary",
+            "weight": 10,
+            "detail": "comparison operator changed"
+          },
+          {
+            "signal": "size",
+            "weight": 15,
+            "detail": "104 changed lines"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "266 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "drivers/raw/ntb/ntb.c#3",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "266 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "drivers/raw/ntb/ntb.h#1",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "266 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "drivers/raw/ntb/ntb.h#2",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "266 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "drivers/raw/ntb/ntb_hw_intel.c#1",
+        "score": 10,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "21 changed lines"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "266 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "drivers/raw/ntb/ntb_hw_intel.c#2",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "266 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 1,
+      "model_substitutions": [],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cost_usd": 0
+        },
+        {
+          "tier": 2,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 9,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 55081,
+          "cache_read_tokens": 994,
+          "output_tokens": 2438,
+          "cost_usd": 0.24480739999999998
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.24480739999999998,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "estimated",
+        "cost_usd": 0.89844
+      },
+      "savings_pct": 72.8,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 28259,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}
