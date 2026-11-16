@@ -27,12 +27,12 @@ const README = "README.md#1";
 const run = (backend: FakeBackend, maxCost: number | null = null) => runPipeline({ routed, cfg, backend, files: () => null, prices, est, maxCost, now: () => 0 });
 
 describe("pipeline", () => {
-  it("runs Tier 3, then 2, then 1, and produces a valid Review", async () => {
+  it("runs every Tier 1 batch first, then Tier 2, then Tier 3, and produces a valid Review", async () => {
     const b = new FakeBackend(() => ({}));
     const { review, budgetExhausted } = await run(b);
     expect(Review.safeParse(review).success).toBe(true);
-    expect(b.requests.map((r) => r.tier)).toEqual([3, 2, 1]);
-    expect(b.requests[2]!.hunkIds.sort()).toEqual([README, FORMAT].sort());
+    expect(b.requests.map((r) => r.tier)).toEqual([1, 2, 3]);
+    expect(b.requests[0]!.hunkIds.sort()).toEqual([README, FORMAT].sort());
     expect(review.findings).toEqual([]);
     expect(review.receipt.skipped_hunks).toBe(1);
     expect(review.receipt.calls).toBe(3);
@@ -56,8 +56,10 @@ describe("pipeline", () => {
       return {};
     });
     const { review } = await run(b);
-    expect(b.requests.map((r) => r.tier)).toEqual([3, 2, 1, 2, 3]);
-    expect(b.requests[3]!.user).toContain("<prior_findings>");
+    // Whole-diff escalation: each higher tier runs once, its own hunks and the escalated ones together
+    // (on the api backend Tiers 2 and 3 still send one request per file: TESTS and FORMAT, LOGIN and FORMAT).
+    expect(b.requests.map((r) => r.tier)).toEqual([1, 2, 2, 3, 3]);
+    expect(b.requests.find((r) => r.tier === 2 && r.hunkIds.includes(FORMAT))!.user).toContain("<prior_findings>");
     expect(review.findings).toEqual([]);
     expect(review.refuted).toHaveLength(1);
     expect(review.refuted[0]!.tier).toBe(1);

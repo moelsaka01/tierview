@@ -3,6 +3,7 @@
 import type { Config } from "./config";
 import { type Estimates, estimatePlan } from "./estimate";
 import type { ModelPrice, Prices } from "./prices";
+import { tiersMerged } from "./tiers/collapse";
 import type { Backend, ScoredHunk } from "./types";
 
 /** Worst case of one request: estimated input at the input price plus max_tokens at the output price. */
@@ -68,7 +69,8 @@ export function degradePlan(routed: ScoredHunk[], cfg: Config, prices: Prices, e
       h.reasons.push({ signal: "budget", weight: 0, detail: "dropped to fit --max-cost" });
       moves.push(`${h.id}: dropped (budget)`);
     } else {
-      const to = (h.tier - 1) as 1 | 2;
+      // With Tier 2 and Tier 3 merged (same model) there is no cheaper Tier 2: go straight to Tier 1.
+      const to = (h.tier === 3 && tiersMerged(cfg) ? 1 : h.tier - 1) as 1 | 2;
       h.reasons.push({ signal: "budget", weight: 0, detail: `moved from tier ${h.tier} to ${to} to fit --max-cost` });
       moves.push(`${h.id}: tier ${h.tier} -> ${to}`);
       h.tier = to;

@@ -6,7 +6,7 @@
 // Per (case, arm): bench/results/runs/<case>__<arm>.json (the Review, kept); one line per run and per judge call in
 // bench/results/usage.jsonl; every judgement in bench/results/judgements.jsonl. Finished pairs are never re-run.
 import { createHash } from "node:crypto";
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { type Config, loadConfig } from "../src/config";
 import { type Estimates, estimateTokens, loadEstimates } from "../src/estimate";
@@ -19,8 +19,9 @@ import { configPath } from "../src/root";
 import { parseDiff } from "../src/tier0/diff";
 import { routeDiff } from "../src/tier0/route";
 import { limitsFor, packHunks } from "../src/tiers/batch";
+import { collapseTiers } from "../src/tiers/collapse";
 import type { LlmTier, Review, ScoredHunk } from "../src/types";
-import { type Arm, armPreset, parseArms } from "./arms";
+import { ARM_VERSION, type Arm, armPreset, parseArms } from "./arms";
 import { JUDGE_SYSTEM, type Judgement, JudgeResponse, judgeUserMessage, modelJudgements, ruleJudge } from "./judge";
 import { loadCases } from "./routing";
 import type { BenchCase } from "./validate";
@@ -34,6 +35,8 @@ export const LIMIT_ERROR = /usage limit|rate.?limit|limit reached|too many reque
 export interface RunFile {
   case_id: string;
   arm: Arm;
+  /** ARM_VERSION of the arm when it ran; missing = 1. */
+  arm_version?: number;
   batch: string;
   config_hash: string;
   complete: boolean;
@@ -54,7 +57,10 @@ export interface UsageLine {
   kind: "review" | "judge";
   calls: number;
   tokens: Record<string, { input: number; cache_write: number; cache_read: number; output: number }>;
+  /** Via Claude Code (API-equivalent). */
   api_equivalent_usd: number;
+  /** The same run without Claude Code's per-call overhead. */
+  direct_api_usd: number;
   wall_ms: number;
   substitutions: string[];
   complete: boolean;
@@ -104,16 +110,26 @@ export function selectCases(all: { c: BenchCase; diff: string }[], which: string
   return out;
 }
 
-/** Calls a run will make if nothing escalates or retries: one per claude-code pack per tier, plus 2 for tierview's escalation steps. */
+/**
+ * Calls a run will make without retries: one per claude-code pack per tier (after merging Tier 2 into Tier 3 when
+ * they share a model), and for tierview one call for each higher tier that lower-tier escalations could reach.
+ */
 export function plannedCalls(routed: ScoredHunk[], arm: Arm, cfg: Config, est: Estimates): number {
+  const c = collapseTiers(cfg, routed);
   let n = 0;
+  let below = false;
   for (const t of [1, 2, 3] as LlmTier[]) {
-    const hs = routed.filter((h) => h.tier === t);
-    if (!hs.length) continue;
-    n += packHunks(hs, limitsFor("claude-code", t, cfg, est), (h) => estimateTokens(hunkBlock({ hunk: h, context: null, prior: [] }), est)).length;
+    if (t === 2 && c.merged) continue;
+    const hs = c.routed.filter((h) => h.tier === t);
+    const packs = hs.length ? packHunks(hs, limitsFor("claude-code", t, c.cfg, est), (h) => estimateTokens(hunkBlock({ hunk: h, context: null, prior: [] }), est)).length : 0;
+    n += arm === "tierview" && below ? Math.max(packs, 1) : packs;
+    below ||= hs.length > 0;
   }
-  return n + (arm === "tierview" ? 2 : 0);
+  return n;
 }
+
+/** A complete run of the arm's current version. */
+export const isCurrent = (r: RunFile | null, arm: Arm) => !!r?.complete && (r.arm_version ?? 1) === ARM_VERSION[arm];
 
 const runPath = (dir: string, caseId: string, arm: string) => join(dir, "runs", `${caseId}__${arm}.json`);
 
@@ -149,8 +165,8 @@ export async function runBatch(o: BatchOptions, d: Deps): Promise<BatchReport> {
 
   const writeRun = (r: RunFile) => writeFileSync(runPath(d.resultsDir, r.case_id, r.arm), JSON.stringify(r, null, 2) + "\n");
   const usage = (u: UsageLine) => appendFileSync(join(d.resultsDir, "usage.jsonl"), JSON.stringify(u) + "\n");
-  const logJudgements = (js: Judgement[]) => {
-    for (const j of js) appendFileSync(join(d.resultsDir, "judgements.jsonl"), JSON.stringify({ ...j, batch, at: now().toISOString() }) + "\n");
+  const logJudgements = (js: Judgement[], runBatch: string) => {
+    for (const j of js) appendFileSync(join(d.resultsDir, "judgements.jsonl"), JSON.stringify({ ...j, run_batch: runBatch, batch, at: now().toISOString() }) + "\n");
   };
 
   /** Model judge for a run's pending findings. Returns false when the batch must stop. */
@@ -170,7 +186,7 @@ export async function runBatch(o: BatchOptions, d: Deps): Promise<BatchReport> {
     report.calls += res.calls;
     report.judgeCalls += res.calls;
     const usd = costOfModels(res.usageByModel, d.prices).cost;
-    usage({ at: now().toISOString(), batch, case_id: c.id, arm: `judge:${r.arm}`, kind: "judge", calls: res.calls, tokens: tokensOf(res.usageByModel), api_equivalent_usd: usd, wall_ms: Math.round(clock() - t0), substitutions: [], complete: res.ok });
+    usage({ at: now().toISOString(), batch, case_id: c.id, arm: `judge:${r.arm}`, kind: "judge", calls: res.calls, tokens: tokensOf(res.usageByModel), api_equivalent_usd: usd, direct_api_usd: usd, wall_ms: Math.round(clock() - t0), substitutions: [], complete: res.ok });
     if (!res.ok || !res.value) {
       log(`  judge failed for ${c.id} ${r.arm}: ${res.error}`);
       if (res.error && LIMIT_ERROR.test(res.error)) {
@@ -180,7 +196,7 @@ export async function runBatch(o: BatchOptions, d: Deps): Promise<BatchReport> {
       return true; // stays pending; retried next batch
     }
     const js = modelJudgements(c, r.arm, items, res.value, res.model);
-    logJudgements(js.filter((j): j is Judgement => j !== null));
+    logJudgements(js.filter((j): j is Judgement => j !== null), r.batch);
     r.judge_pending = items.filter((_, i) => js[i] === null).map((x) => x.finding.id);
     writeRun(r);
     return true;
@@ -190,7 +206,7 @@ export async function runBatch(o: BatchOptions, d: Deps): Promise<BatchReport> {
   for (const { c, diff } of cases) {
     for (const arm of o.arms) {
       const r = readRun(d.resultsDir, c.id, arm);
-      if (r?.complete && r.judge_pending.length) {
+      if (r && isCurrent(r, arm) && r.judge_pending.length) {
         if (left() < 1 || !(await judgePending(c, diff, r))) {
           report.stopped ??= "batch call cap reached";
           return finish();
@@ -203,7 +219,7 @@ export async function runBatch(o: BatchOptions, d: Deps): Promise<BatchReport> {
   for (const { c, diff } of cases) {
     for (const arm of o.arms) {
       const prev = readRun(d.resultsDir, c.id, arm);
-      if (prev?.complete) continue;
+      if (isCurrent(prev, arm)) continue;
       const preset = armPreset(arm, d.cfg);
       const routed = routeDiff(parseDiff(diff), preset.cfg, null);
       const planned = plannedCalls(routed, arm, preset.cfg, d.est) + (c.kind === "buggy" ? 1 : 0);
@@ -216,6 +232,11 @@ export async function runBatch(o: BatchOptions, d: Deps): Promise<BatchReport> {
         report.calls += planned;
         report.runs.push({ case_id: c.id, arm, calls: planned, complete: false, usd: 0 });
         continue;
+      }
+      if (prev) {
+        // Keep the stale or incomplete run for the record; metrics reads it as an older version.
+        mkdirSync(join(d.resultsDir, "runs-archive"), { recursive: true });
+        renameSync(runPath(d.resultsDir, c.id, arm), join(d.resultsDir, "runs-archive", `${c.id}__${arm}__v${prev.arm_version ?? 1}__${prev.batch}.json`));
       }
       log(`run ${c.id} ${arm} (planned ${planned} call(s), ${left()} left in this batch)`);
       const t0 = clock();
@@ -239,10 +260,10 @@ export async function runBatch(o: BatchOptions, d: Deps): Promise<BatchReport> {
       let pending: string[] = [];
       if (complete && c.kind === "buggy") {
         const { judged, ambiguous } = ruleJudge(c, arm, [...review.findings, ...review.refuted], parseDiff(diff));
-        logJudgements(judged);
+        logJudgements(judged, batch);
         pending = ambiguous.map((a) => a.finding.id);
       }
-      const run: RunFile = { case_id: c.id, arm, batch, config_hash: hash, complete, stopped: limitHit ? "usage limit" : budgetExhausted ? "batch call cap" : undefined, calls: review.receipt.calls, wall_ms: wall, review, judge_pending: pending };
+      const run: RunFile = { case_id: c.id, arm, arm_version: ARM_VERSION[arm], batch, config_hash: hash, complete, stopped: limitHit ? "usage limit" : budgetExhausted ? "batch call cap" : undefined, calls: review.receipt.calls, wall_ms: wall, review, judge_pending: pending };
       writeRun(run);
       const usd = review.receipt.total_cost_usd;
       usage({
@@ -254,6 +275,7 @@ export async function runBatch(o: BatchOptions, d: Deps): Promise<BatchReport> {
         calls: review.receipt.calls,
         tokens: Object.fromEntries(review.receipt.tiers.filter((t) => t.requests).map((t) => [`tier${t.tier}:${t.model}`, { input: t.input_tokens, cache_write: t.cache_write_tokens, cache_read: t.cache_read_tokens, output: t.output_tokens }])),
         api_equivalent_usd: usd,
+        direct_api_usd: review.receipt.total_direct_api_cost_usd,
         wall_ms: wall,
         substitutions: review.receipt.model_substitutions.map((s) => `tier ${s.tier}: ${s.requested} -> ${s.used} (${s.reason})`),
         complete,

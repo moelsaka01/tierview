@@ -123,7 +123,12 @@ export const TierReceipt = z.object({
   cache_write_tokens: z.number().int(),
   cache_read_tokens: z.number().int(),
   output_tokens: z.number().int(),
+  /** Part of cache_write_tokens written with the 1-hour TTL (Claude Code on a plan). */
+  cache_write_1h_tokens: z.number().int(),
+  /** Actual cost: via Claude Code on claude-code (API-equivalent), billed on api. */
   cost_usd: z.number(),
+  /** The same tokens without Claude Code's per-call overhead, at the uncached input rate (= cost_usd on api). */
+  direct_api_cost_usd: z.number(),
 });
 export type TierReceipt = z.infer<typeof TierReceipt>;
 
@@ -150,10 +155,13 @@ export const Receipt = z.object({
   skipped_hunks: z.number().int(),
   not_reviewed_hunks: z.number().int(),
   total_cost_usd: z.number(),
+  total_direct_api_cost_usd: z.number(),
+  /** All-Fable: this run's actual tokens priced at the baseline model's rates (a calculation; PLAN §7). */
   baseline: z.object({
     model: z.string(),
-    method: z.literal("estimated"),
+    method: z.literal("actual_tokens_at_baseline_prices"),
     cost_usd: z.number(),
+    direct_api_cost_usd: z.number(),
   }),
   savings_pct: z.number(),
   budget: z.object({ max_cost_usd: z.number().nullable(), degraded: z.boolean() }),

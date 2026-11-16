@@ -14,6 +14,7 @@ import { runPipeline } from "./pipeline";
 import { PricesError, loadPrices } from "./prices";
 import { parseDiffFiles } from "./tier0/diff";
 import { routeDiff } from "./tier0/route";
+import { tiersMerged } from "./tiers/collapse";
 import { atOrAbove } from "./tiers/escalate";
 import { type Backend, EXIT, SEVERITY_ORDER, type Severity } from "./types";
 
@@ -114,6 +115,7 @@ export async function runReview(opts: ReviewOptions, io: Io): Promise<number> {
     if (opts.dryRun) {
       const plan = estimatePlan(routed, cfg, prices, est, backendName);
       const subNotes = plannedSubs.map((s) => `Tier ${s.tier} will run on ${displayName(s.used)} (${FABLE_NOT_ENABLED}; --allow-fable to use ${displayName(s.requested)}).`);
+      if (tiersMerged(cfg) && routed.some((h) => h.tier === 2)) subNotes.push(`Tier 2 and Tier 3 both run ${displayName(cfg.models.tier3.model)}: Tier 2 hunks join the Tier 3 call (one call at the higher effort).`);
       const view: DryRunView = { routed, plan, warnings: [...subNotes, ...warnings, `prices as of ${prices.as_of}.`], maxCost };
       io.out(opts.json ? dryRunJson({ ...view, pricesAsOf: prices.as_of }) : renderDryRun(view));
       return EXIT.OK;

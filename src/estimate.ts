@@ -1,12 +1,15 @@
-// Token and cost estimates for --dry-run and the all-Fable baseline. Spec: PLAN.md §5 (request shapes), §7.
+// Token and cost estimates for --dry-run and the budget's degrade plan. Spec: PLAN.md §5 (request shapes), §7.
+// The all-Fable figure uses the receipt's one method (src/costs.ts): the plan's own estimated tokens at Fable rates.
 // Estimates ignore prompt caching (no cache-read discount) and escalations; the reserve covers the latter.
 import { readFileSync } from "node:fs";
 import { z } from "zod";
 import type { Config } from "./config";
 import { type Prices, loadPrices, priceFor } from "./prices";
+import { costViews, savingsPct } from "./costs";
 import { configPath } from "./root";
 import { formatHunk } from "./tier0/diff";
 import { limitsFor, packHunks } from "./tiers/batch";
+import { collapseTiers } from "./tiers/collapse";
 import type { Backend, LlmTier, ScoredHunk } from "./types";
 
 const PerTier = z.object({ tier1: z.number(), tier2: z.number(), tier3: z.number() });
@@ -48,11 +51,13 @@ export interface TierEstimate {
 export interface Plan {
   tiers: TierEstimate[];
   total_usd: number;
+  /** total_usd without Claude Code's per-call overhead (= total_usd on api). */
+  total_direct_api_usd: number;
   /** Allowance for escalations (escalation_reserve x total). Not included in total_usd. */
   reserve_usd: number;
-  baseline: { model: string; method: "estimated"; cost_usd: number };
+  baseline: { model: string; method: "estimated_tokens_at_baseline_prices"; cost_usd: number; direct_api_cost_usd: number };
   backend: Backend;
-  /** Savings of total_usd + reserve_usd against the baseline, as a percentage. */
+  /** Savings of total_usd against the baseline (the same estimated tokens at the baseline model's rates), as a percentage. */
   savings_pct: number;
   skipped_hunks: number;
   calibrated: boolean;
@@ -99,24 +104,6 @@ function estimateTier(
   };
 }
 
-/**
- * The all-Fable baseline (§7): every reviewable hunk as a Tier 3 API request (one per file, same context
- * builder), priced at the receipt's baseline model (config `receipt.baseline`, Fable 5.2 by default). `outputPerHunk` comes from the run's own Tier 3 usage
- * when it reviewed >= 3 hunks.
- */
-export function estimateBaseline(
-  routed: ScoredHunk[],
-  cfg: Config,
-  prices: Prices = loadPrices(),
-  est: Estimates = loadEstimates(),
-  outputPerHunk?: number,
-): { model: string; method: "estimated"; cost_usd: number } {
-  const reviewable = routed.filter((h) => h.tier !== 0);
-  const tokens = new Map(reviewable.map((h) => [h.id, estimateTokens(formatHunk(h), est)]));
-  const b = estimateTier(3, reviewable, reviewable, cfg, prices, est, tokens, "api", cfg.receipt.baseline.model, outputPerHunk);
-  return { model: b.model, method: "estimated", cost_usd: b.cost_usd };
-}
-
 export function estimatePlan(
   routed: ScoredHunk[],
   cfg: Config,
@@ -124,20 +111,29 @@ export function estimatePlan(
   est: Estimates = loadEstimates(),
   backend: Backend = "api",
 ): Plan {
+  ({ cfg, routed } = collapseTiers(cfg, routed));
   const reviewable = routed.filter((h) => h.tier !== 0);
   const tokens = new Map(reviewable.map((h) => [h.id, estimateTokens(formatHunk(h), est)]));
   const tiers = ([1, 2, 3] as LlmTier[]).map((t) =>
     estimateTier(t, reviewable.filter((h) => h.tier === t), reviewable, cfg, prices, est, tokens, backend),
   );
-  const total = tiers.reduce((a, t) => a + t.cost_usd, 0);
-  const base = estimateBaseline(routed, cfg, prices, est);
+  const overhead = backend === "claude-code" ? est.claude_code_overhead_tokens_per_call : 0;
+  const v = costViews(
+    tiers.map((t) => ({ model: t.model, cost_usd: t.cost_usd, requests: t.requests, input_tokens: t.input_tokens, cache_write_tokens: 0, cache_read_tokens: 0, output_tokens: t.output_tokens })),
+    cfg.receipt.baseline.model,
+    prices,
+    backend,
+    overhead,
+  );
+  const total = v.actual_usd;
   const reserve = total * est.escalation_reserve;
   return {
     tiers,
     total_usd: total,
+    total_direct_api_usd: v.direct_api_usd,
     reserve_usd: reserve,
-    baseline: base,
-    savings_pct: base.cost_usd > 0 ? Math.round((1 - (total + reserve) / base.cost_usd) * 1000) / 10 : 0,
+    baseline: { model: cfg.receipt.baseline.model, method: "estimated_tokens_at_baseline_prices", cost_usd: v.baseline_usd, direct_api_cost_usd: v.baseline_direct_api_usd },
+    savings_pct: savingsPct(total, v.baseline_usd),
     backend,
     skipped_hunks: routed.length - reviewable.length,
     calibrated: est.calibrated,

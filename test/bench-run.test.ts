@@ -1,11 +1,11 @@
 // P4-04 to P4-07: arms, judge, runner (fake backend and fake judge only), metrics. No claude process, no API.
-import { existsSync, mkdtempSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { armPreset, parseArms } from "../bench/arms";
 import { type Judgement, JudgeResponse, auditSample, classify, judgeUserMessage, modelJudgements, ruleJudge } from "../bench/judge";
-import { atLeast, bootstrapCI, computeMetrics, latestJudgements, mcnemarExact, percentile } from "../bench/metrics";
+import { atLeast, bootstrapCI, computeMetrics, judgementsFor, labelOf, loadRuns, mcnemarExact, percentile, runCosts } from "../bench/metrics";
 import { faultyHunks, loadCases } from "../bench/routing";
 import { BATCH_CAP, type Deps, type RunFile, readRun, runBatch, selectCases } from "../bench/run";
 import { loadEstimates } from "../src/estimate";
@@ -205,14 +205,56 @@ describe("metrics", () => {
     const dir = mkdtempSync(join(tmpdir(), "tv-bench-"));
     await runBatch({ cases: "dpdk-ntb-window-bound,nextjs-clean-default-export-errors", arms: ["tierview", "all-opus"], maxCalls: 20 }, deps(dir, fakeFor(0)));
     const sel = selectCases(cases, "dpdk-ntb-window-bound,nextjs-clean-default-export-errors");
-    const runs = new Map<string, RunFile>();
-    for (const x of sel) for (const arm of ["tierview", "all-opus"] as const) runs.set(`${x.c.id}|${arm}`, readRun(dir, x.c.id, arm)!);
+    const runs = loadRuns(dir);
     const js = readFileSync(join(dir, "judgements.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l) as Judgement);
-    const res = computeMetrics(sel, runs, latestJudgements(js), cfg, "test");
+    const res = computeMetrics(sel, runs, js, cfg, "test");
     const tv = res.arms.find((a) => a.arm === "tierview")!;
     expect(tv).toMatchObject({ buggy_runs: 1, clean_runs: 1, caught: 1, recall: 1, fp_per_clean_case: 0 });
+    // Both cost views and the same-tokens-at-Fable-rates figure come from the receipt's own functions.
+    const r = readRun(dir, "dpdk-ntb-window-bound", "tierview")!;
+    const v = runCosts(r, cfg, loadPrices(), loadEstimates());
+    expect(v.actual_usd).toBeCloseTo(r.review.receipt.total_cost_usd, 10);
+    expect(v.direct_api_usd).toBeCloseTo(r.review.receipt.total_direct_api_cost_usd, 10);
+    expect(v.baseline_usd).toBeCloseTo(r.review.receipt.baseline.cost_usd, 10);
+    expect(v.direct_api_usd).toBeLessThan(v.actual_usd);
+    expect(res.all_fable_calculated.via_claude_code_mean_usd).toBeCloseTo(res.arms.find((a) => a.arm === "all-opus")!.mean_fable_priced_via_claude_code_usd, 10);
     expect(res.mcnemar_tierview_vs_all_opus).toMatchObject({ both: 1, p: 1 });
     expect(res.arms.find((a) => a.arm === "all-sonnet")!.runs).toBe(0);
-    expect(res.all_fable_calculated.note).toMatch(/no Fable calls/);
+    expect(res.all_fable_calculated.note).toMatch(/no Fable calls/i);
+  });
+});
+
+describe("pipeline v2 in the benchmark", () => {
+  it("tierview makes one Sonnet call and one Opus call per case (Tier 2 merged into Tier 3, whole-diff escalation)", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tv-bench-"));
+    const d = deps(dir, fakeFor(0));
+    await runBatch({ cases: "dpdk-ntb-window-bound", arms: ["tierview"], maxCalls: 20 }, d);
+    const reqs = d.backends.flatMap((b) => b.requests);
+    expect(reqs.map((q) => q.tier)).toEqual([1, 3]);
+    expect(reqs[1]!.model).toBe(cfg.models.tier2.model);
+    expect(reqs[1]!.effort).toBe("high");
+    const r = readRun(dir, "dpdk-ntb-window-bound", "tierview")!;
+    expect(r.arm_version).toBe(2);
+    expect(r.review.receipt.tiers[1]!.requests).toBe(0);
+    expect(r.review.receipt.baseline.method).toBe("actual_tokens_at_baseline_prices");
+  });
+
+  it("treats tierview runs of an older version as stale: re-runs them and archives the old file", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tv-bench-"));
+    const d = deps(dir, fakeFor(0));
+    await runBatch({ cases: "dpdk-ntb-window-bound", arms: ["tierview", "all-opus"], maxCalls: 20 }, d);
+    const p = join(dir, "runs", "dpdk-ntb-window-bound__tierview.json");
+    const old = JSON.parse(readFileSync(p, "utf8")) as RunFile;
+    writeFileSync(p, JSON.stringify({ ...old, arm_version: undefined, batch: "old-batch" }));
+    expect(labelOf({ arm: "tierview" })).toBe("tierview@v1");
+    const r2 = await runBatch({ cases: "dpdk-ntb-window-bound", arms: ["tierview", "all-opus"], maxCalls: 20 }, d);
+    expect(r2.runs.map((x) => x.arm)).toEqual(["tierview"]);
+    const runs = loadRuns(dir);
+    expect(runs.has("dpdk-ntb-window-bound|tierview")).toBe(true);
+    expect(runs.has("dpdk-ntb-window-bound|tierview@v1")).toBe(true);
+    // Judgements count only for the run they judged.
+    const js = readFileSync(join(dir, "judgements.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l) as Judgement);
+    expect(judgementsFor(js, runs.get("dpdk-ntb-window-bound|tierview@v1")!)).toEqual([]);
+    expect(judgementsFor(js, runs.get("dpdk-ntb-window-bound|tierview")!).length).toBeGreaterThan(0);
   });
 });

@@ -264,7 +264,26 @@ What the 4 complete pilot cases show (far too few for any claim):
 
 Projection from measured calls per case (tierview 2.3, each baseline 1.3, judge about 0): about 5 calls per case for the three arms. Pilot batch 2 needs about 9 calls. The other 25 cases need about 125 calls, so roughly 7 more batches of 20, before any re-runs.
 
-**Next.** Pilot batch 2 (the 3 Tailscale runs), then stop and ask Mohamed before the full run (P4-08).
+**Pipeline v2, before pilot batch 2 (Mohamed's changes, no `claude` calls).** Prompt: "Don't run pilot batch 2 yet. First fix these, with tests and no claude calls: (1) when Fable is off, merge Tier 2 and Tier 3 into one Opus call at the higher effort; (2) make escalation whole-diff: run all Sonnet batches first, then send every escalated hunk to a single Opus call; (3) compute the all-Fable figure one way only, as the actual tokens priced at Fable rates, everywhere (receipt and metrics); (4) report both "via Claude Code" cost and "direct API" cost (without the ~2,100-token per-call overhead) in the receipt and metrics. Re-run the pilot metrics from the saved results where possible, update BUILD_LOG and PLAN.md, and commit. Then run pilot batch 2, and stop and report." (followed by "run batch yourself").
+
+1. **Tier merge** (`src/tiers/collapse.ts`): when Tier 2 and Tier 3 run the same model, Tier 2 hunks join Tier 3 at the higher effort; Tier 1 escalates straight to it; a budget degrade moves Tier 3 straight to Tier 1; the dry run notes it. Applied in the pipeline, the estimator and the bench's call planner.
+2. **Whole-diff escalation** (`src/pipeline.ts`): Tier 1 first, then each higher tier once with its own hunks plus all escalated hunks. To keep "riskiest first" under a cap, the higher tiers' calls and worst-case cost are held back while lower tiers run, and own-hunk packs go before escalation-only packs. On the `api` backend Tiers 2 and 3 still send one request per file, so "one Opus call" holds on `claude-code` (cross-file packing).
+3. **All-Fable, one method** (`src/costs.ts`): actual tokens at the baseline model's rates, in the receipt (`method: "actual_tokens_at_baseline_prices"`), the dry run (its estimated tokens) and the metrics (the all-opus arm's tokens for the headline, every arm's own tokens listed). `estimateBaseline` and the estimator-error metric are removed. Caveat now in PLAN §7: the same tokens at Fable rates understate a real all-Fable run, which would send every hunk with Tier 3 context.
+4. **Two cost views**: via Claude Code (what ran) and direct API (minus 2,100 overhead tokens per call, rest at the uncached input rate) per tier and in total, in the receipt, the dry run, `usage.jsonl` (`direct_api_usd`) and the metrics.
+5. **Bench**: `ARM_VERSION` (tierview v2); stale or incomplete runs are archived to `bench/results/runs-archive/` before a re-run; metrics reads both folders and shows old versions as their own row; judgements carry `run_batch` so a judgement counts only for the run it judged. Receipt schema: `cache_write_1h_tokens`, `direct_api_cost_usd`, `total_direct_api_cost_usd`, `baseline.direct_api_cost_usd` (PLAN §8).
+6. Tests: `test/costs.test.ts` (cost views, merge, degrade), new runner tests (one Sonnet + one Opus call per case, stale re-run and archive, judgement scoping), updated order tests; dry-run snapshots regenerated. 219 tests pass.
+
+**Pilot metrics recomputed from saved results (dev split, no calls).** The 4 saved tierview runs are v1 (old pipeline), shown as `tierview@v1`, and will be re-run in batch 2; the baseline arms are unaffected by the change and stay.
+
+| arm | runs | recall | FP / clean | calls / case | $ / case via Claude Code | $ / case direct API | same tokens at Fable rates (CC / direct) |
+|---|---:|---|---:|---:|---:|---:|---|
+| all-sonnet | 4 | 2/2 | 0 | 1.3 | $0.155 | $0.082 | $0.618 / $0.326 |
+| all-opus | 4 | 2/2 | 0 | 1.3 | $0.342 | $0.194 | $0.684 / $0.388 |
+| tierview@v1 | 4 | 2/2 | 0 | 2.3 | $0.202 | $0.135 | $0.465 / $0.303 |
+
+Direct API is about half of via-Claude-Code: the per-call overhead is written to Claude Code's 1-hour cache, priced at 2x input. Headline all-Fable (all-opus tokens at Fable rates): $0.68 per case via Claude Code, $0.39 direct API.
+
+**Next.** Pilot batch 2: dry run plans 17 calls (4 tierview re-runs at v2, 3 Tailscale runs).
 
 ---
 

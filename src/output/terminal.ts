@@ -49,8 +49,10 @@ export function renderDryRun(v: DryRunView): string {
   out.push(...table(rows, [3, 4, 5, 6, 7]).map((l) => `  ${l}`));
   out.push("");
   out.push(`  skipped hunks:        ${plan.skipped_hunks}`);
-  out.push(`  estimated total:      ${usd(plan.total_usd)} (+ up to ${usd(plan.reserve_usd)} escalation allowance)`);
-  out.push(`  all-${plan.baseline.model} baseline: ${usd(plan.baseline.cost_usd)} (${plan.baseline.method})`);
+  const cc = plan.backend === "claude-code";
+  out.push(`  estimated total:      ${usd(plan.total_usd)}${cc ? " via Claude Code" : ""} (+ up to ${usd(plan.reserve_usd)} escalation allowance)`);
+  if (cc) out.push(`  direct API:           ${usd(plan.total_direct_api_usd)} (without Claude Code's per-call overhead)`);
+  out.push(`  all-${plan.baseline.model}: ${usd(plan.baseline.cost_usd)}${cc ? ` via Claude Code, ${usd(plan.baseline.direct_api_cost_usd)} direct API` : ""} (the same estimated tokens at its rates)`);
   out.push(`  estimated savings:    ${plan.savings_pct}%`);
   if (v.maxCost !== null) out.push(`  --max-cost:           ${usd(v.maxCost)}${plan.total_usd + plan.reserve_usd > v.maxCost ? " (this plan would be degraded to fit)" : ""}`);
 
@@ -66,15 +68,15 @@ export function renderReceipt(r: Receipt): string[] {
   const apiEq = r.cost_basis === "api_equivalent";
   const out: string[] = [];
   out.push(apiEq ? `Receipt (claude-code backend: ${r.calls} claude call(s); cost is API-equivalent at list prices as of ${r.prices_as_of}, not what your plan bills)` : `Receipt (api backend: ${r.calls} request(s); list prices as of ${r.prices_as_of})`);
-  const rows = [["tier", "model", "effort", "hunks", "+escalated", apiEq ? "calls" : "requests", "input", "cache write", "cache read", "output", apiEq ? "API-eq cost" : "cost"]];
+  const rows = [["tier", "model", "effort", "hunks", "+escalated", apiEq ? "calls" : "requests", "input", "cache write", "cache read", "output", apiEq ? "via Claude Code" : "cost", ...(apiEq ? ["direct API"] : [])]];
   for (const t of r.tiers) {
-    rows.push([String(t.tier), t.model, t.effort, String(t.hunks), String(t.escalated_in), String(t.requests), n(t.input_tokens), n(t.cache_write_tokens), n(t.cache_read_tokens), n(t.output_tokens), usd(t.cost_usd)]);
+    rows.push([String(t.tier), t.model, t.effort, String(t.hunks), String(t.escalated_in), String(t.requests), n(t.input_tokens), n(t.cache_write_tokens), n(t.cache_read_tokens), n(t.output_tokens), usd(t.cost_usd), ...(apiEq ? [usd(t.direct_api_cost_usd)] : [])]);
   }
-  out.push(...table(rows, [3, 4, 5, 6, 7, 8, 9, 10]).map((l) => `  ${l}`));
+  out.push(...table(rows, [3, 4, 5, 6, 7, 8, 9, 10, 11]).map((l) => `  ${l}`));
   const tok = r.tiers.reduce((a, t) => a + t.input_tokens + t.cache_write_tokens + t.cache_read_tokens + t.output_tokens, 0);
   out.push("");
-  out.push(`  total:                ${usd(r.total_cost_usd)}${apiEq ? " API-equivalent" : ""} (${n(tok)} tokens)`);
-  out.push(`  all-${r.baseline.model}: ${usd(r.baseline.cost_usd)} (${r.baseline.method}${apiEq ? ", API prices" : ""}) -> ${r.savings_pct}% ${r.savings_pct >= 0 ? "less" : "more"}`);
+  out.push(`  total:                ${usd(r.total_cost_usd)}${apiEq ? ` via Claude Code, ${usd(r.total_direct_api_cost_usd)} direct API (without Claude Code's per-call overhead)` : ""} (${n(tok)} tokens)`);
+  out.push(`  all-${r.baseline.model}: ${usd(r.baseline.cost_usd)}${apiEq ? ` via Claude Code, ${usd(r.baseline.direct_api_cost_usd)} direct API` : ""} (the same tokens at its rates) -> ${r.savings_pct}% ${r.savings_pct >= 0 ? "less" : "more"}`);
   out.push(`  skipped hunks: ${r.skipped_hunks}   not reviewed: ${r.not_reviewed_hunks}   wall time: ${(r.wall_ms / 1000).toFixed(1)}s`);
   if (r.budget.max_cost_usd !== null) out.push(`  --max-cost: ${usd(r.budget.max_cost_usd)}${r.budget.degraded ? " (plan degraded to fit)" : ""}`);
   for (const s of r.model_substitutions) out.push(`  ${substitutionLine(s)}`);

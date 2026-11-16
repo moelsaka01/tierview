@@ -26,7 +26,10 @@ export interface Judgement {
   /** Model judgements only. */
   model?: string;
   confidence?: number;
+  /** Batch in which this judgement was made. */
   batch?: string;
+  /** Batch of the run being judged (missing in early logs: same as batch). */
+  run_batch?: string;
   at?: string;
 }
 

@@ -27,7 +27,7 @@ describe("review --dry-run", () => {
     const j = JSON.parse(r.out);
     expect(j.dry_run).toBe(true);
     expect(j.routing.length).toBeGreaterThan(0);
-    expect(j.estimate.baseline.method).toBe("estimated");
+    expect(j.estimate.baseline.method).toBe("estimated_tokens_at_baseline_prices");
     expect(j.estimate.prices_as_of).toMatch(/^\d{4}/);
   });
 
@@ -54,7 +54,10 @@ describe("review --dry-run", () => {
     const api = JSON.parse((await run({ dryRun: true, json: true, backend: "api" }, mixed)).out);
     expect(cc.estimate.backend).toBe("claude-code");
     expect(api.estimate.backend).toBe("api");
-    expect(cc.estimate.baseline.cost_usd).toBeCloseTo(api.estimate.baseline.cost_usd, 10);
+    // Direct API drops Claude Code's per-call overhead; on the api backend there is none.
+    expect(cc.estimate.total_direct_api_usd).toBeLessThan(cc.estimate.total_usd);
+    expect(cc.estimate.baseline.direct_api_cost_usd).toBeLessThan(cc.estimate.baseline.cost_usd);
+    expect(api.estimate.total_direct_api_usd).toBeCloseTo(api.estimate.total_usd, 10);
   });
 
   it("exits 2 on a bad --max-cost", async () => {

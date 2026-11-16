@@ -8,6 +8,12 @@ import type { ModelSubstitution } from "../src/types";
 export const ARMS = ["tierview", "all-sonnet", "all-opus"] as const;
 export type Arm = (typeof ARMS)[number];
 
+/**
+ * Bumped when an arm's behaviour changes; saved runs of an older version are stale and re-run.
+ * tierview v2 (2026-11-16): Tier 2 and Tier 3 merged into one Opus call, whole-diff escalation (PLAN §6).
+ */
+export const ARM_VERSION: Record<Arm, number> = { tierview: 2, "all-sonnet": 1, "all-opus": 1 };
+
 export interface ArmPreset {
   arm: Arm;
   cfg: Config;
