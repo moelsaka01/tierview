@@ -1,0 +1,290 @@
+{
+  "case_id": "ch-mov-imm32-store",
+  "arm": "all-opus",
+  "arm_version": 1,
+  "batch": "2026-11-16T15-22-32",
+  "config_hash": "3f0786b02d0a",
+  "complete": true,
+  "calls": 1,
+  "wall_ms": 36514,
+  "review": {
+    "version": 1,
+    "findings": [
+      {
+        "file": "hypervisor/src/arch/x86/emulator/instructions/mov.rs",
+        "start_line": 203,
+        "end_line": 206,
+        "side": "new",
+        "severity": "high",
+        "category": "bug",
+        "title": "MOV r/m64, imm32 now stores only 4 bytes to memory instead of 8",
+        "explanation": "Previously `mov_rm_imm!(u32tou64)` sign-extended the imm32 to a u64 and wrote 8 bytes (`imm.to_le_bytes()` on a u64). Now the macro passes `size_of::<u32>()` = 4 to set_op, so for a memory destination (e.g. `mov qword [rax], -1`, REX.W C7 /0) only the low 4 bytes are written and the upper 4 bytes keep stale guest memory. That silently corrupts guest data on MMIO/emulated memory writes.",
+        "suggestion": "Use an operand size of 8 for the destination of Mov_rm64_imm32: read the imm with 4 bytes and write with 8 (e.g. give mov_rm_imm separate source/destination size parameters, or call it with u64 if get_op sign-extends Immediate32to64). Add a test for the memory form.",
+        "evidence": "    mov_rm_imm!(u32);",
+        "confidence": 0.7,
+        "id": "210106d5d029",
+        "hunk_id": "hypervisor/src/arch/x86/emulator/instructions/mov.rs#6",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      }
+    ],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "hypervisor/src/arch/x86/emulator/instructions/mov.rs#1",
+        "score": 15,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "deletion_only",
+            "weight": 5,
+            "detail": "only deletions"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "110 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "hypervisor/src/arch/x86/emulator/instructions/mov.rs#2",
+        "score": 40,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "boundary",
+            "weight": 25,
+            "detail": "comparison operator changed"
+          },
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "29 changed lines"
+          },
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "110 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "hypervisor/src/arch/x86/emulator/instructions/mov.rs#3",
+        "score": 40,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "boundary",
+            "weight": 25,
+            "detail": "comparison operator changed"
+          },
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "30 changed lines"
+          },
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "110 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "hypervisor/src/arch/x86/emulator/instructions/mov.rs#4",
+        "score": 45,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "boundary",
+            "weight": 25,
+            "detail": "comparison operator changed"
+          },
+          {
+            "signal": "size",
+            "weight": 10,
+            "detail": "31 changed lines"
+          },
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "110 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "hypervisor/src/arch/x86/emulator/instructions/mov.rs#5",
+        "score": 40,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "boundary",
+            "weight": 25,
+            "detail": "comparison operator changed"
+          },
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "17 changed lines"
+          },
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "110 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "hypervisor/src/arch/x86/emulator/instructions/mov.rs#6",
+        "score": 10,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "110 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 1,
+      "model_substitutions": [],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 2,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 6,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 20543,
+          "cache_read_tokens": 994,
+          "output_tokens": 2804,
+          "cache_write_1h_tokens": 20543,
+          "cost_usd": 0.2206308,
+          "direct_api_cost_usd": 0.133836
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.2206308,
+      "total_direct_api_cost_usd": 0.133836,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.4410628,
+        "direct_api_cost_usd": 0.267672
+      },
+      "savings_pct": 50,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 36514,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}

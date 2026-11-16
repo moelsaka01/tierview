@@ -378,6 +378,36 @@ Judge outcomes: all four ambiguous Tailscale findings (two all-opus, two tiervie
 
 **Next.** Stop and report. Remaining: the other 5 dev cases (15 runs) and the 20 test cases (60 runs), about 4.2 review calls per case plus judge calls: about 6 to 7 batches of 20.
 
+**Batch 4 (2026-11-16, Mohamed: "Run next batch"; `--cases dev` on `bench-config-v1`).** 19 `claude` calls (cap 20; the dry run planned 9 runs in 20 calls, but runs used fewer calls than reserved, so all 15 remaining dev runs fit): 18 reviews and 1 Opus judge call; no Fable, no errors. API-equivalent $2.15 via Claude Code. **The dev split is complete** (10 cases x 3 arms).
+
+| case | tierview | all-sonnet | all-opus |
+|---|---|---|---|
+| ch-mov-imm32-store | caught (2 calls, $0.263) | caught (1, $0.095) | caught (1, $0.221) |
+| django-verbatim-no-spaces | missed (2, $0.207) | caught (1, $0.149) | caught (1, $0.368) |
+| dpdk-bnxt-short-bd-checksum | caught (1, $0.091) | caught (1, $0.035) | caught (1, $0.037) |
+| qemu-i8259-irq-leak | missed (2, $0.123) | missed (1, $0.090) | missed (1, $0.263; 1 judge call: "no match") |
+| qemu-clean-physmem-dirty-range | 0 FP (1, $0.016) | 0 FP (1, $0.063) | 0 FP (1, $0.132) |
+
+**Dev split, all 10 cases (tuning data, not the headline):**
+
+| arm | recall (95% CI) | FP / clean | calls / case | $ / case via Claude Code | $ / case direct API | $ / bug caught via CC |
+|---|---|---:|---:|---:|---:|---:|
+| tierview v3 | 3/7 = 43% (14–86%) | 0 | 1.7 | $0.146 | $0.098 | $0.456 |
+| all-sonnet | 5/7 = 71% (43–100%) | 0 | 1.1 | $0.111 | $0.060 | $0.194 |
+| all-opus | 5/7 = 71% (43–100%) | 0 | 1.1 | $0.254 | $0.155 | $0.441 |
+
+McNemar tierview vs all-opus: both 3, opus only 2, tierview only 0, neither 2; p = 0.5. All-Fable (all-opus tokens at Fable rates): $0.51 per case via Claude Code, $0.31 direct API.
+
+What the dev split says (7 bugs; a pattern to test, not a result):
+- **tierview's two extra misses are the same failure:** Django legend and Django verbatim both sit in hunks routed to Tier 1, where Sonnet sees the diff with no file context and raised nothing. all-sonnet (same model and effort, Tier 3 context) caught both. The bnxt bug was caught by tierview only because P4-09 routed it to Opus.
+- **all-sonnet matches all-opus recall at 44% of the cost** on dev. Cost per case: all-sonnet < tierview < all-opus; tierview pays for two calls (Claude Code overhead twice) on most cases.
+- No arm raised a false positive (medium or higher) on the 3 clean dev cases.
+- Both i8259 and Tailscale are missed by every arm.
+
+Implication (not acted on; needs Mohamed's decision because the config is frozen and the test split must not be used for it): the weak link is Tier 1's missing context, not the router or the model. Giving Tier 1 the Tier 3 context shape would make tierview's Tier 1 equal to all-sonnet on those hunks; that is a design change (unfreeze, bump to `bench-config-v2`, re-run tierview on dev) and should be decided before the test split runs.
+
+**Next.** Stop and report. Remaining: 20 test cases (60 runs), about 4 batches of 20 at the measured 1.1 to 1.7 calls per run.
+
 ---
 
 *Template for each later phase:*

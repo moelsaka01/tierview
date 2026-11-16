@@ -1,0 +1,223 @@
+{
+  "case_id": "qemu-i8259-irq-leak",
+  "arm": "all-opus",
+  "arm_version": 1,
+  "batch": "2026-11-16T15-22-32",
+  "config_hash": "3f0786b02d0a",
+  "complete": true,
+  "calls": 1,
+  "wall_ms": 60418,
+  "review": {
+    "version": 1,
+    "findings": [
+      {
+        "file": "hw/intc/i8259.c",
+        "start_line": 502,
+        "end_line": 517,
+        "side": "new",
+        "severity": "medium",
+        "category": "bug",
+        "title": "isa_realize() may not exist in the ISA API; possible build break",
+        "explanation": "The container realizes its embedded children with isa_realize(). As far as I recall, the ISA bus API only provides isa_realize_and_unref(), and this diff touches only i8259.c, so nothing here adds isa_realize(). If no other change adds it, the file will not compile. Do not switch to isa_realize_and_unref(): it would drop a reference that object_initialize_child() makes the parent own.",
+        "suggestion": "Use qdev_realize(pri_dev, BUS(s->isabus), errp) and qdev_realize(sec_dev, BUS(s->isabus), errp), or make sure isa_realize() is added in the same series.",
+        "evidence": "    if (!isa_realize(ISA_DEVICE(pri_dev), s->isabus, errp)) {",
+        "confidence": 0.3,
+        "id": "64e359afa07b",
+        "hunk_id": "hw/intc/i8259.c#4",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      }
+    ],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "hw/intc/i8259.c#1",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "133 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "hw/intc/i8259.c#2",
+        "score": 10,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "16 changed lines"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "133 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "hw/intc/i8259.c#3",
+        "score": 60,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "boundary",
+            "weight": 25,
+            "detail": "condition changed"
+          },
+          {
+            "signal": "memory",
+            "weight": 25,
+            "detail": "`qdev_realize_and_unref(dev, NULL, &error_fatal);`"
+          },
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "24 changed lines"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "133 source lines, no test file"
+          }
+        ]
+      },
+      {
+        "hunk_id": "hw/intc/i8259.c#4",
+        "score": 15,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 10,
+            "detail": "84 changed lines"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "133 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "hw/intc/i8259.c#5",
+        "score": 10,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "7 changed lines"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "133 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 1,
+      "model_substitutions": [],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 2,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 5,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 19483,
+          "cache_read_tokens": 994,
+          "output_tokens": 5343,
+          "cache_write_1h_tokens": 19483,
+          "cost_usd": 0.26293079999999996,
+          "direct_api_cost_usd": 0.180376
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.26293079999999996,
+      "total_direct_api_cost_usd": 0.180376,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.5256628000000001,
+        "direct_api_cost_usd": 0.360752
+      },
+      "savings_pct": 50,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 60418,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}

@@ -1,0 +1,144 @@
+{
+  "case_id": "qemu-clean-physmem-dirty-range",
+  "arm": "all-opus",
+  "arm_version": 1,
+  "batch": "2026-11-16T15-22-32",
+  "config_hash": "3f0786b02d0a",
+  "complete": true,
+  "calls": 1,
+  "wall_ms": 15963,
+  "review": {
+    "version": 1,
+    "findings": [],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "include/system/ram_addr.h#1",
+        "score": 10,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "9 changed lines"
+          },
+          {
+            "signal": "deletion_only",
+            "weight": 5,
+            "detail": "only deletions"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "system/physmem.c#1",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "7 changed lines"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "system/physmem.c#2",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 1,
+      "model_substitutions": [],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 2,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 3,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 15051,
+          "cache_read_tokens": 994,
+          "output_tokens": 584,
+          "cache_write_1h_tokens": 15051,
+          "cost_usd": 0.1322948,
+          "direct_api_cost_usd": 0.067468
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.1322948,
+      "total_direct_api_cost_usd": 0.067468,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.2643908,
+        "direct_api_cost_usd": 0.134936
+      },
+      "savings_pct": 50,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 15963,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}

@@ -1,0 +1,254 @@
+{
+  "case_id": "django-verbatim-no-spaces",
+  "arm": "tierview",
+  "arm_version": 3,
+  "batch": "2026-11-16T15-22-32",
+  "config_hash": "3f0786b02d0a",
+  "complete": true,
+  "calls": 2,
+  "wall_ms": 78164,
+  "review": {
+    "version": 1,
+    "findings": [
+      {
+        "file": "django/template/base.py",
+        "start_line": 517,
+        "end_line": 523,
+        "side": "new",
+        "severity": "medium",
+        "category": "bug",
+        "title": "Verbatim/comment tags without inner whitespace are no longer handled",
+        "explanation": "This hunk removes the verbatim state machine from create_token. Raw-block handling now depends only on the lexer regexes, and those regexes require whitespace after the tag opener. `_raw_start_re` uses `{%\\s+(?:comment|verbatim)`, while `_verbatim_end_re` and `_comment_end_re` use `{%[^\\S\\n]+end...`. The old code stripped the tag content, so `{%verbatim%}`, `{%endverbatim%}` and `{%endcomment%}` all worked, and `tag_re` still accepts these forms. Under the new code: (a) A template whose only raw tag is `{%verbatim%}...{%endverbatim%}` takes the fast `tag_re.split` path. Its contents are lexed as normal VAR/BLOCK tokens, so `{{ x }}` renders as '' instead of the literal text, and unknown tags inside raise TemplateSyntaxError. (b) `{% verbatim %}...{%endverbatim%}` or `{% comment %}...{%endcomment%}` never finds its closing regex. The rest of the template becomes one TEXT token, and the result is an 'Unclosed tag' TemplateSyntaxError. (c) Whether `{%verbatim%}` is honoured now depends on whether some other `{% comment`/`{% verbatim` tag appears elsewhere in the template. Templates that used to work will now render differently or fail.",
+        "suggestion": "Use `\\s*` (or `[^\\S\\n]*`) after BLOCK_TAG_START in `_raw_start_re`, `_comment_end_re` and `_verbatim_end_re`, to match the old `.strip()` behaviour. Add tests for `{%verbatim%}...{%endverbatim%}` and `{% comment %}...{%endcomment%}`.",
+        "evidence": "return Token(token_type_match[token_start], content, position, lineno)",
+        "confidence": 0.6,
+        "id": "9b062af04e77",
+        "hunk_id": "django/template/base.py#3",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      },
+      {
+        "file": "django/template/base.py",
+        "start_line": 518,
+        "end_line": 522,
+        "side": "new",
+        "severity": "low",
+        "category": "performance",
+        "title": "Token-type dict rebuilt on every tag token in hot lexer path",
+        "explanation": "create_token runs once per tag token for every template compile. The new code builds a three-entry dict on each call, where the old code did a direct comparison. The extra allocation is small but sits on a hot path, and the surrounding comments show this code is tuned for performance (for example, the hard-coded 2s).",
+        "suggestion": "Hoist the mapping to a module-level or class-level constant, e.g. `_TOKEN_TYPES = {BLOCK_TAG_START: TokenType.BLOCK, ...}`.",
+        "evidence": "token_type_match = {",
+        "confidence": 0.5,
+        "id": "272f3a4002c7",
+        "hunk_id": "django/template/base.py#3",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      }
+    ],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "django/template/base.py#1",
+        "score": 10,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 10,
+            "detail": "71 changed lines"
+          }
+        ]
+      },
+      {
+        "hunk_id": "django/template/base.py#2",
+        "score": 5,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "8 changed lines"
+          }
+        ]
+      },
+      {
+        "hunk_id": "django/template/base.py#3",
+        "score": 55,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "error_handling_removed",
+            "weight": 20,
+            "detail": "`assert token_start == COMMENT_TAG_START`"
+          },
+          {
+            "signal": "boundary",
+            "weight": 25,
+            "detail": "comparison operator changed"
+          },
+          {
+            "signal": "size",
+            "weight": 10,
+            "detail": "46 changed lines"
+          },
+          {
+            "signal": "merge",
+            "weight": 0,
+            "detail": "Tier 2 and Tier 3 run the same model: one call at high effort"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/template_tests/syntax_tests/test_verbatim.py#1",
+        "score": 0,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 10,
+            "detail": "42 changed lines"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/template_tests/syntax_tests/test_verbatim.py#2",
+        "score": 0,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "9 changed lines"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/template_tests/test_parser.py#1",
+        "score": 0,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/template_tests/test_partials.py#1",
+        "score": 0,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "28 changed lines"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 2,
+      "model_substitutions": [
+        {
+          "tier": 3,
+          "requested": "claude-fable-5-2",
+          "used": "claude-opus-5-5",
+          "reason": "Fable not enabled"
+        }
+      ],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 6,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 6348,
+          "cache_read_tokens": 994,
+          "output_tokens": 1168,
+          "cache_write_1h_tokens": 6348,
+          "cost_usd": 0.037175400000000004,
+          "direct_api_cost_usd": 0.022168
+        },
+        {
+          "tier": 2,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "hunks": 1,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 7184,
+          "cache_read_tokens": 994,
+          "output_tokens": 5594,
+          "cache_write_1h_tokens": 7184,
+          "cost_usd": 0.16955879999999998,
+          "direct_api_cost_usd": 0.1362
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.20673419999999998,
+      "total_direct_api_cost_usd": 0.15836799999999998,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.48742159999999995,
+        "direct_api_cost_usd": 0.36107199999999995
+      },
+      "savings_pct": 57.6,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "Tier 2 and Tier 3 both run claude-opus-5-5, so they ran as one tier at high effort.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 78164,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}
