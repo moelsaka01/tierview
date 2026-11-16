@@ -6,3 +6,5 @@ dist/
 # benchmark: cloned repos and raw model outputs stay local
 bench/repos/
 bench/results/raw/
+.bench-build/
+bench/validate-*.log

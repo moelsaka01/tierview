@@ -1,0 +1,37 @@
+{
+  "id": "qemu-nbd-block-status-assert",
+  "kind": "buggy",
+  "split": "test",
+  "pilot": false,
+  "repo": "qemu/qemu",
+  "language": "C",
+  "commit": "2dcbb11b399ada51f734229b612e4f561a2aae0a",
+  "commit_date": "2023-10-05T11:02:08-05:00",
+  "subject": "nbd/server: Add FLAG_PAYLOAD support to CMD_BLOCK_STATUS",
+  "url": "https://github.com/qemu/qemu/commit/2dcbb11b399ada51f734229b612e4f561a2aae0a",
+  "stats": {
+    "files": 7,
+    "added": 125,
+    "deleted": 20
+  },
+  "fix": {
+    "sha": "3ec7bb19359c9368ac3e1556ffb156ab5f915ea3",
+    "date": "2026-11-13T08:02:09.000-06:00",
+    "subject": "nbd/server: Reject rather than assert on non-compliant BLOCK_STATUS",
+    "url": "https://github.com/qemu/qemu/commit/3ec7bb19359c9368ac3e1556ffb156ab5f915ea3",
+    "link": "fixes-trailer",
+    "files": [
+      "nbd/server.c"
+    ],
+    "bug": "A non-compliant NBD client can trigger an assertion (server crash) by sending BLOCK_STATUS without negotiated metacontexts."
+  },
+  "faulty": [
+    {
+      "file": "nbd/server.c",
+      "lines": [
+        2455,
+        2460
+      ]
+    }
+  ]
+}

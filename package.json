@@ -25,7 +25,10 @@
     "build": "tsup src/bin.ts --format esm --target node22 --clean",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check": "npm run typecheck && npm run test"
+    "check": "npm run typecheck && npm run test",
+    "bench:build": "tsup bench/mine.ts bench/validate.ts bench/routing.ts --format esm --target node22 --out-dir .bench-build --silent",
+    "bench:mine": "npm run bench:build && node .bench-build/mine.js",
+    "bench:validate": "npm run bench:build && node .bench-build/validate.js"
   },
   "keywords": [
     "code-review",

@@ -1,0 +1,39 @@
+{
+  "id": "ch-prefault-thread-startup",
+  "kind": "buggy",
+  "split": "test",
+  "pilot": false,
+  "repo": "cloud-hypervisor/cloud-hypervisor",
+  "language": "Rust",
+  "commit": "aa74b1d13bea8d2c466c1a534daec05703ff37b6",
+  "commit_date": "2026-09-26T20:18:59Z",
+  "subject": "vmm: Pin and parallelize memory prefault",
+  "url": "https://github.com/cloud-hypervisor/cloud-hypervisor/commit/aa74b1d13bea8d2c466c1a534daec05703ff37b6",
+  "stats": {
+    "files": 3,
+    "added": 243,
+    "deleted": 58
+  },
+  "fix": {
+    "sha": "fc5441a85e2d305c2cad9faa4213e34c3960ad6f",
+    "date": "2026-09-29T14:11:21.000Z",
+    "subject": "vmm: prefault: Release workers only after their thread startup",
+    "url": "https://github.com/cloud-hypervisor/cloud-hypervisor/commit/fc5441a85e2d305c2cad9faa4213e34c3960ad6f",
+    "link": "fixes-trailer",
+    "files": [
+      "vmm/src/prefault.rs"
+    ],
+    "bug": "Prefault workers are released before their threads finish starting up, a race that makes large prefaults up to 4x slower."
+  },
+  "faulty": [
+    {
+      "file": "vmm/src/prefault.rs",
+      "lines": [
+        7,
+        138,
+        139,
+        180
+      ]
+    }
+  ]
+}

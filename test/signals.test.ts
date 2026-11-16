@@ -34,6 +34,8 @@ const cases: Case[] = [
   ["crypto", "src/a.py", ["+requests.get(u, verify=False)"], []],
   ["payment", "src/billing/x.ts", ["+const a = 1;"], []],
   ["payment", "src/a.ts", ["+await stripe.charges.create(c);"], ["+await mail.send(c);"]],
+  // Phase 4: the estimate.ts false positive, git checkout, and a budget Ledger class are not payment code.
+  ["payment", "src/estimate.ts", ["+order.amount_cents -= refundCents;", "+const totalCents = a + b;"], ["+  const total = tiers.reduce((a, t) => a + t.cost_usd, 0);", "+    const price = priceFor(m.model, prices);", "+  run(`git checkout ${ref}`);", "+const ledger = new Ledger(x.maxCost);"]],
   ["sql", "src/a.py", ['+q = f"select * from t where id = {i}"'], ['+print("hello")']],
   ["sql", "src/a.js", ["+db.query(`SELECT * FROM t WHERE id = ${id}`)"], ["+db.query(stmt, [id])"]],
   ["migrations", "db/migrations/001_init.py", ["+x = 1"], []],

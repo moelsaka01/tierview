@@ -1,0 +1,36 @@
+{
+  "id": "cilium-mtu-portmap-warning",
+  "kind": "buggy",
+  "split": "test",
+  "pilot": false,
+  "repo": "cilium/cilium",
+  "language": "Go",
+  "commit": "d91ed8e6e68ca3e683cd267e4d7382b6bc7d2a0f",
+  "commit_date": "2026-10-30T19:27:42Z",
+  "subject": "mtu: warn when CNI chaining lacks route MTU",
+  "url": "https://github.com/cilium/cilium/commit/d91ed8e6e68ca3e683cd267e4d7382b6bc7d2a0f",
+  "stats": {
+    "files": 1,
+    "added": 17,
+    "deleted": 0
+  },
+  "fix": {
+    "sha": "12b9e35fab118d2fbe294375a603e43f8bdd2635",
+    "date": "2026-11-05T16:37:02.000Z",
+    "subject": "mtu: Don't warn about the route MTU with portmap chaining",
+    "url": "https://github.com/cilium/cilium/commit/12b9e35fab118d2fbe294375a603e43f8bdd2635",
+    "link": "fixes-trailer",
+    "files": [
+      "pkg/mtu/cell.go"
+    ],
+    "bug": "The new route-MTU warning fires wrongly with portmap chaining, where cilium-cni still sets the route MTU."
+  },
+  "faulty": [
+    {
+      "file": "pkg/mtu/cell.go",
+      "lines": [
+        128
+      ]
+    }
+  ]
+}

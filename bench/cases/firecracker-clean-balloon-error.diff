@@ -1,0 +1,39 @@
+diff --git a/src/vmm/src/devices/virtio/balloon/device.rs b/src/vmm/src/devices/virtio/balloon/device.rs
+index 48668a40..c9ef9b50 100644
+--- a/src/vmm/src/devices/virtio/balloon/device.rs
++++ b/src/vmm/src/devices/virtio/balloon/device.rs
+@@ -41,7 +41,9 @@ const SIZE_OF_STAT: usize = std::mem::size_of::<BalloonStat>();
+ fn mib_to_pages(amount_mib: u32) -> Result<u32, BalloonError> {
+     amount_mib
+         .checked_mul(MIB_TO_4K_PAGES)
+-        .ok_or(BalloonError::TooManyPagesRequested)
++        .ok_or(BalloonError::TooMuchMemoryRequested(
++            u32::MAX / MIB_TO_4K_PAGES,
++        ))
+ }
+ 
+ fn pages_to_mib(amount_pages: u32) -> u32 {
+@@ -455,7 +457,7 @@ impl Balloon {
+             // The balloon cannot have a target size greater than the size of
+             // the guest memory.
+             if u64::from(amount_mib) > mem_size_mib(mem) {
+-                return Err(BalloonError::TooManyPagesRequested);
++                return Err(BalloonError::TooMuchMemoryRequested(amount_mib));
+             }
+             self.config_space.num_pages = mib_to_pages(amount_mib)?;
+             self.interrupt_trigger()
+diff --git a/src/vmm/src/devices/virtio/balloon/mod.rs b/src/vmm/src/devices/virtio/balloon/mod.rs
+index 58bf686c..91de01a8 100644
+--- a/src/vmm/src/devices/virtio/balloon/mod.rs
++++ b/src/vmm/src/devices/virtio/balloon/mod.rs
+@@ -83,8 +83,8 @@ pub enum BalloonError {
+     StatisticsDisabled,
+     /// Statistics cannot be enabled/disabled after activation.
+     StatisticsStateChange,
+-    /// Amount of pages requested cannot fit in `u32`.
+-    TooManyPagesRequested,
++    /// Requested memory should be less than {0}MiB
++    TooMuchMemoryRequested(u32),
+     /// Error while processing the virt queues: {0}
+     Queue(#[from] QueueError),
+     /// {0}

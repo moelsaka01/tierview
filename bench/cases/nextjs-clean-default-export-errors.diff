@@ -1,0 +1,46 @@
+diff --git a/packages/next/src/server/app-render/create-component-tree.tsx b/packages/next/src/server/app-render/create-component-tree.tsx
+index 575142629f..2cea1f548e 100644
+--- a/packages/next/src/server/app-render/create-component-tree.tsx
++++ b/packages/next/src/server/app-render/create-component-tree.tsx
+@@ -371,7 +371,7 @@ async function createComponentTreeInternal(
+    */
+   let MaybeComponent = LayoutOrPage
+ 
+-  if (process.env.NODE_ENV === 'development') {
++  if (process.env.NODE_ENV === 'development' || isStaticGeneration) {
+     const { isValidElementType } =
+       require('next/dist/compiled/react-is') as typeof import('next/dist/compiled/react-is')
+     if (
+diff --git a/test/e2e/app-dir/undefined-default-export/undefined-default-export.test.ts b/test/e2e/app-dir/undefined-default-export/undefined-default-export.test.ts
+index b8dd6bc579..436fd70cc0 100644
+--- a/test/e2e/app-dir/undefined-default-export/undefined-default-export.test.ts
++++ b/test/e2e/app-dir/undefined-default-export/undefined-default-export.test.ts
+@@ -51,24 +51,24 @@ describe('Undefined default export', () => {
+       `)
+     })
+   } else {
+-    it('errors the build with unhelpful error messages', async () => {
++    it('errors the build with helpful error messages', async () => {
+       const { cliOutput, exitCode } = await next.build()
+ 
+       expect(exitCode).toBe(1)
+ 
+       expect(cliOutput).toContain(
+         `Error occurred prerendering page "/specific-path/1". Read more: https://nextjs.org/docs/messages/prerender-error
+-Error: Functions cannot be passed directly to Client Components unless you explicitly expose it by marking it with "use server". Or maybe you meant to call this function rather than return it.Module`
++Error: The default export is not a React Component in "/specific-path/1/page"`
+       )
+ 
+       expect(cliOutput).toContain(
+         `Error occurred prerendering page "/specific-path/2". Read more: https://nextjs.org/docs/messages/prerender-error
+-Error: Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: object.`
++Error: The default export is not a React Component in "/specific-path/2/layout"`
+       )
+ 
+       expect(cliOutput).toContain(
+         `Error occurred prerendering page "/will-not-found". Read more: https://nextjs.org/docs/messages/prerender-error
+-Error: Functions cannot be passed directly to Client Components unless you explicitly expose it by marking it with "use server". Or maybe you meant to call this function rather than return it.Module`
++Error: The default export is not a React Component in "/will-not-found/not-found"`
+       )
+     })
+   }

@@ -294,7 +294,7 @@ The project's credibility rests on this, so the design favours claims that survi
 
 **Automatic validation** of every candidate (`bench/validate.ts`): `B` and `F` both exist; at least one line removed or changed by `F` is attributed to `B` by `git blame` at `F^`; `B` changes ≤ 400 lines and ≤ 15 files; `F` changes ≤ 60 lines (a small fix localises the bug); not a merge commit. Then a manual pass: read `F`'s message and drop cases where the "bug" is a feature change or a build fix. Record: repo, shas, language, the faulty lines (lines of `B` that `F` touched), a one-sentence bug description from `F`'s message, `F`'s date.
 
-**Clean cases**: commits from the same repos and months, size-matched, that have no later `Fixes:` / revert / "regression" reference and whose lines were not touched by any fix-labelled commit for ≥ 12 months. These are *presumed* clean; the write-up says so.
+**Clean cases**: commits from the same repos (in Phase 4: from 2025-08 to 2025-11, so that 12 months of later history exist), size-matched, that have no later `Fixes:` / revert / "regression" reference and whose lines were not touched by any fix-labelled commit for ≥ 12 months. These are *presumed* clean; the write-up says so.
 
 **Backend** (changed in Phase 3): the whole benchmark, judge included, runs on the **`claude-code` backend** on Mohamed's Claude Pro plan. There is no API key and no dollar budget. The constraint is the plan's usage limits, so the benchmark runs **in batches across days** and records usage for every run (see Usage control).
 
@@ -306,33 +306,32 @@ The project's credibility rests on this, so the design favours claims that survi
 
 | Arm | What runs |
 |---|---|
-| `tierview` | the real pipeline with the frozen config |
+| `tierview` | the real pipeline with the frozen config; Fable not enabled, so Tier 3 runs on Opus 5.5 `high` (§5a) |
 | `all-sonnet` | every hunk → Sonnet 5.5 `low`, Tier 3 request shape |
 | `all-opus` | every hunk → Opus 5.5 `medium`, Tier 3 request shape |
-| `all-fable` | every hunk → Fable 5.2 `high`, Tier 3 request shape |
-| `all-fable-low` | every hunk → Fable 5.2 `low`. The strongest simple alternative to a cascade; if it wins, say so. |
+| `all-fable` | **not run** (no Fable calls, see below). Reported as a calculated cost only. |
 
 Baselines share the Tier 3 context builder so the only variable is model and effort. No escalation in baselines. On `claude-code` each baseline sends all of a case's hunks in as few calls as the §5a batch limits allow.
 
-**Fable on the plan**: before the pilot, run `tierview models --probe` (3 tiny calls) and **ask Mohamed** whether Fable may be used: on some plans Fable draws on usage credits and `claude -p` bills them without asking. If Fable is unavailable or not approved, the `all-fable` and `all-fable-low` arms are dropped, `tierview` runs with Tier 3 on Opus 5.5 (reported as a substitution), and the all-Fable figure in the results is the receipt's *estimate* only, labelled as such. The tagline check in §12 then compares against `all-opus` and says so.
+**No Fable calls (decided at the start of Phase 4).** Mohamed has no budget for extra usage, and on some plans Fable draws on paid extra usage that `claude -p` bills without asking. So the benchmark makes **zero Fable calls**: the `all-fable` arm is not run, the planned `all-fable-low` arm is dropped (it was the strongest simple alternative to a cascade, but it needs Fable calls, so the question it answers stays open and the write-up says so), and `tierview` runs without `--allow-fable`, i.e. Tier 3 on Opus 5.5 at high effort. The all-Fable cost is **calculated** two ways and labelled as a calculation: (a) the receipt's estimator (§7), and (b) the `all-opus` arm's measured tokens priced at Fable 5.2 list prices (same request shape; Fable's real token counts would differ). The estimator's error is measured against the `all-opus` arm instead (estimator run with Opus as the baseline model, against measured all-Opus cost). The tagline check in §12 compares against `all-opus` and says so.
 
 **Scoring**:
 - A buggy case is **caught** when at least one finding (a) is in a file `F` touched and within ±10 lines of a faulty line or in the same function, and (b) is judged to describe the same defect. The judge is `claude-sonnet-5-5` at `medium`, given the fix diff, the bug description and the finding, blind to the arm. 20 random judge decisions are audited by hand and the agreement rate is published (`bench/results/judge-audit.md`).
 - **False positives** are measured on clean cases only: findings of severity ≥ medium per case, and the share of clean cases with at least one. Unmatched findings on buggy cases are reported as "unmatched", not as false positives (they may be real).
 - **Routing recall** (free, no API): share of faulty hunks that Tier 0 routed to Tier 2 or 3. Bugs missed *because* they were routed low are reported separately. This is the failure mode a reader will ask about.
 
-**Metrics table**: recall with bootstrap 95% CI; paired McNemar test of tierview against all-fable (or all-opus, see above); false positives per clean case; mean **tokens and API-equivalent cost** per case and per bug caught; claude calls per case; latency p50 / p90 (wall time of the `claude` calls, which includes CLI start-up, so it is not API latency, and the write-up says so); escalation rate; receipt-estimator error against the measured all-Fable API-equivalent cost.
+**Metrics table**: recall with bootstrap 95% CI; paired McNemar test of tierview against all-opus; false positives per clean case; mean **tokens and API-equivalent cost** per case and per bug caught; claude calls per case; latency p50 / p90 (wall time of the `claude` calls, which includes CLI start-up, so it is not API latency, and the write-up says so); escalation rate; receipt-estimator error against the measured all-Opus API-equivalent cost; calculated all-Fable cost per case (both methods above, labelled as calculated).
 
 **Outputs**: `bench/results/results.json`, `bench/results/RESULTS.md` (table + method + limits), `bench/results/chart.svg` (cost per case on x, recall on y, one point per arm with CI bars; hand-written SVG, readable in light and dark).
 
 **Usage control** (`bench/run.ts`), replacing the old $25 spend cap:
 - **Record usage per run.** Every (case, arm) run and every judge call appends one line to `bench/results/usage.jsonl`: timestamp, batch id, case, arm, claude calls, tokens per model (input, cache write, cache read, output), API-equivalent cost, wall time, model substitutions. `bench/results/usage.md` sums it per batch, per arm and overall. No dollar budget applies.
-- **Batches.** A batch is one sitting, capped by `--max-calls` (default 40; set from the pilot so a batch fits inside one usage window). The runner stops at the cap, or at the first rate-limit or usage-limit error, and exits cleanly. Runs are resumable: finished (case, arm) pairs are cached on disk and never re-run, so the next batch, often the next day, continues where the last stopped.
+- **Batches.** A batch is one sitting, capped by `--max-calls`: **at most 20 `claude` calls per batch** (Mohamed's limit; judge calls count). The runner never starts a (case, arm) run that could cross the cap, stops at the first rate-limit or usage-limit error, and exits cleanly. After each batch, stop and report usage; the next batch starts in a later session when the plan's usage has reset. Runs are resumable: finished (case, arm) pairs are cached on disk and never re-run, so the next batch, often the next day, continues where the last stopped.
 - Mohamed starts each batch. A batch never starts on its own.
 
-**Order of work**: (1) probe models and get Mohamed's answer on Fable (above); (2) pilot on 5 cases (3 buggy, 2 clean), all arms; (3) report measured calls, tokens and API-equivalent cost per case and arm, and a projection for 30 cases as a number of batches and days; (4) **stop and ask Mohamed** before the full run.
+**Order of work**: (1) build the 30-case dataset and **show Mohamed the case list** before any `claude` call; (2) pilot on 5 cases (3 buggy, 2 clean), all three arms, in batches of ≤ 20 calls; (3) report measured calls, tokens and API-equivalent cost per case and arm, and a projection for 30 cases as a number of batches; (4) **stop and ask Mohamed** before the full run. Tier 0 routing recall needs no calls and can be measured as soon as the dataset exists.
 
-Planning estimate, to be replaced by the pilot's numbers: tierview 3–5 calls per case, each baseline 1–2, the judge about 1 per (case, arm), so roughly 15–20 calls per case with five arms, about 500 calls for 30 cases, or 10–15 batches of 40. Treat this as a guess until measured.
+Planning estimate, to be replaced by the pilot's numbers: tierview 2–4 calls per case, each baseline 1, the judge about 1 per (buggy case, arm) that has a finding near the fault, so roughly 5–8 calls per case with three arms, about 150–220 calls for 30 cases, or 8–11 batches of 20. Treat this as a guess until measured.
 
 ## 10. Outputs and integrations (Phase 5)
 
@@ -372,15 +371,15 @@ Every task ends with `npm run check` (typecheck + tests) passing. Tick the box i
 - [x] P3-10 Live smoke test on the `claude-code` backend, small diffs only, at most 5 `claude` calls (`test/fixtures/seeded-bug*.diff`). No API key, so no live `api` call. Calibrate `config/estimates.json` from the measured usage, log it in `BUILD_LOG.md`; commit.
 
 ### Phase 4 — Opus 5.5 — benchmark. Read §9, §8.
-- [ ] P4-01 `bench/mine.ts`: collect candidate (B, F) pairs from the §9 sources into `bench/candidates.jsonl`.
-- [ ] P4-02 `bench/validate.ts` + test: blame check and filters; write `bench/cases/<id>.json`; clean-case selection.
-- [ ] P4-03 Manual pass; `bench/cases/README.md` lists every case with its source link and the dev / test split.
-- [ ] P4-04 `bench/arms.ts`: the arms as config presets over the real pipeline on the `claude-code` backend (Fable arms only if approved, §9).
-- [ ] P4-05 `bench/run.ts` + test: resumable runner in batches (`--max-calls` per batch, stop on a usage-limit error), usage ledger `bench/results/usage.jsonl` per run (§9 Usage control).
+- [x] P4-01 `bench/mine.ts`: collect candidate (B, F) pairs from the §9 sources into `bench/candidates.jsonl`.
+- [x] P4-02 `bench/validate.ts` + test: blame check and filters; write `bench/cases/<id>.json`; clean-case selection.
+- [x] P4-03 Manual pass; `bench/cases/README.md` lists every case with its source link and the dev / test split.
+- [ ] P4-04 `bench/arms.ts`: the three arms (`tierview`, `all-sonnet`, `all-opus`) as config presets over the real pipeline on the `claude-code` backend; no Fable arm (§9).
+- [ ] P4-05 `bench/run.ts` + test: resumable runner in batches (≤ 20 calls per batch, stop on a usage-limit error), usage ledger `bench/results/usage.jsonl` per run (§9 Usage control).
 - [ ] P4-06 `bench/judge.ts` + test: location pre-filter, blind judge, audit sample export.
 - [ ] P4-07 `bench/metrics.ts` + test: every metric in §9, bootstrap CI, McNemar.
-- [ ] P4-08 `tierview models --probe`, ask Mohamed about Fable, then pilot on 5 cases. Report measured calls, tokens and API-equivalent cost, and the projection in batches and days. **Stop and ask Mohamed.**
-- [ ] P4-09 Tune thresholds on the dev split from saved outputs; commit the frozen config.
+- [ ] P4-08 Pilot on 5 cases in batches of ≤ 20 calls, no Fable. Report measured calls, tokens and API-equivalent cost, and the projection in batches. **Stop and ask Mohamed.**
+- [ ] P4-09 Tune risk weights and thresholds on the dev split from saved outputs and Tier 0 routing recall (includes the "payment" false positive on `estimate.ts`, Phase 2 issue); commit the frozen config.
 - [ ] P4-10 Full run on the test split in batches across days, each started by Mohamed; judge audit.
 - [ ] P4-11 `bench/chart.ts` → `chart.svg`; `bench/results/RESULTS.md`; update `BUILD_LOG.md`; commit.
 
@@ -402,12 +401,12 @@ Every task ends with `npm run check` (typecheck + tests) passing. Tick the box i
 
 ## 12. Risks and open decisions
 
-- **The tagline is a claim.** If tierview's recall on the test split is clearly below all-fable's, or its cost is nearer Opus than Sonnet, change the tagline to what the numbers say. Publishing an honest "87% of the recall at 24% of the cost" is better for this repo's audience than an unsupported slogan.
-- **`all-fable-low` may beat the cascade.** One model at low effort is simpler and shares one cache. If it wins, the project's value becomes the receipt, the budget cap and the benchmark, and the default config should change.
+- **The tagline is a claim.** If tierview's recall on the test split is clearly below all-opus's, or its cost is nearer Opus than Sonnet, change the tagline to what the numbers say. With no measured Fable arm (§9), the tagline cannot say "Fable-level". Publishing an honest "87% of the recall at 24% of the cost" is better for this repo's audience than an unsupported slogan.
+- **A single strong model at low effort may beat the cascade.** The planned `all-fable-low` arm was dropped (no Fable calls, §9), so this stays untested; `all-sonnet` is the only single-model low-effort arm. The write-up says so.
 - **Routing misses.** A bug in a boring-looking hunk goes to Sonnet at low effort. Routing recall (§9) quantifies this; escalation rules E1–E3 are the mitigation.
 - **Confidence calibration** may be too weak to drive escalation. If so, fall back to E2–E5 only and say so.
 - **Benchmark size.** About 14 buggy test cases (30 cases in all, run on a Pro plan) gives very wide confidence intervals. Report the intervals, not just the point estimates, and treat the result as a pilot-scale comparison, not proof.
-- **Fable may not be on the plan,** or may bill usage credits. Then the all-Fable arms are dropped and the all-Fable number is an estimate (§9). The tagline cannot claim "Fable-level" without a measured Fable arm.
+- **Fable is not measured.** No Fable calls in Phase 4 (§9); the all-Fable number is calculated. The tagline cannot claim "Fable-level" without a measured Fable arm.
 - **Prices change.** `config/prices.json` carries `as_of`; the receipt prints it.
 
 ## 13. Kickoff prompts
@@ -416,6 +415,6 @@ Paste one of these into a fresh chat opened in this folder.
 
 - **Phase 2**: "Read PLAN.md §0–§4, the dry-run paragraph of §7, and §8. Do tasks P2-01 to P2-08 in order. Tick each box, run `npm run check` after each task, add a Phase 2 entry to BUILD_LOG.md, commit, and stop."
 - **Phase 3**: "Read PLAN.md §0 and §5–§8, then `src/types.ts`. Do P3-01 to P3-10 in order. Ask me before any real API call. Tick boxes, log in BUILD_LOG.md, commit, and stop."
-- **Phase 4**: "Read PLAN.md §5a, §8 and §9. Do P4-01 to P4-08, then stop and report the pilot usage and the projection in batches. Ask me before using Fable and before every batch."
+- **Phase 4**: "Read PLAN.md §5a, §8 and §9. Do P4-01 to P4-08, then stop and report the pilot usage and the projection in batches. No Fable calls; at most 20 `claude` calls per batch; ask me before every batch."
 - **Phase 5**: "Read PLAN.md §8 and §10. Do P5-01 to P5-07. Tick boxes, log in BUILD_LOG.md, commit, and stop."
 - **Phase 6**: "Read PLAN.md §1, §12 and bench/results/RESULTS.md. Do P6-01 to P6-05. Every number in the README must come from RESULTS.md."

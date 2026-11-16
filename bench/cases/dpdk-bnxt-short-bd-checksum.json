@@ -1,0 +1,36 @@
+{
+  "id": "dpdk-bnxt-short-bd-checksum",
+  "kind": "buggy",
+  "split": "dev",
+  "pilot": false,
+  "repo": "DPDK/dpdk",
+  "language": "C",
+  "commit": "2feea0f3b8b0546ce0c1c6d9732f18c1e00bd53a",
+  "commit_date": "2026-06-10T17:01:54+02:00",
+  "subject": "net/bnxt: modify check for short Tx BD",
+  "url": "https://github.com/DPDK/dpdk/commit/2feea0f3b8b0546ce0c1c6d9732f18c1e00bd53a",
+  "stats": {
+    "files": 1,
+    "added": 1,
+    "deleted": 2
+  },
+  "fix": {
+    "sha": "1706d2d4711d85cc7fd4daa7d21dbc3127399a31",
+    "date": "2026-11-11T04:29:02.000+01:00",
+    "subject": "net/bnxt: use long descriptors for Tx checksum offload",
+    "url": "https://github.com/DPDK/dpdk/commit/1706d2d4711d85cc7fd4daa7d21dbc3127399a31",
+    "link": "fixes-trailer",
+    "files": [
+      "drivers/net/bnxt/bnxt_txr.c"
+    ],
+    "bug": "Checksum-offload flags were dropped from the long-descriptor check, but they are written to the second descriptor, which only a long BD has, so checksum offload silently fails."
+  },
+  "faulty": [
+    {
+      "file": "drivers/net/bnxt/bnxt_txr.c",
+      "lines": [
+        114
+      ]
+    }
+  ]
+}

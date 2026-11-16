@@ -1,0 +1,41 @@
+{
+  "id": "dpdk-procinfo-eeprom-loop",
+  "kind": "buggy",
+  "split": "test",
+  "pilot": false,
+  "repo": "DPDK/dpdk",
+  "language": "C",
+  "commit": "0084463ea0042f15b3ef50d9e4c47dbe4d3704b1",
+  "commit_date": "2022-11-15T10:51:58+01:00",
+  "subject": "app/procinfo: dump module EEPROM info",
+  "url": "https://github.com/DPDK/dpdk/commit/0084463ea0042f15b3ef50d9e4c47dbe4d3704b1",
+  "stats": {
+    "files": 2,
+    "added": 57,
+    "deleted": 1
+  },
+  "fix": {
+    "sha": "8b10621b79e2a33ad32944177d4b5ad675f8455d",
+    "date": "2026-11-12T18:04:54.000+01:00",
+    "subject": "app/procinfo: fix module EEPROM dump of multiple ports",
+    "url": "https://github.com/DPDK/dpdk/commit/8b10621b79e2a33ad32944177d4b5ad675f8455d",
+    "link": "fixes-trailer",
+    "files": [
+      "app/proc-info/main.c"
+    ],
+    "bug": "The EEPROM dump stops at the first port whose module EEPROM cannot be read, hiding all later ports."
+  },
+  "faulty": [
+    {
+      "file": "app/proc-info/main.c",
+      "lines": [
+        1609,
+        1610,
+        1611,
+        1620,
+        1621,
+        1622
+      ]
+    }
+  ]
+}

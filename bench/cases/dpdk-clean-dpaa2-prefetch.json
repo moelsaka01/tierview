@@ -1,0 +1,19 @@
+{
+  "id": "dpdk-clean-dpaa2-prefetch",
+  "kind": "clean",
+  "split": "test",
+  "pilot": false,
+  "repo": "DPDK/dpdk",
+  "language": "C",
+  "commit": "876896628dc391f1d7f5a6581bc8bc45d993fb68",
+  "commit_date": "2025-10-22T18:51:10+02:00",
+  "subject": "net/dpaa2: optimize to prefetch next parser result",
+  "url": "https://github.com/DPDK/dpdk/commit/876896628dc391f1d7f5a6581bc8bc45d993fb68",
+  "stats": {
+    "files": 1,
+    "added": 30,
+    "deleted": 34
+  },
+  "fix": null,
+  "faulty": []
+}

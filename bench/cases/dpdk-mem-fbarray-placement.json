@@ -1,0 +1,42 @@
+{
+  "id": "dpdk-mem-fbarray-placement",
+  "kind": "buggy",
+  "split": "test",
+  "pilot": false,
+  "repo": "DPDK/dpdk",
+  "language": "C",
+  "commit": "3368bc8600e8c23c3e40d40ccf81438fe9ace9fd",
+  "commit_date": "2026-06-04T10:16:20+02:00",
+  "subject": "mem: allocate all VA space in one go",
+  "url": "https://github.com/DPDK/dpdk/commit/3368bc8600e8c23c3e40d40ccf81438fe9ace9fd",
+  "stats": {
+    "files": 6,
+    "added": 157,
+    "deleted": 18
+  },
+  "fix": {
+    "sha": "855b09487dec82e12cf9230ff86518e323699cee",
+    "date": "2026-11-12T17:51:39.000+01:00",
+    "subject": "mem: fix multi-process crash due to fbarray placement",
+    "url": "https://github.com/DPDK/dpdk/commit/855b09487dec82e12cf9230ff86518e323699cee",
+    "link": "fixes-trailer",
+    "files": [
+      "lib/eal/common/eal_common_dynmem.c"
+    ],
+    "bug": "Reserving all VA space in one go places the first fbarray right after the memseg lists, which crashes secondary processes."
+  },
+  "faulty": [
+    {
+      "file": "lib/eal/common/eal_common_dynmem.c",
+      "lines": [
+        148,
+        152,
+        153,
+        155,
+        156,
+        159,
+        163
+      ]
+    }
+  ]
+}

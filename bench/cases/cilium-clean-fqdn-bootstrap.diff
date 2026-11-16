@@ -1,0 +1,33 @@
+diff --git a/pkg/fqdn/namemanager/gc.go b/pkg/fqdn/namemanager/gc.go
+index 53b43f9b4f..8a778b8166 100644
+--- a/pkg/fqdn/namemanager/gc.go
++++ b/pkg/fqdn/namemanager/gc.go
+@@ -38,6 +38,11 @@ const dnsGCJobName = "dns-garbage-collector-job"
+ // finally deleted from the global DNSCache. Until then, each of these IPs is
+ // inserted into the global cache as a synthetic DNS lookup.
+ func (n *manager) doGC(ctx context.Context) error {
++	if !n.hasBootstrapCompleted() {
++		n.logger.Debug("Skipping DNS GC since bootstrap is not yet completed")
++		return nil
++	}
++
+ 	var (
+ 		GCStart = time.Now()
+ 
+diff --git a/pkg/fqdn/namemanager/manager.go b/pkg/fqdn/namemanager/manager.go
+index e52edd7b09..21e36004ea 100644
+--- a/pkg/fqdn/namemanager/manager.go
++++ b/pkg/fqdn/namemanager/manager.go
+@@ -244,6 +244,12 @@ func (n *manager) waitForEndpointRestore(ctx context.Context, _ cell.Health) err
+ 	return nil
+ }
+ 
++func (n *manager) hasBootstrapCompleted() bool {
++	n.RLock()
++	defer n.RUnlock()
++	return n.bootstrapCompleted
++}
++
+ // updateDNSIPs updates the IPs for a DNS name. It returns whether the name's IPs
+ // changed and ipcacheRevision, a revision number to pass to WaitForRevision()
+ func (n *manager) updateDNSIPs(lookupTime time.Time, dnsName string, lookupIPs *fqdn.DNSIPRecords) (updated bool, ipcacheRevision uint64) {

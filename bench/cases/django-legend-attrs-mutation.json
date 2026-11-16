@@ -1,0 +1,38 @@
+{
+  "id": "django-legend-attrs-mutation",
+  "kind": "buggy",
+  "split": "dev",
+  "pilot": true,
+  "repo": "django/django",
+  "language": "Python",
+  "commit": "0eec2a163a4b2ea4e82c53ae1d7b71bf43ac911d",
+  "commit_date": "2025-11-13T11:22:44-05:00",
+  "subject": "Fixed #36724 -- Removed invalid \"for\" attribute on <legend> tags.",
+  "url": "https://github.com/django/django/commit/0eec2a163a4b2ea4e82c53ae1d7b71bf43ac911d",
+  "stats": {
+    "files": 7,
+    "added": 52,
+    "deleted": 34
+  },
+  "fix": {
+    "sha": "817df1c4d6d38f416460d7d9354d7deab9d35139",
+    "date": "2026-10-29T08:01:01.000-04:00",
+    "subject": "Fixed #37463 -- Fixed attrs mutation in legend_tag().",
+    "url": "https://github.com/django/django/commit/817df1c4d6d38f416460d7d9354d7deab9d35139",
+    "link": "regression-in",
+    "files": [
+      "django/forms/boundfield.py",
+      "docs/releases/6.1.3.txt",
+      "tests/forms_tests/tests/test_forms.py"
+    ],
+    "bug": "BoundField.legend_tag() mutates the caller's attrs dict."
+  },
+  "faulty": [
+    {
+      "file": "django/forms/boundfield.py",
+      "lines": [
+        195
+      ]
+    }
+  ]
+}

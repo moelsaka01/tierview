@@ -1,0 +1,39 @@
+{
+  "id": "django-lookup-rhs-iterator",
+  "kind": "buggy",
+  "split": "test",
+  "pilot": false,
+  "repo": "django/django",
+  "language": "Python",
+  "commit": "7b54ddd5e64c96c641b70bb5f0e958a9e2035fb2",
+  "commit_date": "2025-12-10T17:45:51-05:00",
+  "subject": "Refs #36025 -- Made get_prep_lookup() pass output_field when wrapping direct values in Value.",
+  "url": "https://github.com/django/django/commit/7b54ddd5e64c96c641b70bb5f0e958a9e2035fb2",
+  "stats": {
+    "files": 2,
+    "added": 36,
+    "deleted": 21
+  },
+  "fix": {
+    "sha": "0751d5fed159fd9ff7edba522ece13c8c9d2a0d0",
+    "date": "2026-09-02T14:15:43.000+02:00",
+    "subject": "Fixed #37311 -- Prevented consumption of rhs iterators in annotation lookups.",
+    "url": "https://github.com/django/django/commit/0751d5fed159fd9ff7edba522ece13c8c9d2a0d0",
+    "link": "regression-in",
+    "files": [
+      "django/db/models/lookups.py",
+      "docs/releases/6.1.1.txt",
+      "tests/lookup/tests.py"
+    ],
+    "bug": "get_prep_lookup() consumes iterator right-hand sides in annotation lookups, so the query sees an empty list."
+  },
+  "faulty": [
+    {
+      "file": "django/db/models/lookups.py",
+      "lines": [
+        290,
+        300
+      ]
+    }
+  ]
+}

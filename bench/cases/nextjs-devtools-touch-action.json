@@ -1,0 +1,37 @@
+{
+  "id": "nextjs-devtools-touch-action",
+  "kind": "buggy",
+  "split": "test",
+  "pilot": false,
+  "repo": "vercel/next.js",
+  "language": "TypeScript",
+  "commit": "907e1b671cd81240fc8f1020b0dc847979a81376",
+  "commit_date": "2025-12-04T15:18:36+01:00",
+  "subject": "[devtool] make the draggable content selective (#86816)",
+  "url": "https://github.com/vercel/next.js/commit/907e1b671cd81240fc8f1020b0dc847979a81376",
+  "stats": {
+    "files": 2,
+    "added": 3,
+    "deleted": 14
+  },
+  "fix": {
+    "sha": "27a8eb09990ce15ada9a6d844d159097ab660588",
+    "date": "2026-08-23T11:56:26.000-07:00",
+    "subject": "[devtools] Fix indicator dragging on touch screens (#97723)",
+    "url": "https://github.com/vercel/next.js/commit/27a8eb09990ce15ada9a6d844d159097ab660588",
+    "link": "pr-ref",
+    "files": [
+      "packages/next/src/next-devtools/dev-overlay/components/errors/dev-tools-indicator/draggable.tsx",
+      "test/development/app-dir/devtools-position/default-position.test.ts"
+    ],
+    "bug": "Removing `touch-action: none` from the draggable devtools indicator breaks dragging on touch screens."
+  },
+  "faulty": [
+    {
+      "file": "packages/next/src/next-devtools/dev-overlay/components/errors/dev-tools-indicator/draggable.tsx",
+      "lines": [
+        146
+      ]
+    }
+  ]
+}

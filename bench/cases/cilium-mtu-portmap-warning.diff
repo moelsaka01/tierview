@@ -1,0 +1,35 @@
+diff --git a/pkg/mtu/cell.go b/pkg/mtu/cell.go
+index 216a28f0fa..7b71e65a54 100644
+--- a/pkg/mtu/cell.go
++++ b/pkg/mtu/cell.go
+@@ -122,6 +122,21 @@ func parsePLPMTUDMode(cc Config) (string, error) {
+ 	}
+ }
+ 
++// warnRouteMTUForCNIChaining warns when CNI chaining is combined with a feature
++// adding encapsulation or encryption overhead, but the route MTU is not managed.
++func warnRouteMTUForCNIChaining(p mtuParams, cc Config) {
++	if p.CNI.GetChainingMode() == "none" || cc.EnableRouteMTUForCNIChaining {
++		return
++	}
++	if netConf := p.CNI.GetCustomNetConf(); netConf != nil && netConf.EnableRouteMTU {
++		return
++	}
++	if p.WgConfig.Enabled() || p.TunnelConfig.ShouldAdaptMTU() {
++		p.Log.Warn("Encapsulation or encryption overhead is not accounted for in the Pod MTU, " +
++			"which might lead to fragmentation. Consider setting cni.enableRouteMTUForCNIChaining=true")
++	}
++}
++
+ func newForCell(lc cell.Lifecycle, p mtuParams, cc Config) (MTU, error) {
+ 	plpmtudMode, err := parsePLPMTUDMode(cc)
+ 	if err != nil {
+@@ -141,6 +156,8 @@ func newForCell(lc cell.Lifecycle, p mtuParams, cc Config) (MTU, error) {
+ 				tunnelOverIPv6,
+ 			)
+ 
++			warnRouteMTUForCNIChaining(p, cc)
++
+ 			configuredMTU := cc.MTU
+ 			if mtu := p.CNI.GetMTU(); mtu > 0 {
+ 				configuredMTU = mtu

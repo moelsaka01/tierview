@@ -1,0 +1,323 @@
+diff --git a/docs/interop/nbd.txt b/docs/interop/nbd.txt
+index 9aae5e1f29..18efb251de 100644
+--- a/docs/interop/nbd.txt
++++ b/docs/interop/nbd.txt
+@@ -69,4 +69,4 @@ NBD_CMD_BLOCK_STATUS for "qemu:dirty-bitmap:", NBD_CMD_CACHE
+ NBD_CMD_FLAG_FAST_ZERO
+ * 5.2: NBD_CMD_BLOCK_STATUS for "qemu:allocation-depth"
+ * 7.1: NBD_FLAG_CAN_MULTI_CONN for shareable writable exports
+-* 8.2: NBD_OPT_EXTENDED_HEADERS
++* 8.2: NBD_OPT_EXTENDED_HEADERS, NBD_FLAG_BLOCK_STATUS_PAYLOAD
+diff --git a/nbd/server.c b/nbd/server.c
+index 2dce9c3ad6..859c163d19 100644
+--- a/nbd/server.c
++++ b/nbd/server.c
+@@ -512,6 +512,9 @@ static int nbd_negotiate_handle_export_name(NBDClient *client, bool no_zeroes,
+     if (client->mode >= NBD_MODE_STRUCTURED) {
+         myflags |= NBD_FLAG_SEND_DF;
+     }
++    if (client->mode >= NBD_MODE_EXTENDED && client->contexts.count) {
++        myflags |= NBD_FLAG_BLOCK_STAT_PAYLOAD;
++    }
+     trace_nbd_negotiate_new_style_size_flags(client->exp->size, myflags);
+     stq_be_p(buf, client->exp->size);
+     stw_be_p(buf + 8, myflags);
+@@ -699,6 +702,10 @@ static int nbd_negotiate_handle_info(NBDClient *client, Error **errp)
+     if (client->mode >= NBD_MODE_STRUCTURED) {
+         myflags |= NBD_FLAG_SEND_DF;
+     }
++    if (client->mode >= NBD_MODE_EXTENDED &&
++        (client->contexts.count || client->opt == NBD_OPT_INFO)) {
++        myflags |= NBD_FLAG_BLOCK_STAT_PAYLOAD;
++    }
+     trace_nbd_negotiate_new_style_size_flags(exp->size, myflags);
+     stq_be_p(buf, exp->size);
+     stw_be_p(buf + 8, myflags);
+@@ -2420,6 +2427,90 @@ static int coroutine_fn nbd_co_send_bitmap(NBDClient *client,
+     return nbd_co_send_extents(client, request, ea, last, context_id, errp);
+ }
+ 
++/*
++ * nbd_co_block_status_payload_read
++ * Called when a client wants a subset of negotiated contexts via a
++ * BLOCK_STATUS payload.  Check the payload for valid length and
++ * contents.  On success, return 0 with request updated to effective
++ * length.  If request was invalid but all payload consumed, return 0
++ * with request->len and request->contexts->count set to 0 (which will
++ * trigger an appropriate NBD_EINVAL response later on).  Return
++ * negative errno if the payload was not fully consumed.
++ */
++static int
++nbd_co_block_status_payload_read(NBDClient *client, NBDRequest *request,
++                                 Error **errp)
++{
++    uint64_t payload_len = request->len;
++    g_autofree char *buf = NULL;
++    size_t count, i, nr_bitmaps;
++    uint32_t id;
++
++    if (payload_len > NBD_MAX_BUFFER_SIZE) {
++        error_setg(errp, "len (%" PRIu64 ") is larger than max len (%u)",
++                   request->len, NBD_MAX_BUFFER_SIZE);
++        return -EINVAL;
++    }
++
++    assert(client->contexts.exp == client->exp);
++    nr_bitmaps = client->exp->nr_export_bitmaps;
++    request->contexts = g_new0(NBDMetaContexts, 1);
++    request->contexts->exp = client->exp;
++
++    if (payload_len % sizeof(uint32_t) ||
++        payload_len < sizeof(NBDBlockStatusPayload) ||
++        payload_len > (sizeof(NBDBlockStatusPayload) +
++                       sizeof(id) * client->contexts.count)) {
++        goto skip;
++    }
++
++    buf = g_malloc(payload_len);
++    if (nbd_read(client->ioc, buf, payload_len,
++                 "CMD_BLOCK_STATUS data", errp) < 0) {
++        return -EIO;
++    }
++    trace_nbd_co_receive_request_payload_received(request->cookie,
++                                                  payload_len);
++    request->contexts->bitmaps = g_new0(bool, nr_bitmaps);
++    count = (payload_len - sizeof(NBDBlockStatusPayload)) / sizeof(id);
++    payload_len = 0;
++
++    for (i = 0; i < count; i++) {
++        id = ldl_be_p(buf + sizeof(NBDBlockStatusPayload) + sizeof(id) * i);
++        if (id == NBD_META_ID_BASE_ALLOCATION) {
++            if (!client->contexts.base_allocation ||
++                request->contexts->base_allocation) {
++                goto skip;
++            }
++            request->contexts->base_allocation = true;
++        } else if (id == NBD_META_ID_ALLOCATION_DEPTH) {
++            if (!client->contexts.allocation_depth ||
++                request->contexts->allocation_depth) {
++                goto skip;
++            }
++            request->contexts->allocation_depth = true;
++        } else {
++            unsigned idx = id - NBD_META_ID_DIRTY_BITMAP;
++
++            if (idx >= nr_bitmaps || !client->contexts.bitmaps[idx] ||
++                request->contexts->bitmaps[idx]) {
++                goto skip;
++            }
++            request->contexts->bitmaps[idx] = true;
++        }
++    }
++
++    request->len = ldq_be_p(buf);
++    request->contexts->count = count;
++    return 0;
++
++ skip:
++    trace_nbd_co_receive_block_status_payload_compliance(request->from,
++                                                         request->len);
++    request->len = request->contexts->count = 0;
++    return nbd_drop(client->ioc, payload_len, errp);
++}
++
+ /* nbd_co_receive_request
+  * Collect a client request. Return 0 if request looks valid, -EIO to drop
+  * connection right away, -EAGAIN to indicate we were interrupted and the
+@@ -2505,7 +2596,18 @@ static int coroutine_fn nbd_co_receive_request(NBDRequestData *req,
+         break;
+ 
+     case NBD_CMD_BLOCK_STATUS:
+-        request->contexts = &client->contexts;
++        if (extended_with_payload) {
++            ret = nbd_co_block_status_payload_read(client, request, errp);
++            if (ret < 0) {
++                return ret;
++            }
++            /* payload now consumed */
++            check_length = false;
++            payload_len = 0;
++            valid_flags |= NBD_CMD_FLAG_PAYLOAD_LEN;
++        } else {
++            request->contexts = &client->contexts;
++        }
+         valid_flags |= NBD_CMD_FLAG_REQ_ONE;
+         break;
+ 
+@@ -2750,16 +2852,16 @@ static coroutine_fn int nbd_handle_request(NBDClient *client,
+ 
+     case NBD_CMD_BLOCK_STATUS:
+         assert(request->contexts);
+-        if (!request->len) {
+-            return nbd_send_generic_reply(client, request, -EINVAL,
+-                                          "need non-zero length", errp);
+-        }
+         assert(client->mode >= NBD_MODE_EXTENDED ||
+                request->len <= UINT32_MAX);
+         if (request->contexts->count) {
+             bool dont_fragment = request->flags & NBD_CMD_FLAG_REQ_ONE;
+             int contexts_remaining = request->contexts->count;
+ 
++            if (!request->len) {
++                return nbd_send_generic_reply(client, request, -EINVAL,
++                                              "need non-zero length", errp);
++            }
+             if (request->contexts->base_allocation) {
+                 ret = nbd_co_send_block_status(client, request,
+                                                exp->common.blk,
+@@ -2896,8 +2998,9 @@ static coroutine_fn void nbd_trip(void *opaque)
+         goto disconnect;
+     }
+ 
+-    /* We must disconnect after NBD_CMD_WRITE if we did not
+-     * read the payload.
++    /*
++     * We must disconnect after NBD_CMD_WRITE or BLOCK_STATUS with
++     * payload if we did not read the payload.
+      */
+     if (!req->complete) {
+         error_setg(&local_err, "Request handling failed in intermediate state");
+diff --git a/nbd/trace-events b/nbd/trace-events
+index cb5d719ed6..00ae3216a1 100644
+--- a/nbd/trace-events
++++ b/nbd/trace-events
+@@ -70,6 +70,7 @@ nbd_co_send_chunk_read(uint64_t cookie, uint64_t offset, void *data, uint64_t si
+ nbd_co_send_chunk_read_hole(uint64_t cookie, uint64_t offset, uint64_t size) "Send structured read hole reply: cookie = %" PRIu64 ", offset = %" PRIu64 ", len = %" PRIu64
+ nbd_co_send_extents(uint64_t cookie, unsigned int extents, uint32_t id, uint64_t length, int last) "Send block status reply: cookie = %" PRIu64 ", extents = %u, context = %d (extents cover %" PRIu64 " bytes, last chunk = %d)"
+ nbd_co_send_chunk_error(uint64_t cookie, int err, const char *errname, const char *msg) "Send structured error reply: cookie = %" PRIu64 ", error = %d (%s), msg = '%s'"
++nbd_co_receive_block_status_payload_compliance(uint64_t from, uint64_t len) "client sent unusable block status payload: from=0x%" PRIx64 ", len=0x%" PRIx64
+ nbd_co_receive_request_decode_type(uint64_t cookie, uint16_t type, const char *name) "Decoding type: cookie = %" PRIu64 ", type = %" PRIu16 " (%s)"
+ nbd_co_receive_request_payload_received(uint64_t cookie, uint64_t len) "Payload received: cookie = %" PRIu64 ", len = %" PRIu64
+ nbd_co_receive_ext_payload_compliance(uint64_t from, uint64_t len) "client sent non-compliant write without payload flag: from=0x%" PRIx64 ", len=0x%" PRIx64
+diff --git a/qemu-nbd.c b/qemu-nbd.c
+index 1a39bb8fac..186e6468b1 100644
+--- a/qemu-nbd.c
++++ b/qemu-nbd.c
+@@ -219,6 +219,7 @@ static int qemu_nbd_client_list(SocketAddress *saddr, QCryptoTLSCreds *tls,
+                 [NBD_FLAG_SEND_RESIZE_BIT]          = "resize",
+                 [NBD_FLAG_SEND_CACHE_BIT]           = "cache",
+                 [NBD_FLAG_SEND_FAST_ZERO_BIT]       = "fast-zero",
++                [NBD_FLAG_BLOCK_STAT_PAYLOAD_BIT]   = "block-status-payload",
+             };
+ 
+             printf("  size:  %" PRIu64 "\n", list[i].size);
+diff --git a/tests/qemu-iotests/223.out b/tests/qemu-iotests/223.out
+index 32f05f1c9a..e5e7f42caa 100644
+--- a/tests/qemu-iotests/223.out
++++ b/tests/qemu-iotests/223.out
+@@ -83,7 +83,7 @@ exports available: 0
+ exports available: 3
+  export: 'n'
+   size:  4194304
+-  flags: 0x58f ( readonly flush fua df multi cache )
++  flags: 0x158f ( readonly flush fua df multi cache block-status-payload )
+   min block: 1
+   opt block: 4096
+   max block: 33554432
+@@ -94,7 +94,7 @@ exports available: 3
+  export: 'n2'
+   description: some text
+   size:  4194304
+-  flags: 0xded ( flush fua trim zeroes df multi cache fast-zero )
++  flags: 0x1ded ( flush fua trim zeroes df multi cache fast-zero block-status-payload )
+   min block: 1
+   opt block: 4096
+   max block: 33554432
+@@ -104,7 +104,7 @@ exports available: 3
+    qemu:dirty-bitmap:b2
+  export: 'n3'
+   size:  4194304
+-  flags: 0x58f ( readonly flush fua df multi cache )
++  flags: 0x158f ( readonly flush fua df multi cache block-status-payload )
+   min block: 1
+   opt block: 4096
+   max block: 33554432
+@@ -205,7 +205,7 @@ exports available: 0
+ exports available: 3
+  export: 'n'
+   size:  4194304
+-  flags: 0x58f ( readonly flush fua df multi cache )
++  flags: 0x158f ( readonly flush fua df multi cache block-status-payload )
+   min block: 1
+   opt block: 4096
+   max block: 33554432
+@@ -216,7 +216,7 @@ exports available: 3
+  export: 'n2'
+   description: some text
+   size:  4194304
+-  flags: 0xded ( flush fua trim zeroes df multi cache fast-zero )
++  flags: 0x1ded ( flush fua trim zeroes df multi cache fast-zero block-status-payload )
+   min block: 1
+   opt block: 4096
+   max block: 33554432
+@@ -226,7 +226,7 @@ exports available: 3
+    qemu:dirty-bitmap:b2
+  export: 'n3'
+   size:  4194304
+-  flags: 0x58f ( readonly flush fua df multi cache )
++  flags: 0x158f ( readonly flush fua df multi cache block-status-payload )
+   min block: 1
+   opt block: 4096
+   max block: 33554432
+diff --git a/tests/qemu-iotests/307.out b/tests/qemu-iotests/307.out
+index 2b9a6a67a1..f645f3315f 100644
+--- a/tests/qemu-iotests/307.out
++++ b/tests/qemu-iotests/307.out
+@@ -15,7 +15,7 @@ wrote 4096/4096 bytes at offset 0
+ exports available: 1
+  export: 'fmt'
+   size:  67108864
+-  flags: 0x58f ( readonly flush fua df multi cache )
++  flags: 0x158f ( readonly flush fua df multi cache block-status-payload )
+   min block: XXX
+   opt block: XXX
+   max block: XXX
+@@ -44,7 +44,7 @@ exports available: 1
+ exports available: 1
+  export: 'fmt'
+   size:  67108864
+-  flags: 0x58f ( readonly flush fua df multi cache )
++  flags: 0x158f ( readonly flush fua df multi cache block-status-payload )
+   min block: XXX
+   opt block: XXX
+   max block: XXX
+@@ -76,7 +76,7 @@ exports available: 1
+ exports available: 2
+  export: 'fmt'
+   size:  67108864
+-  flags: 0x58f ( readonly flush fua df multi cache )
++  flags: 0x158f ( readonly flush fua df multi cache block-status-payload )
+   min block: XXX
+   opt block: XXX
+   max block: XXX
+@@ -86,7 +86,7 @@ exports available: 2
+  export: 'export1'
+   description: This is the writable second export
+   size:  67108864
+-  flags: 0xded ( flush fua trim zeroes df multi cache fast-zero )
++  flags: 0x1ded ( flush fua trim zeroes df multi cache fast-zero block-status-payload )
+   min block: XXX
+   opt block: XXX
+   max block: XXX
+@@ -113,7 +113,7 @@ exports available: 1
+  export: 'export1'
+   description: This is the writable second export
+   size:  67108864
+-  flags: 0xded ( flush fua trim zeroes df multi cache fast-zero )
++  flags: 0x1ded ( flush fua trim zeroes df multi cache fast-zero block-status-payload )
+   min block: XXX
+   opt block: XXX
+   max block: XXX
+diff --git a/tests/qemu-iotests/tests/nbd-qemu-allocation.out b/tests/qemu-iotests/tests/nbd-qemu-allocation.out
+index 1db16926ed..56b57c69ed 100644
+--- a/tests/qemu-iotests/tests/nbd-qemu-allocation.out
++++ b/tests/qemu-iotests/tests/nbd-qemu-allocation.out
+@@ -17,7 +17,7 @@ wrote 2097152/2097152 bytes at offset 1048576
+ exports available: 1
+  export: ''
+   size:  4194304
+-  flags: 0x48f ( readonly flush fua df cache )
++  flags: 0x148f ( readonly flush fua df cache block-status-payload )
+   min block: 1
+   opt block: 4096
+   max block: 33554432

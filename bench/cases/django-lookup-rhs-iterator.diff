@@ -1,0 +1,102 @@
+diff --git a/django/db/models/lookups.py b/django/db/models/lookups.py
+index f15147a60b..769b9c9198 100644
+--- a/django/db/models/lookups.py
++++ b/django/db/models/lookups.py
+@@ -287,33 +287,28 @@ class FieldGetDbPrepValueIterableMixin(FieldGetDbPrepValueMixin):
+     def get_prep_lookup(self):
+         if hasattr(self.rhs, "resolve_expression"):
+             return self.rhs
+-        contains_expr = False
++        if any(hasattr(value, "resolve_expression") for value in self.rhs):
++            # Wrap direct values in Value expressions so they are handled by
++            # the database at compilation time, along with other expressions.
++            return ExpressionList(
++                *[
++                    (
++                        value
++                        if hasattr(value, "resolve_expression")
++                        else Value(value, self.lhs.output_field)
++                    )
++                    for value in self.rhs
++                ]
++            )
+         prepared_values = []
+         for rhs_value in self.rhs:
+-            if hasattr(rhs_value, "resolve_expression"):
+-                # An expression will be handled by the database but can coexist
+-                # alongside real values.
+-                contains_expr = True
+-            elif (
++            if (
+                 self.prepare_rhs
+                 and hasattr(self.lhs, "output_field")
+                 and hasattr(self.lhs.output_field, "get_prep_value")
+             ):
+                 rhs_value = self.lhs.output_field.get_prep_value(rhs_value)
+             prepared_values.append(rhs_value)
+-        if contains_expr:
+-            return ExpressionList(
+-                *[
+-                    # Expression defaults `str` to field references while
+-                    # lookups default them to literal values.
+-                    (
+-                        Value(prep_value, self.lhs.output_field)
+-                        if isinstance(prep_value, str)
+-                        else prep_value
+-                    )
+-                    for prep_value in prepared_values
+-                ]
+-            )
+         return prepared_values
+ 
+     def process_rhs(self, compiler, connection):
+diff --git a/tests/model_fields/test_jsonfield.py b/tests/model_fields/test_jsonfield.py
+index 7ab5d17086..d0561e14d2 100644
+--- a/tests/model_fields/test_jsonfield.py
++++ b/tests/model_fields/test_jsonfield.py
+@@ -1036,6 +1036,7 @@ class TestQuerying(TestCase):
+                 [self.objs[7]],
+             ),
+             ("value__foo__in", [F("value__bax__foo")], [self.objs[7]]),
++            ("value__foo__in", [F("value__bax__foo"), {}], [self.objs[7]]),
+             (
+                 "value__foo__in",
+                 [KeyTransform("foo", KeyTransform("bax", "value")), "baz"],
+@@ -1045,6 +1046,16 @@ class TestQuerying(TestCase):
+             ("value__foo__in", ["bar", "baz"], [self.objs[7]]),
+             ("value__bar__in", [["foo", "bar"]], [self.objs[7]]),
+             ("value__bar__in", [Value(["foo", "bar"], JSONField())], [self.objs[7]]),
++            (
++                "value__bar__in",
++                [["foo", "bar"], Value({}, JSONField())],
++                [self.objs[7]],
++            ),
++            (
++                "value__bar__in",
++                [Value(["foo", "bar"], JSONField()), {"a": "b"}],
++                [self.objs[7]],
++            ),
+             ("value__bar__in", [["foo", "bar"], ["a"]], [self.objs[7]]),
+             ("value__bax__in", [{"foo": "bar"}, {"a": "b"}], [self.objs[7]]),
+             ("value__h__in", [True, "foo"], [self.objs[4]]),
+@@ -1313,9 +1324,18 @@ class JSONNullTests(TestCase):
+ 
+     def test_filter_in(self):
+         obj = NullableJSONModel.objects.create(value=JSONNull())
++        obj2 = NullableJSONModel.objects.create(value=[1])
+         self.assertSequenceEqual(
+-            NullableJSONModel.objects.filter(value__in=[JSONNull()]),
+-            [obj],
++            NullableJSONModel.objects.filter(value__in=[JSONNull(), [1], "foo"]),
++            [obj, obj2],
++        )
++
++    def test_key_in(self):
++        obj1 = NullableJSONModel.objects.create(value={"key": None})
++        obj2 = NullableJSONModel.objects.create(value={"key": [1]})
++        self.assertSequenceEqual(
++            NullableJSONModel.objects.filter(value__key__in=[JSONNull(), [1], 0]),
++            [obj1, obj2],
+         )
+ 
+     def test_bulk_update(self):

@@ -1,0 +1,36 @@
+{
+  "id": "qemu-i8259-irq-leak",
+  "kind": "buggy",
+  "split": "dev",
+  "pilot": false,
+  "repo": "qemu/qemu",
+  "language": "C",
+  "commit": "54fbbb30d44eb4df6345bdc16869ea32eba991d3",
+  "commit_date": "2026-10-23T14:45:31+01:00",
+  "subject": "i8259.c: introduce TYPE_I8259_PIC device",
+  "url": "https://github.com/qemu/qemu/commit/54fbbb30d44eb4df6345bdc16869ea32eba991d3",
+  "stats": {
+    "files": 1,
+    "added": 118,
+    "deleted": 15
+  },
+  "fix": {
+    "sha": "24ce0031350003bfb70676f47937dac8fb3f8294",
+    "date": "2026-11-05T10:51:55.000Z",
+    "subject": "i8259.c: don't leak I8259_PIC output IRQ",
+    "url": "https://github.com/qemu/qemu/commit/24ce0031350003bfb70676f47937dac8fb3f8294",
+    "link": "fixes-trailer",
+    "files": [
+      "hw/intc/i8259.c"
+    ],
+    "bug": "The new cascaded-PIC output IRQ is allocated but never freed (leak)."
+  },
+  "faulty": [
+    {
+      "file": "hw/intc/i8259.c",
+      "lines": [
+        484
+      ]
+    }
+  ]
+}

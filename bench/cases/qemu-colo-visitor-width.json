@@ -1,0 +1,36 @@
+{
+  "id": "qemu-colo-visitor-width",
+  "kind": "buggy",
+  "split": "test",
+  "pilot": false,
+  "repo": "qemu/qemu",
+  "language": "C",
+  "commit": "0c4266ef2690312512512ad6f4e44b5ac1d44c0c",
+  "commit_date": "2020-11-11T16:52:23+08:00",
+  "subject": "net/colo-compare.c: Fix compare_timeout format issue",
+  "url": "https://github.com/qemu/qemu/commit/0c4266ef2690312512512ad6f4e44b5ac1d44c0c",
+  "stats": {
+    "files": 1,
+    "added": 6,
+    "deleted": 6
+  },
+  "fix": {
+    "sha": "4449d29d3b136adbd5e9a11ff36000125d0818a7",
+    "date": "2026-11-02T19:35:21.000+01:00",
+    "subject": "net/colo-compare: fix max_queue_size setter visitor type",
+    "url": "https://github.com/qemu/qemu/commit/4449d29d3b136adbd5e9a11ff36000125d0818a7",
+    "link": "fixes-trailer",
+    "files": [
+      "net/colo-compare.c"
+    ],
+    "bug": "The max_queue_size setter uses a uint64 visitor for a uint32_t field, accepting values that do not fit."
+  },
+  "faulty": [
+    {
+      "file": "net/colo-compare.c",
+      "lines": [
+        1144
+      ]
+    }
+  ]
+}

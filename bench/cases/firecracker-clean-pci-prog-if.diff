@@ -1,0 +1,151 @@
+diff --git a/src/pci/src/bus.rs b/src/pci/src/bus.rs
+index 7739e8d9..c0a5a45b 100644
+--- a/src/pci/src/bus.rs
++++ b/src/pci/src/bus.rs
+@@ -58,7 +58,6 @@ impl PciRoot {
+                     0,
+                     PciClassCode::BridgeDevice,
+                     &PciBridgeSubclass::HostBridge,
+-                    None,
+                     PciHeaderType::Device,
+                     0,
+                     0,
+@@ -482,7 +481,6 @@ mod tests {
+                 0x0,
+                 PciClassCode::MassStorage,
+                 &PciMassStorageSubclass::SerialScsiController,
+-                None,
+                 PciHeaderType::Device,
+                 0x13,
+                 0x12,
+diff --git a/src/pci/src/configuration.rs b/src/pci/src/configuration.rs
+index b9607d76..9159da9f 100644
+--- a/src/pci/src/configuration.rs
++++ b/src/pci/src/configuration.rs
+@@ -176,17 +176,6 @@ impl PciSubclass for PciNetworkControllerSubclass {
+     }
+ }
+ 
+-/// Trait to define a PCI class programming interface
+-///
+-/// Each combination of `PciClassCode` and `PciSubclass` can specify a
+-/// set of register-level programming interfaces.
+-/// This trait is implemented by each programming interface.
+-/// It allows use of a trait object to generate configurations.
+-pub trait PciProgrammingInterface {
+-    /// Convert this programming interface to the value used in the PCI specification.
+-    fn get_register_value(&self) -> u8;
+-}
+-
+ /// Types of PCI capabilities.
+ #[derive(Debug, PartialEq, Eq, Copy, Clone)]
+ #[allow(dead_code)]
+@@ -451,7 +440,6 @@ impl PciConfiguration {
+         revision_id: u8,
+         class_code: PciClassCode,
+         subclass: &dyn PciSubclass,
+-        programming_interface: Option<&dyn PciProgrammingInterface>,
+         header_type: PciHeaderType,
+         subsystem_vendor_id: u16,
+         subsystem_id: u16,
+@@ -473,14 +461,8 @@ impl PciConfiguration {
+                 registers[0] = (u32::from(device_id) << 16) | u32::from(vendor_id);
+                 // TODO(dverkamp): Status should be write-1-to-clear
+                 writable_bits[1] = 0x0000_ffff; // Status (r/o), command (r/w)
+-                let pi = if let Some(pi) = programming_interface {
+-                    pi.get_register_value()
+-                } else {
+-                    0
+-                };
+                 registers[2] = (u32::from(class_code.get_register_value()) << 24)
+                     | (u32::from(subclass.get_register_value()) << 16)
+-                    | (u32::from(pi) << 8)
+                     | u32::from(revision_id);
+                 writable_bits[3] = 0x0000_00ff; // Cacheline size (r/w)
+ 
+@@ -1016,17 +998,6 @@ mod tests {
+         assert_eq!(cfg.read_reg(cap_reg + 2), pba_offset);
+     }
+ 
+-    #[derive(Copy, Clone)]
+-    enum TestPi {
+-        Test = 0x5a,
+-    }
+-
+-    impl PciProgrammingInterface for TestPi {
+-        fn get_register_value(&self) -> u8 {
+-            *self as u8
+-        }
+-    }
+-
+     #[test]
+     fn class_code() {
+         let cfg = PciConfiguration::new(
+@@ -1035,7 +1006,6 @@ mod tests {
+             0x1,
+             PciClassCode::MultimediaController,
+             &PciMultimediaSubclass::AudioController,
+-            Some(&TestPi::Test),
+             PciHeaderType::Device,
+             0xABCD,
+             0x2468,
+@@ -1049,7 +1019,7 @@ mod tests {
+         let prog_if = (class_reg >> 8) & 0xFF;
+         assert_eq!(class_code, 0x04);
+         assert_eq!(subclass, 0x01);
+-        assert_eq!(prog_if, 0x5a);
++        assert_eq!(prog_if, 0x0);
+     }
+ 
+     #[test]
+@@ -1092,7 +1062,6 @@ mod tests {
+             0x0,
+             PciClassCode::MassStorage,
+             &PciMassStorageSubclass::SerialScsiController,
+-            None,
+             PciHeaderType::Device,
+             0x13,
+             0x12,
+@@ -1174,7 +1143,6 @@ mod tests {
+             0x0,
+             PciClassCode::MassStorage,
+             &PciMassStorageSubclass::SerialScsiController,
+-            None,
+             PciHeaderType::Device,
+             0x13,
+             0x12,
+@@ -1220,7 +1188,6 @@ mod tests {
+             0x0,
+             PciClassCode::MassStorage,
+             &PciMassStorageSubclass::SerialScsiController,
+-            None,
+             PciHeaderType::Device,
+             0x13,
+             0x12,
+diff --git a/src/pci/src/lib.rs b/src/pci/src/lib.rs
+index 83f5a7a5..ec93f34e 100644
+--- a/src/pci/src/lib.rs
++++ b/src/pci/src/lib.rs
+@@ -24,8 +24,8 @@ pub use self::bus::{PciBus, PciConfigIo, PciConfigMmio, PciRoot, PciRootError};
+ pub use self::configuration::{
+     PciBarConfiguration, PciBarPrefetchable, PciBarRegionType, PciCapability, PciCapabilityId,
+     PciClassCode, PciConfiguration, PciConfigurationState, PciExpressCapabilityId, PciHeaderType,
+-    PciMassStorageSubclass, PciNetworkControllerSubclass, PciProgrammingInterface,
+-    PciSerialBusSubClass, PciSubclass, PCI_CONFIGURATION_ID,
++    PciMassStorageSubclass, PciNetworkControllerSubclass, PciSerialBusSubClass, PciSubclass,
++    PCI_CONFIGURATION_ID,
+ };
+ pub use self::device::{
+     BarReprogrammingParams, DeviceRelocation, Error as PciDeviceError, PciDevice,
+diff --git a/src/vmm/src/devices/virtio/transport/pci/device.rs b/src/vmm/src/devices/virtio/transport/pci/device.rs
+index f60ca43a..3bf7c62d 100644
+--- a/src/vmm/src/devices/virtio/transport/pci/device.rs
++++ b/src/vmm/src/devices/virtio/transport/pci/device.rs
+@@ -335,7 +335,6 @@ impl VirtioPciDevice {
+             0x1, // For modern virtio-PCI devices
+             class,
+             subclass,
+-            None,
+             PciHeaderType::Device,
+             VIRTIO_PCI_VENDOR_ID,
+             pci_device_id,

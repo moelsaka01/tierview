@@ -1,0 +1,19 @@
+{
+  "id": "nextjs-clean-head-ppr-resume",
+  "kind": "clean",
+  "split": "test",
+  "pilot": false,
+  "repo": "vercel/next.js",
+  "language": "TypeScript",
+  "commit": "7cc0ed1fba6badef4375b34c3769635773484eac",
+  "commit_date": "2025-08-12T20:51:34-04:00",
+  "subject": "Fix: Resolve <Head> PPR resume mismatch by search params (#82587)",
+  "url": "https://github.com/vercel/next.js/commit/7cc0ed1fba6badef4375b34c3769635773484eac",
+  "stats": {
+    "files": 6,
+    "added": 94,
+    "deleted": 8
+  },
+  "fix": null,
+  "faulty": []
+}

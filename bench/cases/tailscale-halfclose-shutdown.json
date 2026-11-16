@@ -1,0 +1,44 @@
+{
+  "id": "tailscale-halfclose-shutdown",
+  "kind": "buggy",
+  "split": "dev",
+  "pilot": true,
+  "repo": "tailscale/tailscale",
+  "language": "Go",
+  "commit": "04d24cdbd4b551d95f85ca3b9b36ef147503d2b7",
+  "commit_date": "2025-07-07T15:36:16-04:00",
+  "subject": "wgengine/netstack: correctly proxy half-closed TCP connections",
+  "url": "https://github.com/tailscale/tailscale/commit/04d24cdbd4b551d95f85ca3b9b36ef147503d2b7",
+  "stats": {
+    "files": 1,
+    "added": 40,
+    "deleted": 3
+  },
+  "fix": {
+    "sha": "5d35baeb8730dc9149d2f81d11d0c997e6f566a6",
+    "date": "2026-09-29T05:29:48.000-07:00",
+    "subject": "wgengine/netstack: don't half-close the backend's read side after EOF",
+    "url": "https://github.com/tailscale/tailscale/commit/5d35baeb8730dc9149d2f81d11d0c997e6f566a6",
+    "link": "introduced-phrase",
+    "files": [
+      "wgengine/netstack/netstack.go"
+    ],
+    "bug": "After the backend reaches EOF, forwardTCP calls shutdown(SHUT_RD) on the backend socket, which fails with ENOTCONN on macOS (and on Linux in TIME_WAIT) and breaks every forwarded connection."
+  },
+  "faulty": [
+    {
+      "file": "wgengine/netstack/netstack.go",
+      "lines": [
+        1523,
+        1526,
+        1527,
+        1528,
+        1529,
+        1538,
+        1541,
+        1542,
+        1543
+      ]
+    }
+  ]
+}

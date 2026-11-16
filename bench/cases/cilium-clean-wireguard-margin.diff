@@ -1,0 +1,77 @@
+diff --git a/pkg/datapath/fake/types/wireguard.go b/pkg/datapath/fake/types/wireguard.go
+index 1b6e38ab0b..6a023f2433 100644
+--- a/pkg/datapath/fake/types/wireguard.go
++++ b/pkg/datapath/fake/types/wireguard.go
+@@ -26,6 +26,10 @@ func (fwa *WireguardAgent) IfaceIndex() (uint32, error) {
+ 	return 0, nil
+ }
+ 
++func (fwa *WireguardAgent) IfaceBufferMargins() (uint16, uint16, error) {
++	return 0, 0, nil
++}
++
+ func (fwa *WireguardAgent) Status(withPeers bool) (*models.WireguardStatus, error) {
+ 	return nil, nil
+ }
+diff --git a/pkg/datapath/link/link.go b/pkg/datapath/link/link.go
+index 5d8f4953a5..a90c48fd30 100644
+--- a/pkg/datapath/link/link.go
++++ b/pkg/datapath/link/link.go
+@@ -66,6 +66,14 @@ func GetIfIndex(ifName string) (uint32, error) {
+ 	return uint32(iface.Attrs().Index), nil
+ }
+ 
++func GetIfBufferMargins(ifName string) (uint16, uint16, error) {
++	iface, err := safenetlink.LinkByName(ifName)
++	if err != nil {
++		return 0, 0, err
++	}
++	return iface.Attrs().Headroom, iface.Attrs().Tailroom, nil
++}
++
+ type LinkCache struct {
+ 	mu          lock.RWMutex
+ 	indexToName map[int]string
+diff --git a/pkg/wireguard/agent/agent.go b/pkg/wireguard/agent/agent.go
+index f1608f3ad8..d238095bfb 100644
+--- a/pkg/wireguard/agent/agent.go
++++ b/pkg/wireguard/agent/agent.go
+@@ -828,6 +828,15 @@ func (a *Agent) IfaceIndex() (uint32, error) {
+ 	return link.GetIfIndex(types.IfaceName)
+ }
+ 
++// IfaceBufferMargins() returns the buffer margins of the Wireguard interface.
++func (a *Agent) IfaceBufferMargins() (uint16, uint16, error) {
++	if !a.Enabled() {
++		return 0, 0, nil
++	}
++
++	return link.GetIfBufferMargins(types.IfaceName)
++}
++
+ // Status returns the state of the WireGuard tunnel managed by this instance.
+ // If withPeers is true, then the details about each connected peer are
+ // are populated as well.
+diff --git a/pkg/wireguard/types/types.go b/pkg/wireguard/types/types.go
+index 24a976a6d7..e0240af5f8 100644
+--- a/pkg/wireguard/types/types.go
++++ b/pkg/wireguard/types/types.go
+@@ -4,7 +4,9 @@
+ // Common WireGuard types and constants
+ package types
+ 
+-import "github.com/cilium/cilium/api/v1/models"
++import (
++	"github.com/cilium/cilium/api/v1/models"
++)
+ 
+ const (
+ 	// ListenPort is the port on which the WireGuard tunnel device listens on
+@@ -23,6 +25,7 @@ type WireguardAgent interface {
+ 	Enabled() bool
+ 	Status(withPeers bool) (*models.WireguardStatus, error)
+ 	IfaceIndex() (uint32, error)
++	IfaceBufferMargins() (uint16, uint16, error)
+ }
+ 
+ // WireguardConfig exports the Enabled method rather than the whole config.

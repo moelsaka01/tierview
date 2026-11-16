@@ -1,0 +1,37 @@
+{
+  "id": "dpdk-ntb-window-bound",
+  "kind": "buggy",
+  "split": "dev",
+  "pilot": true,
+  "repo": "DPDK/dpdk",
+  "language": "C",
+  "commit": "11b5c7daf01993b1582e048d217bde2b0e075afa",
+  "commit_date": "2019-10-21T15:41:18+02:00",
+  "subject": "raw/ntb: add enqueue and dequeue functions",
+  "url": "https://github.com/DPDK/dpdk/commit/11b5c7daf01993b1582e048d217bde2b0e075afa",
+  "stats": {
+    "files": 4,
+    "added": 305,
+    "deleted": 19
+  },
+  "fix": {
+    "sha": "be5e9874b72b162c73be8fa57e3fd918b8eb035f",
+    "date": "2026-11-12T15:51:07.000+01:00",
+    "subject": "raw/ntb: fix memory window bound in address remapping",
+    "url": "https://github.com/DPDK/dpdk/commit/be5e9874b72b162c73be8fa57e3fd918b8eb035f",
+    "link": "fixes-trailer",
+    "files": [
+      "drivers/raw/ntb/ntb_hw_amd.c",
+      "drivers/raw/ntb/ntb_hw_intel.c"
+    ],
+    "bug": "The memory-window range check includes the window's end, so an address one byte past the window is accepted and remapped (off-by-one)."
+  },
+  "faulty": [
+    {
+      "file": "drivers/raw/ntb/ntb_hw_intel.c",
+      "lines": [
+        175
+      ]
+    }
+  ]
+}

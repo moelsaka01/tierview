@@ -1,0 +1,19 @@
+{
+  "id": "django-clean-keytexttransform-mysql",
+  "kind": "clean",
+  "split": "test",
+  "pilot": false,
+  "repo": "django/django",
+  "language": "Python",
+  "commit": "af84cfba5970fda8306860b650937701c7c03c6f",
+  "commit_date": "2025-09-22T09:00:24+02:00",
+  "subject": "Fixed #36612 -- Fixed a KeyTextTransform crash on MySQL against annotations.",
+  "url": "https://github.com/django/django/commit/af84cfba5970fda8306860b650937701c7c03c6f",
+  "stats": {
+    "files": 2,
+    "added": 12,
+    "deleted": 2
+  },
+  "fix": null,
+  "faulty": []
+}

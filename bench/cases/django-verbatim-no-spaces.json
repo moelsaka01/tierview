@@ -1,0 +1,41 @@
+{
+  "id": "django-verbatim-no-spaces",
+  "kind": "buggy",
+  "split": "dev",
+  "pilot": false,
+  "repo": "django/django",
+  "language": "Python",
+  "commit": "1a9fba7a6c2a0acead19bbb45c25ceb0fdcca7c8",
+  "commit_date": "2026-10-13T15:20:41+02:00",
+  "subject": "Fixed #23424 -- Corrected tokenization of verbatim blocks.",
+  "url": "https://github.com/django/django/commit/1a9fba7a6c2a0acead19bbb45c25ceb0fdcca7c8",
+  "stats": {
+    "files": 4,
+    "added": 165,
+    "deleted": 41
+  },
+  "fix": {
+    "sha": "45fe4636d8d147b87040170a6cee4ab036ed2324",
+    "date": "2026-10-26T13:45:31.000+01:00",
+    "subject": "Fixed #37450 -- Fixed parsing of comment and verbatim tags without spaces.",
+    "url": "https://github.com/django/django/commit/45fe4636d8d147b87040170a6cee4ab036ed2324",
+    "link": "regression-in",
+    "files": [
+      "AUTHORS",
+      "django/template/base.py",
+      "tests/template_tests/syntax_tests/test_comment.py",
+      "tests/template_tests/syntax_tests/test_verbatim.py"
+    ],
+    "bug": "The new tokenizer mis-parses comment and verbatim tags written without spaces."
+  },
+  "faulty": [
+    {
+      "file": "django/template/base.py",
+      "lines": [
+        409,
+        412,
+        416
+      ]
+    }
+  ]
+}

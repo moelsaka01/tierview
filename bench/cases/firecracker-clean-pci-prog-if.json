@@ -1,0 +1,19 @@
+{
+  "id": "firecracker-clean-pci-prog-if",
+  "kind": "clean",
+  "split": "test",
+  "pilot": false,
+  "repo": "firecracker-microvm/firecracker",
+  "language": "Rust",
+  "commit": "79af3002d04e39b41046f97b54d873c75da8ee25",
+  "commit_date": "2025-10-03T13:15:06+02:00",
+  "subject": "refactor(pci): drop programming interface argument",
+  "url": "https://github.com/firecracker-microvm/firecracker/commit/79af3002d04e39b41046f97b54d873c75da8ee25",
+  "stats": {
+    "files": 4,
+    "added": 3,
+    "deleted": 39
+  },
+  "fix": null,
+  "faulty": []
+}

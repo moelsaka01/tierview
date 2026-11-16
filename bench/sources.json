@@ -1,0 +1,17 @@
+{
+  "note": "Where bench/mine.ts looks for maintainer-attested (bug-introducing, fix) pairs. PLAN.md §9. `since` limits the FIX commit date (prefer fixes after the models' training data).",
+  "since": "2026-07-01",
+  "sources": [
+    { "repo": "qemu/qemu", "language": "C", "queries": ["\"Fixes:\""], "pages": 2 },
+    { "repo": "DPDK/dpdk", "language": "C", "queries": ["\"Fixes:\""], "pages": 2 },
+    { "repo": "cilium/cilium", "language": "Go", "queries": ["\"Fixes:\""], "pages": 1 },
+    { "repo": "django/django", "language": "Python", "queries": ["\"Regression in\""], "pages": 1 },
+    { "repo": "firecracker-microvm/firecracker", "language": "Rust", "queries": ["\"Fixes:\"", "regression", "introduced"], "pages": 1 },
+    { "repo": "cloud-hypervisor/cloud-hypervisor", "language": "Rust", "queries": ["\"Fixes:\"", "regression", "introduced"], "pages": 1 },
+    { "repo": "vercel/next.js", "language": "TypeScript", "queries": ["regression", "introduced"], "pages": 1, "pr_refs": true },
+    { "repo": "angular/angular", "language": "TypeScript", "queries": ["regression", "introduced"], "pages": 1, "pr_refs": true },
+    { "repo": "mui/material-ui", "language": "TypeScript", "queries": ["regression", "introduced"], "pages": 1, "pr_refs": true },
+    { "repo": "cilium/tetragon", "language": "Go", "queries": ["\"Fixes:\"", "regression"], "pages": 1 },
+    { "repo": "tailscale/tailscale", "language": "Go", "queries": ["regression", "introduced"], "pages": 1 }
+  ]
+}

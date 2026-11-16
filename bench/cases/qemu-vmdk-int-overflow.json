@@ -1,0 +1,36 @@
+{
+  "id": "qemu-vmdk-int-overflow",
+  "kind": "buggy",
+  "split": "test",
+  "pilot": false,
+  "repo": "qemu/qemu",
+  "language": "C",
+  "commit": "2b2c8c5dec6ba0834a70ac1533272ff244a0abe1",
+  "commit_date": "2011-09-06T12:30:28+02:00",
+  "subject": "VMDK: read/write compressed extent",
+  "url": "https://github.com/qemu/qemu/commit/2b2c8c5dec6ba0834a70ac1533272ff244a0abe1",
+  "stats": {
+    "files": 1,
+    "added": 100,
+    "deleted": 11
+  },
+  "fix": {
+    "sha": "53c06d5239b4a4cc21686710bce478207dfbaa6e",
+    "date": "2026-11-09T16:32:35.000+01:00",
+    "subject": "block/vmdk: Use larger types for byte counts in vmdk_read_extent()",
+    "url": "https://github.com/qemu/qemu/commit/53c06d5239b4a4cc21686710bce478207dfbaa6e",
+    "link": "fixes-trailer",
+    "files": [
+      "block/vmdk.c"
+    ],
+    "bug": "cluster_bytes and buf_bytes are int, which overflows for the largest allowed cluster size."
+  },
+  "faulty": [
+    {
+      "file": "block/vmdk.c",
+      "lines": [
+        900
+      ]
+    }
+  ]
+}

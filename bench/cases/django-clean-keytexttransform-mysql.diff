@@ -1,0 +1,36 @@
+diff --git a/django/db/models/fields/json.py b/django/db/models/fields/json.py
+index d544caf3e5..e0aa5c622b 100644
+--- a/django/db/models/fields/json.py
++++ b/django/db/models/fields/json.py
+@@ -424,8 +424,12 @@ class KeyTextTransform(KeyTransform):
+     output_field = TextField()
+ 
+     def as_mysql(self, compiler, connection):
+-        if connection.mysql_is_mariadb:
+-            # MariaDB doesn't support -> and ->> operators (see MDEV-13594).
++        # The ->> operator is not supported on MariaDB (see MDEV-13594) and
++        # only supported against columns on MySQL.
++        if (
++            connection.mysql_is_mariadb
++            or getattr(self.lhs.output_field, "model", None) is None
++        ):
+             sql, params = super().as_mysql(compiler, connection)
+             return "JSON_UNQUOTE(%s)" % sql, params
+         else:
+diff --git a/tests/model_fields/test_jsonfield.py b/tests/model_fields/test_jsonfield.py
+index 16ab8887a9..b16499d198 100644
+--- a/tests/model_fields/test_jsonfield.py
++++ b/tests/model_fields/test_jsonfield.py
+@@ -1160,6 +1160,12 @@ class TestQuerying(TestCase):
+                     True,
+                 )
+ 
++    def test_cast_with_key_text_transform(self):
++        obj = NullableJSONModel.objects.annotate(
++            json_data=Cast(Value({"foo": "bar"}, JSONField()), JSONField())
++        ).get(pk=self.objs[0].pk, json_data__foo__icontains="bar")
++        self.assertEqual(obj, self.objs[0])
++
+     @skipUnlessDBFeature("supports_json_field_contains")
+     def test_contains_contained_by_with_key_transform(self):
+         tests = [

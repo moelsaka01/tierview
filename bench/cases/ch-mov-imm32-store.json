@@ -1,0 +1,36 @@
+{
+  "id": "ch-mov-imm32-store",
+  "kind": "buggy",
+  "split": "dev",
+  "pilot": false,
+  "repo": "cloud-hypervisor/cloud-hypervisor",
+  "language": "Rust",
+  "commit": "0c3ef986fad0644de3fd982f79c0c3c9affaef40",
+  "commit_date": "2020-12-07T14:35:35+01:00",
+  "subject": "hypervisor: emulator: rewrite MOV emulation with get/set_op",
+  "url": "https://github.com/cloud-hypervisor/cloud-hypervisor/commit/0c3ef986fad0644de3fd982f79c0c3c9affaef40",
+  "stats": {
+    "files": 1,
+    "added": 48,
+    "deleted": 62
+  },
+  "fix": {
+    "sha": "e32a90e65697cbd94b517d92d3de6305154dc94f",
+    "date": "2026-11-10T14:01:34.000Z",
+    "subject": "hypervisor: x86: Store all 8 bytes for MOV r/m64, imm32",
+    "url": "https://github.com/cloud-hypervisor/cloud-hypervisor/commit/e32a90e65697cbd94b517d92d3de6305154dc94f",
+    "link": "introduced-phrase",
+    "files": [
+      "hypervisor/src/arch/x86/emulator/instructions/mov.rs"
+    ],
+    "bug": "Emulating MOV r/m64, imm32 with a memory destination stores only the low 4 bytes of the sign-extended immediate."
+  },
+  "faulty": [
+    {
+      "file": "hypervisor/src/arch/x86/emulator/instructions/mov.rs",
+      "lines": [
+        205
+      ]
+    }
+  ]
+}

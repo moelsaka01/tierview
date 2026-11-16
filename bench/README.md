@@ -1,9 +1,17 @@
 # Benchmark
 
-Empty until Phase 4. The design is in [PLAN.md §9](../PLAN.md).
+The design is in [PLAN.md §9](../PLAN.md). About 30 cases (20 bug-introducing commits with a maintainer-attested fix, 10 presumed-clean commits), three arms (`tierview`, `all-sonnet`, `all-opus`; no Fable calls), run on the `claude-code` backend in batches of at most 20 `claude` calls.
 
-- `cases/` — one JSON file per case (bug-introducing commit, fix commit, faulty lines).
-- `results/` — `results.json`, `RESULTS.md`, `chart.svg`, `spend.json` (the spend ledger).
-- `repos/` — local clones, not committed.
+- `sources.json` — where candidate pairs come from (repos, search terms, fix dates).
+- `mine.ts` → `candidates.jsonl` — fix commits whose message names the commit that introduced the bug (`Fixes: <sha>`, "Regression in <sha>", "regression from #PR").
+- `validate.ts` → `validated.jsonl`, `clean.jsonl`, `cases/` — size limits, `git blame` check that the fix rewrote lines of the bug commit, clean-commit selection, case files.
+- `cases/` — one `<id>.json` (metadata, fix, faulty lines) and `<id>.diff` (the diff the reviewer sees) per case; `cases/README.md` lists them with the dev / test split.
+- `results/` — `usage.jsonl` (one line per run and per judge call), later `results.json`, `RESULTS.md`, `chart.svg`.
+- `repos/` — local blobless clones, not committed.
 
-The benchmark has a hard spend cap (default $25). The pilot on 10 cases runs first, and the full run needs explicit approval.
+```bash
+npm run bench:mine                               # GitHub commit search (read-only)
+npm run bench:validate -- validate 10 qemu/qemu  # per repo, resumable
+node .bench-build/validate.js clean django/django Python 2025-08-01 2025-11-15 3
+node .bench-build/validate.js make bench/selection.json
+```

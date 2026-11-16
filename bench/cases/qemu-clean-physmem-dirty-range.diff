@@ -1,0 +1,47 @@
+diff --git a/include/system/ram_addr.h b/include/system/ram_addr.h
+index 54b5f5ec16..cafd258580 100644
+--- a/include/system/ram_addr.h
++++ b/include/system/ram_addr.h
+@@ -175,15 +175,6 @@ bool cpu_physical_memory_snapshot_get_dirty(DirtyBitmapSnapshot *snap,
+                                             ram_addr_t start,
+                                             ram_addr_t length);
+ 
+-static inline void cpu_physical_memory_clear_dirty_range(ram_addr_t start,
+-                                                         ram_addr_t length)
+-{
+-    cpu_physical_memory_test_and_clear_dirty(start, length, DIRTY_MEMORY_MIGRATION);
+-    cpu_physical_memory_test_and_clear_dirty(start, length, DIRTY_MEMORY_VGA);
+-    cpu_physical_memory_test_and_clear_dirty(start, length, DIRTY_MEMORY_CODE);
+-}
+-
+-
+ /* Called with RCU critical section */
+ static inline
+ uint64_t cpu_physical_memory_sync_dirty_bitmap(RAMBlock *rb,
+diff --git a/system/physmem.c b/system/physmem.c
+index 24b654fb3f..079bdbff30 100644
+--- a/system/physmem.c
++++ b/system/physmem.c
+@@ -1137,6 +1137,13 @@ bool cpu_physical_memory_test_and_clear_dirty(ram_addr_t start,
+     return dirty;
+ }
+ 
++static void physical_memory_clear_dirty_range(ram_addr_t addr, ram_addr_t length)
++{
++    cpu_physical_memory_test_and_clear_dirty(addr, length, DIRTY_MEMORY_MIGRATION);
++    cpu_physical_memory_test_and_clear_dirty(addr, length, DIRTY_MEMORY_VGA);
++    cpu_physical_memory_test_and_clear_dirty(addr, length, DIRTY_MEMORY_CODE);
++}
++
+ DirtyBitmapSnapshot *cpu_physical_memory_snapshot_and_clear_dirty
+     (MemoryRegion *mr, hwaddr offset, hwaddr length, unsigned client)
+ {
+@@ -2071,7 +2078,7 @@ int qemu_ram_resize(RAMBlock *block, ram_addr_t newsize, Error **errp)
+         ram_block_notify_resize(block->host, oldsize, newsize);
+     }
+ 
+-    cpu_physical_memory_clear_dirty_range(block->offset, block->used_length);
++    physical_memory_clear_dirty_range(block->offset, block->used_length);
+     block->used_length = newsize;
+     cpu_physical_memory_set_dirty_range(block->offset, block->used_length,
+                                         DIRTY_CLIENTS_ALL);

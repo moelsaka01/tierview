@@ -1,0 +1,19 @@
+{
+  "id": "firecracker-clean-balloon-error",
+  "kind": "clean",
+  "split": "test",
+  "pilot": false,
+  "repo": "firecracker-microvm/firecracker",
+  "language": "Rust",
+  "commit": "f36767ef8537e61d0e0f2cc8db65a3a922b10d67",
+  "commit_date": "2025-08-19T07:40:20-04:00",
+  "subject": "fix(balloon): improve error message in case of too much requested memory",
+  "url": "https://github.com/firecracker-microvm/firecracker/commit/f36767ef8537e61d0e0f2cc8db65a3a922b10d67",
+  "stats": {
+    "files": 2,
+    "added": 6,
+    "deleted": 4
+  },
+  "fix": null,
+  "faulty": []
+}

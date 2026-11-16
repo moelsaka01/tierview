@@ -1,0 +1,19 @@
+{
+  "id": "cilium-clean-fqdn-bootstrap",
+  "kind": "clean",
+  "split": "dev",
+  "pilot": true,
+  "repo": "cilium/cilium",
+  "language": "Go",
+  "commit": "ff9752a80c384063ef4693eb71cfe3f9dcbb13bc",
+  "commit_date": "2025-11-04T11:51:19Z",
+  "subject": "fqdn: ensure bootstrap is completed before GC",
+  "url": "https://github.com/cilium/cilium/commit/ff9752a80c384063ef4693eb71cfe3f9dcbb13bc",
+  "stats": {
+    "files": 2,
+    "added": 11,
+    "deleted": 0
+  },
+  "fix": null,
+  "faulty": []
+}

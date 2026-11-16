@@ -1,0 +1,38 @@
+{
+  "id": "tetragon-domains-output-format",
+  "kind": "buggy",
+  "split": "test",
+  "pilot": false,
+  "repo": "cilium/tetragon",
+  "language": "Go",
+  "commit": "6eb1e743e65e1be1862d43ad0cd585cec5c07eb3",
+  "commit_date": "2026-05-22T15:26:19+02:00",
+  "subject": "new(tetra): add `tetra tracingpolicy domains` command.",
+  "url": "https://github.com/cilium/tetragon/commit/6eb1e743e65e1be1862d43ad0cd585cec5c07eb3",
+  "stats": {
+    "files": 1,
+    "added": 38,
+    "deleted": 0
+  },
+  "fix": {
+    "sha": "f757d35d895a359af14b9196397900829014880e",
+    "date": "2026-09-14T19:46:01.000+02:00",
+    "subject": "cmd/tetra: validate tracingpolicy domains output",
+    "url": "https://github.com/cilium/tetragon/commit/f757d35d895a359af14b9196397900829014880e",
+    "link": "fixes-trailer",
+    "files": [
+      "cmd/tetra/tracingpolicy/tracingpolicy.go"
+    ],
+    "bug": "`tetra tracingpolicy domains` accepts unsupported output formats, prints nothing and exits successfully."
+  },
+  "faulty": [
+    {
+      "file": "cmd/tetra/tracingpolicy/tracingpolicy.go",
+      "lines": [
+        251,
+        268,
+        283
+      ]
+    }
+  ]
+}

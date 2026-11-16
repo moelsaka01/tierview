@@ -1,0 +1,19 @@
+{
+  "id": "cilium-clean-wireguard-margin",
+  "kind": "clean",
+  "split": "test",
+  "pilot": false,
+  "repo": "cilium/cilium",
+  "language": "Go",
+  "commit": "00d86d7054d35161fee3d83f8ae6241be09943b2",
+  "commit_date": "2025-10-23T17:27:22+02:00",
+  "subject": "datapath, wireguard: Provide buffer margin query functions",
+  "url": "https://github.com/cilium/cilium/commit/00d86d7054d35161fee3d83f8ae6241be09943b2",
+  "stats": {
+    "files": 4,
+    "added": 25,
+    "deleted": 1
+  },
+  "fix": null,
+  "faulty": []
+}

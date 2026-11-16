@@ -1,0 +1,171 @@
+diff --git a/packages/next/src/client/components/app-router.tsx b/packages/next/src/client/components/app-router.tsx
+index 6594ef4afc..2f23a3024d 100644
+--- a/packages/next/src/client/components/app-router.tsx
++++ b/packages/next/src/client/components/app-router.tsx
+@@ -474,8 +474,17 @@ function Router({
+     //
+     // The `key` is used to remount the component whenever the head moves to
+     // a different segment.
+-    const [headCacheNode, headKey] = matchingHead
+-    head = <Head key={headKey} headCacheNode={headCacheNode} />
++    const [headCacheNode, headKey, headKeyWithoutSearchParams] = matchingHead
++
++    head = (
++      <Head
++        key={
++          // Necessary for PPR: omit search params from the key to match prerendered keys
++          typeof window === 'undefined' ? headKeyWithoutSearchParams : headKey
++        }
++        headCacheNode={headCacheNode}
++      />
++    )
+   } else {
+     head = null
+   }
+diff --git a/packages/next/src/client/components/router-reducer/reducers/find-head-in-cache.ts b/packages/next/src/client/components/router-reducer/reducers/find-head-in-cache.ts
+index 471b1804e7..d3d4baddcf 100644
+--- a/packages/next/src/client/components/router-reducer/reducers/find-head-in-cache.ts
++++ b/packages/next/src/client/components/router-reducer/reducers/find-head-in-cache.ts
+@@ -6,19 +6,20 @@ import { createRouterCacheKey } from '../create-router-cache-key'
+ export function findHeadInCache(
+   cache: CacheNode,
+   parallelRoutes: FlightRouterState[1]
+-): [CacheNode, string] | null {
+-  return findHeadInCacheImpl(cache, parallelRoutes, '')
++): [CacheNode, string, string] | null {
++  return findHeadInCacheImpl(cache, parallelRoutes, '', '')
+ }
+ 
+ function findHeadInCacheImpl(
+   cache: CacheNode,
+   parallelRoutes: FlightRouterState[1],
+-  keyPrefix: string
+-): [CacheNode, string] | null {
++  keyPrefix: string,
++  keyPrefixWithoutSearchParams: string
++): [CacheNode, string, string] | null {
+   const isLastItem = Object.keys(parallelRoutes).length === 0
+   if (isLastItem) {
+     // Returns the entire Cache Node of the segment whose head we will render.
+-    return [cache, keyPrefix]
++    return [cache, keyPrefix, keyPrefixWithoutSearchParams]
+   }
+ 
+   // First try the 'children' parallel route if it exists
+@@ -45,6 +46,7 @@ function findHeadInCacheImpl(
+     }
+ 
+     const cacheKey = createRouterCacheKey(segment)
++    const cacheKeyWithoutSearchParams = createRouterCacheKey(segment, true)
+ 
+     const cacheNode = childSegmentMap.get(cacheKey)
+     if (!cacheNode) {
+@@ -54,8 +56,10 @@ function findHeadInCacheImpl(
+     const item = findHeadInCacheImpl(
+       cacheNode,
+       childParallelRoutes,
+-      keyPrefix + '/' + cacheKey
++      keyPrefix + '/' + cacheKey,
++      keyPrefix + '/' + cacheKeyWithoutSearchParams
+     )
++
+     if (item) {
+       return item
+     }
+diff --git a/test/e2e/app-dir/resuming-head-runtime-search-param/app/layout.tsx b/test/e2e/app-dir/resuming-head-runtime-search-param/app/layout.tsx
+new file mode 100644
+index 0000000000..dbce4ea8e3
+--- /dev/null
++++ b/test/e2e/app-dir/resuming-head-runtime-search-param/app/layout.tsx
+@@ -0,0 +1,11 @@
++export default function RootLayout({
++  children,
++}: {
++  children: React.ReactNode
++}) {
++  return (
++    <html lang="en">
++      <body>{children}</body>
++    </html>
++  )
++}
+diff --git a/test/e2e/app-dir/resuming-head-runtime-search-param/app/page.tsx b/test/e2e/app-dir/resuming-head-runtime-search-param/app/page.tsx
+new file mode 100644
+index 0000000000..2bdfde9628
+--- /dev/null
++++ b/test/e2e/app-dir/resuming-head-runtime-search-param/app/page.tsx
+@@ -0,0 +1,25 @@
++import { connection } from 'next/server'
++import { Suspense } from 'react'
++
++export default function Page() {
++  return (
++    <p>
++      hello world
++      <Suspense>
++        <DynamicHole />
++      </Suspense>
++    </p>
++  )
++}
++
++export const generateMetadata = async () => {
++  await connection()
++  return {
++    title: `Hello World`,
++  }
++}
++
++const DynamicHole = async () => {
++  await connection()
++  return <p>Dynamic Hole</p>
++}
+diff --git a/test/e2e/app-dir/resuming-head-runtime-search-param/next.config.js b/test/e2e/app-dir/resuming-head-runtime-search-param/next.config.js
+new file mode 100644
+index 0000000000..93363cc5a0
+--- /dev/null
++++ b/test/e2e/app-dir/resuming-head-runtime-search-param/next.config.js
+@@ -0,0 +1,11 @@
++/**
++ * @type {import('next').NextConfig}
++ */
++const nextConfig = {
++  experimental: {
++    cacheComponents: true,
++    clientSegmentCache: true,
++  },
++}
++
++module.exports = nextConfig
+diff --git a/test/e2e/app-dir/resuming-head-runtime-search-param/resuming-head-runtime-search-param.test.ts b/test/e2e/app-dir/resuming-head-runtime-search-param/resuming-head-runtime-search-param.test.ts
+new file mode 100644
+index 0000000000..0880414d02
+--- /dev/null
++++ b/test/e2e/app-dir/resuming-head-runtime-search-param/resuming-head-runtime-search-param.test.ts
+@@ -0,0 +1,26 @@
++import { nextTestSetup } from 'e2e-utils'
++
++describe('resuming-head-runtime-search-param', () => {
++  const { next } = nextTestSetup({
++    files: __dirname,
++  })
++
++  it('should not show resumable slots error when using runtime search params', async () => {
++    const browser = await next.browser('/?foo=bar&test=123')
++
++    // Check that the page renders correctly
++    await browser.waitForElementByCss('p')
++    const text = await browser.elementByCss('p').text()
++    expect(text).toContain('hello world')
++
++    // Wait for dynamic content to load (it's rendered inside the first p element)
++    await browser.waitForElementByCss('p p')
++    const dynamicText = await browser.elementByCss('p p').text()
++    expect(dynamicText).toContain('Dynamic Hole')
++
++    // Check server logs for the specific error message
++    expect(next.cliOutput).not.toContain(
++      "Couldn't find all resumable slots by key/index during replaying. The tree doesn't match so React will fallback to client rendering."
++    )
++  })
++})

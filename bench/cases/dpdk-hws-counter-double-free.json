@@ -1,0 +1,37 @@
+{
+  "id": "dpdk-hws-counter-double-free",
+  "kind": "buggy",
+  "split": "test",
+  "pilot": false,
+  "repo": "DPDK/dpdk",
+  "language": "C",
+  "commit": "9e34fcc81c005a60c919c572ef83c10ebb0201af",
+  "commit_date": "2025-02-26T10:08:27+01:00",
+  "subject": "net/mlx5: fix leak in HWS flow counter action",
+  "url": "https://github.com/DPDK/dpdk/commit/9e34fcc81c005a60c919c572ef83c10ebb0201af",
+  "stats": {
+    "files": 1,
+    "added": 2,
+    "deleted": 1
+  },
+  "fix": {
+    "sha": "682a585ac0c5ee20c487a7cd644676e10565b609",
+    "date": "2026-11-11T14:17:02.000+01:00",
+    "subject": "net/mlx5: fix double free of HWS counter pool name",
+    "url": "https://github.com/DPDK/dpdk/commit/682a585ac0c5ee20c487a7cd644676e10565b609",
+    "link": "fixes-trailer",
+    "files": [
+      "drivers/net/mlx5/mlx5_hws_cnt.c",
+      "drivers/net/mlx5/mlx5_hws_cnt.h"
+    ],
+    "bug": "The counter pool name is freed on the create error path and again on destroy (double free)."
+  },
+  "faulty": [
+    {
+      "file": "drivers/net/mlx5/mlx5_hws_cnt.c",
+      "lines": [
+        770
+      ]
+    }
+  ]
+}

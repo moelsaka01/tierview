@@ -7,7 +7,7 @@ One entry per phase: which model did the work, at what effort, from what prompt,
 | 1 | Plan and scaffold | Fable 5.2 (high) | done 2026-11-16 |
 | 2 | Tier 0, config, dry-run | Sonnet 5.5 (medium) | done 2026-11-16 |
 | 3 | LLM tiers, escalation, receipt, backends | Opus 5.5 (high) | done 2026-11-16 |
-| 4 | Benchmark | Opus 5.5 | not started |
+| 4 | Benchmark | Opus 5.5 (high) | in progress: dataset done, no model calls yet |
 | 5 | PR mode, SARIF, GitHub Action | Sonnet 5.5 | not started |
 | 6 | README and release | Sonnet 5.5 | not started |
 
@@ -188,6 +188,51 @@ Run of calls 3 to 5: 48.0 s wall, 11,446 tokens, $0.08 API-equivalent; both seed
 **Deviations.** The config key is camelCase (`allowFable`) because that is the name Mohamed asked for; every other key is snake_case. The substitute model is the Tier 2 model (Opus 5.5 by default), at Tier 3's own effort (high), so no new model ID enters the code.
 
 **API spend.** $0, no `claude` calls.
+
+---
+
+## Phase 4 — benchmark (in progress, started 2026-11-16)
+
+**Model.** Opus 5.5 (`claude-opus-5-5`). **Effort.** High.
+
+**Prompt.** Verbatim:
+
+<details>
+<summary>Phase 4 prompt</summary>
+
+Read PLAN.md and BUILD_LOG.md. First, a required fix before Phase 4: make Fable 5.2 opt-in. On the claude-code backend, never request Fable unless the user passes --allow-fable or sets allowFable: true in .tierview.yml. Without it, Tier 3 goes straight to Opus 5.5 (no Fable-first request), and the receipt says “Tier 3 ran on Opus 5.5 (Fable not enabled)”. With it, print a warning before the first call that Fable may use paid extra usage on some plans. The all-Fable comparison in the receipt stays (it’s only a calculation). Update the tests, PLAN.md and the README, and commit this separately.
+
+Then do Phase 4 with these limits: I have no money, so no Fable calls at all (the benchmark compares tierview, all-Sonnet and all-Opus, plus the calculated all-Fable cost; drop the Fable low-effort arm and say why in PLAN.md). Build the 30-case dataset first, and show me the case list before running anything. Then run in batches of at most 20 claude calls per session, record usage in bench/results/usage.jsonl, and stop and report after each batch so I can continue in a later session when my usage resets. Tune the risk-scoring weights against the results (including the “payment” false positive on estimate.ts). Update BUILD_LOG (Opus 5.5, high) and commit.
+
+</details>
+
+**Session 1 (2026-11-16): Fable fix, plan changes, dataset. Zero `claude` calls.**
+
+- Fable opt-in: separate commit and log entry above.
+- PLAN §9, §11, §12, §13: three arms (`tierview`, `all-sonnet`, `all-opus`); no Fable calls; `all-fable-low` dropped with the reason; all-Fable cost calculated two ways; McNemar against `all-opus`; batches of at most 20 calls; the case list is shown before any call; planning estimate redone for three arms (about 8 to 11 batches).
+- P4-01 `bench/mine.ts` + `bench/sources.json`: GitHub commit search (`gh api`, read-only) for fixes after 2026-07-01 in 11 repos; 531 links in `bench/candidates.jsonl`.
+- P4-02 `bench/validate.ts`: size, merge, ancestry, language and blame checks against blobless clones in `bench/repos/` (not committed); clean-commit search; `make` writes the case files. Results in `bench/validated.jsonl` and `bench/clean.jsonl`.
+- P4-03: manual pass; `bench/selection.json` (hand-written bug descriptions) and `bench/cases/` (30 `.json` + `.diff`), listed in `bench/cases/README.md`. 20 buggy (C 10, Python 4, Go 3, Rust 2, TypeScript 1), 10 clean; dev 10 incl. a 5-case pilot (3 buggy, 2 clean); at most 6 cases per repo. Fixes dated 2026-08-23 to 2026-11-13.
+- `bench/routing.ts`: Tier 0 routing over the cases, no calls. **With the current weights only 4 of 20 faulty hunks reach Tier 2 or 3**; the other 16 go to Sonnet at low effort. This is the main input for weight tuning (P4-09, dev split only).
+- Payment signal (Phase 2 issue): regex refinement, not a weight change. "checkout" and "ledger" left the content patterns (git checkout, a budget `Ledger` class), and `total =` / `price =` now need a money suffix (`total_cents`, `amountUsd`). Tests cover the estimate.ts lines. Weights are untouched until P4-09.
+- Tests: `test/bench-dataset.test.ts` (extraction, diff and blame parsing, size rules, dataset invariants); 203 tests pass.
+
+**Deviations so far, and why.**
+
+1. **Bench scripts are bundled with tsup** (`npm run bench:build`, output in `.bench-build/`, ignored) instead of adding `tsx`; no new dependency.
+2. **Sizes come from the GitHub commits API**, not local `git diff --numstat`: in a blobless clone each blob is fetched on demand, and validation took about 20 s per candidate. QEMU also needed `git backfill` (725 MB) before blame was fast enough.
+3. **Validation stops at 10 good pairs per repo**, newest fixes first; not every candidate was checked.
+4. **Clean commits are from 2025-08 to 2025-11**, not the bug commits' months, so the 12-month fix check has history to look at. Commits whose files saw more than 10 fix-labelled commits in that year were skipped to bound blame time; this biases the clean set toward calmer code (PLAN §9 updated).
+5. **TypeScript is under-represented** (1 buggy case). Squash-merge TypeScript repos seldom name the PR that caused a bug; Angular's fixes were over 60 lines and MUI's links pointed at the fix's own PR.
+
+**Issues.**
+
+- An inline Python edit to `bench/mine.ts` silently failed to apply (escaped `\n` in a heredoc), so a later mining run overwrote `candidates.jsonl`. Re-mined (read-only search, same result plus the new repos); `validated.jsonl` was unaffected.
+- The PR-reference pattern can match the fix's own PR number in its subject; the "B equals F" check rejects those (all 5 MUI links, 7 Next.js links).
+
+**Usage so far.** $0; zero `claude` calls. GitHub API: about 1,100 read-only requests.
+
+**Next.** Show Mohamed the case list (done in chat), then P4-04 to P4-07 (arms, runner with usage ledger, judge, metrics) and the pilot in batches of at most 20 calls, each started by Mohamed.
 
 ---
 

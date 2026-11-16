@@ -1,0 +1,36 @@
+{
+  "id": "qemu-loongarch-pte-nr",
+  "kind": "buggy",
+  "split": "test",
+  "pilot": false,
+  "repo": "qemu/qemu",
+  "language": "C",
+  "commit": "7392cb1c7b24e34987b6f2bbff00c39fe0829cc9",
+  "commit_date": "2025-08-29T10:05:02+08:00",
+  "subject": "target/loongarch: Add common function loongarch_check_pte()",
+  "url": "https://github.com/qemu/qemu/commit/7392cb1c7b24e34987b6f2bbff00c39fe0829cc9",
+  "stats": {
+    "files": 3,
+    "added": 83,
+    "deleted": 54
+  },
+  "fix": {
+    "sha": "07a4c09e4c1c9de78b3ee287b3ac7b5badc0277b",
+    "date": "2026-11-05T14:50:32.000+08:00",
+    "subject": "target/loongarch: Clear PAGE_READ when PTE.NR is set",
+    "url": "https://github.com/qemu/qemu/commit/07a4c09e4c1c9de78b3ee287b3ac7b5badc0277b",
+    "link": "fixes-trailer",
+    "files": [
+      "target/loongarch/cpu_helper.c"
+    ],
+    "bug": "The PTE NR (not readable) bit is ignored, so write-only pages are exposed as readable."
+  },
+  "faulty": [
+    {
+      "file": "target/loongarch/cpu_helper.c",
+      "lines": [
+        98
+      ]
+    }
+  ]
+}

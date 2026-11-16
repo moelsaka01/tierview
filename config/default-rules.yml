@@ -141,8 +141,10 @@ categories:
     path:
       - '(^|/)(payments?|billing|invoices?|checkout|ledger|refunds?|subscriptions?|wallet|pricing)(/|[._-]|$)'
     content:
-      - '\b(payment|billing|invoice|checkout|refund|chargeback|ledger|stripe|paypal|braintree)\w*\b'
-      - '\b(amount|price|balance|total)_?(cents|minor|usd)?\b\s*[-+*/]?='
+      # Phase 4: "checkout" (git checkout) and "ledger" (any bookkeeping class) left the content list; they stay in path.
+      - '\b(payment|billing|invoice|refund|chargeback|stripe|paypal|braintree)\w*\b'
+      # Phase 4: a bare `total =` / `price =` fired on tierview's own estimate.ts; now a money suffix is required.
+      - '\b(amount|price|balance|total|subtotal|fee)_?(cents|minor|usd|eur|due|paid|charged)\b\s*[-+*/]?='
 
   sql:
     weight: 30
