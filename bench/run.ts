@@ -6,7 +6,7 @@
 // Per (case, arm): bench/results/runs/<case>__<arm>.json (the Review, kept); one line per run and per judge call in
 // bench/results/usage.jsonl; every judgement in bench/results/judgements.jsonl. Finished pairs are never re-run.
 import { createHash } from "node:crypto";
-import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { type Config, loadConfig } from "../src/config";
 import { type Estimates, estimateTokens, loadEstimates } from "../src/estimate";
@@ -22,7 +22,7 @@ import { limitsFor, packHunks } from "../src/tiers/batch";
 import { collapseTiers } from "../src/tiers/collapse";
 import type { LlmTier, Review, ScoredHunk } from "../src/types";
 import { ARM_VERSION, type Arm, armPreset, parseArms } from "./arms";
-import { JUDGE_SYSTEM, type Judgement, JudgeResponse, judgeUserMessage, modelJudgements, ruleJudge } from "./judge";
+import { JUDGE_SYSTEM, JUDGE_VERSION, type Judgement, JudgeResponse, judgeConfig, judgeUserMessage, modelJudgements, ruleJudge } from "./judge";
 import { loadCases } from "./routing";
 import type { BenchCase } from "./validate";
 import { BENCH } from "./lib/sh";
@@ -97,7 +97,68 @@ export interface BatchOptions {
 export function configHash(): string {
   const h = createHash("sha256");
   for (const f of ["default-rules.yml", "prices.json", "estimates.json"]) h.update(readFileSync(configPath(f)));
+  // The judge is frozen with the config (bench-config-v1): its rules, stopwords, prompt and version.
+  h.update(judgeConfig());
   return h.digest("hex").slice(0, 12);
+}
+
+export interface RejudgeReport {
+  runs: number;
+  findings: number;
+  ruleMatch: number;
+  ruleNoMatch: number;
+  ambiguous: number;
+  reusedModel: number;
+  pending: number;
+  /** Opus calls the pending findings need: one per run with pending findings. */
+  opusCallsNeeded: number;
+}
+
+/**
+ * Re-judges saved runs (runs/ and runs-archive/) under the current JUDGE_VERSION from their saved findings, with no
+ * model calls. An ambiguous finding reuses an earlier model verdict on the same finding of the same run when one
+ * exists (same prompt); otherwise it is left pending for the next batch's judge step.
+ */
+export function rejudge(resultsDir: string, which: string, at: string): RejudgeReport {
+  const cases = new Map(selectCases(loadCases(), which).map((x) => [x.c.id, x]));
+  const jf = join(resultsDir, "judgements.jsonl");
+  const old = existsSync(jf) ? readFileSync(jf, "utf8").trim().split("\n").filter(Boolean).map((l) => JSON.parse(l) as Judgement) : [];
+  const rep: RejudgeReport = { runs: 0, findings: 0, ruleMatch: 0, ruleNoMatch: 0, ambiguous: 0, reusedModel: 0, pending: 0, opusCallsNeeded: 0 };
+  for (const sub of ["runs", "runs-archive"]) {
+    const dir = join(resultsDir, sub);
+    if (!existsSync(dir)) continue;
+    for (const f of readdirSync(dir).filter((x) => x.endsWith(".json")).sort()) {
+      const r = JSON.parse(readFileSync(join(dir, f), "utf8")) as RunFile;
+      const x = cases.get(r.case_id);
+      if (!x || x.c.kind !== "buggy" || !r.complete) continue;
+      const done = old.some((j) => j.case_id === r.case_id && j.arm === r.arm && (j.run_batch ?? j.batch) === r.batch && (j.judge_version ?? 1) === JUDGE_VERSION);
+      if (done) continue;
+      rep.runs++;
+      const findings = [...r.review.findings, ...r.review.refuted];
+      rep.findings += findings.length;
+      const { judged, ambiguous } = ruleJudge(x.c, r.arm, findings, x.diff);
+      const out: Judgement[] = [...judged];
+      rep.ruleMatch += judged.filter((j) => j.verdict === "match").length;
+      rep.ruleNoMatch += judged.filter((j) => j.verdict === "no_match").length;
+      rep.ambiguous += ambiguous.length;
+      const pending: string[] = [];
+      for (const a of ambiguous) {
+        const prev = [...old].reverse().find((j) => j.method === "model" && j.case_id === r.case_id && j.arm === r.arm && j.finding_id === a.finding.id && (j.run_batch ?? j.batch) === r.batch);
+        if (prev) {
+          rep.reusedModel++;
+          out.push({ ...prev, judge_version: JUDGE_VERSION, reason: `${prev.reason} [reused from judge v${prev.judge_version ?? 1}: same finding, same prompt; now ambiguous because: ${a.reason}]` });
+        } else pending.push(a.finding.id);
+      }
+      for (const j of out) appendFileSync(jf, JSON.stringify({ ...j, run_batch: r.batch, batch: `rejudge-v${JUDGE_VERSION}-${at}`, at }) + "\n");
+      rep.pending += pending.length;
+      if (pending.length) rep.opusCallsNeeded++;
+      if (sub === "runs") {
+        r.judge_pending = pending;
+        writeFileSync(join(dir, f), JSON.stringify(r, null, 2) + "\n");
+      }
+    }
+  }
+  return rep;
 }
 
 export function selectCases(all: { c: BenchCase; diff: string }[], which: string): { c: BenchCase; diff: string }[] {
@@ -173,9 +234,8 @@ export async function runBatch(o: BatchOptions, d: Deps): Promise<BatchReport> {
   const judgePending = async (c: BenchCase, diff: string, r: RunFile): Promise<boolean> => {
     if (!r.judge_pending.length) return true;
     if (left() < 1) return false;
-    const hunks = parseDiff(diff);
     const all = [...r.review.findings, ...r.review.refuted];
-    const items = ruleJudge(c, r.arm, all.filter((f) => r.judge_pending.includes(f.id)), hunks).ambiguous;
+    const items = ruleJudge(c, r.arm, all.filter((f) => r.judge_pending.includes(f.id)), diff).ambiguous;
     if (o.dryRun) {
       report.calls += 1;
       report.judgeCalls += 1;
@@ -259,7 +319,7 @@ export async function runBatch(o: BatchOptions, d: Deps): Promise<BatchReport> {
       const complete = !budgetExhausted && !limitHit;
       let pending: string[] = [];
       if (complete && c.kind === "buggy") {
-        const { judged, ambiguous } = ruleJudge(c, arm, [...review.findings, ...review.refuted], parseDiff(diff));
+        const { judged, ambiguous } = ruleJudge(c, arm, [...review.findings, ...review.refuted], diff);
         logJudgements(judged, batch);
         pending = ambiguous.map((a) => a.finding.id);
       }
@@ -312,6 +372,12 @@ async function main(): Promise<void> {
   const { ensureClone, git } = await import("./lib/sh");
   const cfg = loadConfig({ cwd: BENCH });
   const dryRun = process.argv.includes("--dry-run");
+  if (process.argv.includes("--rejudge")) {
+    // No model calls: re-judge saved findings under the current judge version.
+    const r = rejudge(join(BENCH, "results"), arg("cases") ?? "all", new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19));
+    console.log(JSON.stringify(r, null, 2));
+    return;
+  }
   const o: BatchOptions = { cases: arg("cases") ?? "pilot", arms: parseArms(arg("arms")), maxCalls: Number(arg("max-calls") ?? BATCH_CAP), dryRun };
   let bin = "claude";
   if (!dryRun) {

@@ -172,5 +172,8 @@
       "prices_as_of": "2026-11-16"
     }
   },
-  "judge_pending": []
+  "judge_pending": [
+    "4c5d5597fb26",
+    "b994d33c010c"
+  ]
 }

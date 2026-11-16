@@ -7,7 +7,7 @@ One entry per phase: which model did the work, at what effort, from what prompt,
 | 1 | Plan and scaffold | Fable 5.2 (high) | done 2026-11-16 |
 | 2 | Tier 0, config, dry-run | Sonnet 5.5 (medium) | done 2026-11-16 |
 | 3 | LLM tiers, escalation, receipt, backends | Opus 5.5 (high) | done 2026-11-16 |
-| 4 | Benchmark | Opus 5.5 (high) | in progress: pilot done (31 calls), routing tuned and frozen, full run not started |
+| 4 | Benchmark | Opus 5.5 (high) | in progress: pilot done (31 calls), routing and judge frozen (`bench-config-v1`), full run not started |
 | 5 | PR mode, SARIF, GitHub Action | Sonnet 5.5 | not started |
 | 6 | README and release | Sonnet 5.5 | not started |
 
@@ -339,6 +339,16 @@ Caveat on independence: I chose the dataset (and so read the one-line descriptio
 Frozen: config hash `8b8d0f208dd5`; tierview arm version 3, so the 5 tierview pilot runs (v2, old weights) are stale and re-run in the next batch (about 9 calls); the baseline arms do not depend on routing and stay. Tests: new signal cases in `test/signals.test.ts`; threshold tests updated; 229 tests pass.
 
 **Next.** Ask Mohamed: whether to tighten the location match rule before more judgements accumulate, then the test split in batches of 20 (about 6 batches) plus the dev re-runs.
+
+**Judge v2 and freeze (2026-11-16). Zero `claude` calls.** Prompt: "Tighten it first, with no claude calls. For fixes whose changed lines span more than ~8 lines, a location match alone isn't enough; the finding must describe the same mechanism as the fix (rule check on key terms from the fix/bug description, otherwise send it to Opus as ambiguous, logged). Apply it identically to all three arms, and re-judge the existing pilot runs under the new rule (re-using saved findings; only ambiguous cases need Opus calls; count them). Freeze the judge too: include it in the config hash and tag bench-config-v1. Update PLAN.md and BUILD_LOG, commit, then stop and show me how the pilot catches changed."
+
+- Rule (`bench/judge.ts`, `JUDGE_VERSION` 2): a fix is wide when its faulty lines in a file span more than 8 lines (6 of 20 buggy cases: Tailscale on dev; prefault, Django lookup, DPDK mem, DPDK procinfo, Tetragon on test). For those, a location match also needs at least 2 mechanism terms in the finding's text, otherwise it is ambiguous (Opus). Mechanism terms are bug-description and fix-subject words, stemmed, minus stopwords, minus every word that occurs in the reviewed diff. Same rule for all arms.
+- Two fixes to the term extraction before freezing, found while checking the terms: identifiers like `backendSocket` hid their parts, so "socket" passed as a mechanism term (now split at `_` and camelCase); and generic outcome words (fail, crash, later…) counted (now stopwords). I also first tried "at least 1 term": the all-Opus Tailscale finding then matched on the single word "half" while describing copy-error handling, so the threshold is 2. These choices were made after seeing the 3 dev pilot runs' findings and the mechanism-term lists of all 6 wide cases (not any test-split findings, which do not exist yet).
+- Re-judge (`node .bench-build/run.js --rejudge`): 11 saved buggy runs (runs/ and runs-archive/), 39 findings, no calls: 11 rule matches, 24 rule no-matches, 4 ambiguous; 1 reused an earlier Opus verdict (same finding, same prompt), **3 pending, needing 2 Opus calls** (one per run), not made. Only the all-Opus run is current; the tierview@v2 run is stale (arm v3) and will be re-run anyway, so **1 Opus judge call** is really needed, in the next batch.
+- How the pilot catches changed (judge v1 → v2): unchanged everywhere except **Tailscale / all-opus: caught → pending** (its two rule matches lacked mechanism terms: "copy error handled as a half-close", "non-tcpCloser backend never gets EOF"). Tailscale / tierview@v2 stays caught on a rule match with terms "half, shutdown"; all-sonnet still misses it. Current dev recall: all-sonnet 2/3, all-opus 2/3 (1 pending), tierview needs its v3 re-run.
+- Frozen: judge included in the config hash (`judgeConfig()`); hash `3f0786b02d0a`; git tag `bench-config-v1`. Tests: `test/judge-v2.test.ts` (terms, wide rule for all arms, hash, re-judge reuse and idempotency); 235 tests pass.
+
+**Next.** Ask Mohamed to start the next batch: the dev re-runs (5 tierview v3 runs, the pending Opus judge call) and then the test split, about 6 to 7 batches of 20.
 
 ---
 

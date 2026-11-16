@@ -66,7 +66,7 @@ describe("judge", () => {
 
   it("hands only ambiguous findings to the model, blind to arm and model", () => {
     const fs = [asFinding({ id: "a" }), asFinding({ id: "b", start_line: NTB_LINE + 7, end_line: NTB_LINE + 7, model: "claude-opus-5-5" })];
-    const r = ruleJudge(NTB.c, "tierview", fs, hunks);
+    const r = ruleJudge(NTB.c, "tierview", fs, NTB.diff);
     expect(r.judged.map((j) => [j.finding_id, j.method, j.verdict])).toEqual([["a", "rule", "match"]]);
     expect(r.ambiguous.map((a) => a.finding.id)).toEqual(["b"]);
     const msg = judgeUserMessage(NTB.c, "FIXDIFF", r.ambiguous);

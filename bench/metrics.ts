@@ -12,7 +12,7 @@ import { parseDiff } from "../src/tier0/diff";
 import { routeDiff } from "../src/tier0/route";
 import { SEVERITY_ORDER, type Severity } from "../src/types";
 import { ARMS, ARM_VERSION, type Arm, armPreset } from "./arms";
-import type { Judgement } from "./judge";
+import { JUDGE_VERSION, type Judgement } from "./judge";
 import { faultyHunks, loadCases } from "./routing";
 import type { RunFile } from "./run";
 import type { BenchCase } from "./validate";
@@ -80,10 +80,14 @@ export function loadRuns(resultsDir: string): Map<string, RunFile> {
   return out;
 }
 
-/** The judgements of one run: logged for that run's batch, latest per finding (a model verdict overrides a rule hand-off). */
+/** The judgements of one run: logged for that run's batch by the current judge version, latest per finding (a model verdict overrides a rule hand-off). */
 export function judgementsFor(all: Judgement[], r: Pick<RunFile, "case_id" | "arm" | "batch">): Judgement[] {
   const byFinding = new Map<string, Judgement>();
-  for (const j of all) if (j.case_id === r.case_id && j.arm === r.arm && (j.run_batch ?? j.batch) === r.batch) byFinding.set(j.finding_id, j);
+  for (const j of all) {
+    if (j.case_id !== r.case_id || j.arm !== r.arm || (j.run_batch ?? j.batch) !== r.batch) continue;
+    if ((j.judge_version ?? 1) !== JUDGE_VERSION) continue; // only the frozen judge counts
+    byFinding.set(j.finding_id, j);
+  }
   return [...byFinding.values()];
 }
 
