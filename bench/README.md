@@ -6,7 +6,7 @@ The design is in [PLAN.md §9](../PLAN.md). About 30 cases (20 bug-introducing c
 - `mine.ts` → `candidates.jsonl` — fix commits whose message names the commit that introduced the bug (`Fixes: <sha>`, "Regression in <sha>", "regression from #PR").
 - `validate.ts` → `validated.jsonl`, `clean.jsonl`, `cases/` — size limits, `git blame` check that the fix rewrote lines of the bug commit, clean-commit selection, case files.
 - `cases/` — one `<id>.json` (metadata, fix, faulty lines) and `<id>.diff` (the diff the reviewer sees) per case; `cases/README.md` lists them with the dev / test split.
-- `results/` — `usage.jsonl` (one line per run and per judge call), later `results.json`, `RESULTS.md`, `chart.svg`.
+- `results/` — **`RESULTS.md` (the write-up)**, `chart.svg`, `results-test.json` / `results-dev.json`, `judge-audit.csv` (20 judgements for a hand audit), `usage.jsonl` (one line per run and per judge call), `batches.jsonl`, `judgements.jsonl`, `runs/`, `runs-archive/`.
 - `repos/` — local blobless clones, not committed.
 
 ```bash

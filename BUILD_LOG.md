@@ -7,7 +7,7 @@ One entry per phase: which model did the work, at what effort, from what prompt,
 | 1 | Plan and scaffold | Fable 5.2 (high) | done 2026-11-16 |
 | 2 | Tier 0, config, dry-run | Sonnet 5.5 (medium) | done 2026-11-16 |
 | 3 | LLM tiers, escalation, receipt, backends | Opus 5.5 (high) | done 2026-11-16 |
-| 4 | Benchmark | Opus 5.5 (high) | runs complete (190 calls); judge audit and RESULTS.md / chart to do |
+| 4 | Benchmark | Opus 5.5 (high) | done 2026-11-16, except the judge audit marks (Mohamed) |
 | 5 | PR mode, SARIF, GitHub Action | Sonnet 5.5 | not started |
 | 6 | README and release | Sonnet 5.5 | not started |
 
@@ -544,6 +544,16 @@ What the test split says, with the intervals in mind:
 **Phase 4 usage, all batches:** 11 batches, 190 `claude` calls recorded in `usage.jsonl` (171 reviews, 19 Opus judge calls), about $20.36 API-equivalent via Claude Code; $0 billed (Pro plan usage). About 14 of those calls (test batch 3) returned only the usage-limit error. No Fable calls. (`direct_api_usd` is missing on the batch 1 lines, written before that field existed.)
 
 **Not done yet:** the hand audit of 20 judgements (P4-10, `bench/results/judge-audit.md`), and P4-11 (`bench/chart.ts`, `chart.svg`, `bench/results/RESULTS.md`). Both need no `claude` calls.
+
+**Write-up (2026-11-16). Zero `claude` calls.** Prompt: "Write them now. RESULTS.md: lead with the test-split table and the headline "caught more bugs than all-Opus (9 vs 7) with zero false alarms at 16% lower cost", with p = 0.5 (not significant), n = 13, the C-heavy mix, the dev/test disagreement on all-Sonnet, the batch 3 usage-limit incident and its fix, and the calculated all-Fable figure clearly labelled as calculated. Update the tagline everywhere; "Fable-level at Sonnet prices" isn't supported. Make the chart (recall vs cost per case, one point per arm, with 95% ranges). For the judge audit, prepare 20 judgements as a simple file with, for each one: the bug in plain English, the fix summary, the finding, and the judge's verdict, with a column for me to mark agree / disagree / unsure. Commit, then stop."
+
+- `bench/results/RESULTS.md`: headline, test-split table, per-case table, dev table, the dev/test disagreement on all-Sonnet, method, limitations, what was not measured (Fable; latency), usage and the batch 3 incident, reproduction.
+- `bench/chart.ts` → `bench/results/chart.svg`: recall vs API-equivalent cost per case (via Claude Code), one point per arm with its 95% bootstrap range and a direct label (bugs caught, cost, false alarms); light and dark via `prefers-color-scheme`; colours from the dataviz reference palette, validated with its script (the light aqua is under 3:1 on the light surface, so every point also has a text label and RESULTS.md has the table). Rendered in headless Edge in both schemes and checked: one label collision (tierview's label crossed all-Opus's range bar) fixed by placing a label on the left when another arm sits within 150 px.
+- `bench/audit.ts` → `bench/results/judge-audit.csv`: 20 current judgements, stratified so every kind of decision is checked (7 of 37 rule matches, both model matches, 6 of 23 model no-matches, 4 of 14 same-file rule no-matches, 1 of 15 other-file rule no-matches), fixed seed, blind to arm and model. Columns: case, split, bug, fix subject, finding location (with the faulty lines), title, explanation, judge (rule or Opus), verdict, reason, **your mark (agree / disagree / unsure)**, note. `audit.js --score` reports the agreement rate once marked.
+- Tagline: "Tiered Claude code review with a cost receipt." in PLAN.md (line 3 and §12) and README.md, with the supported claim and its caveats. The Phase 1 prompt quoted above keeps the old wording because it is a verbatim record.
+- Tests: `test/bench-report.test.ts` (chart content, audit strata and CSV round trip); 245 tests pass.
+
+**Phase 4 summary.** Model: Opus 5.5 (`claude-opus-5-5`), high effort. Delivered P4-01 to P4-11 except the audit marks. Main deviations from the original plan, each logged above: no Fable calls and no `all-fable-low` arm; three arms; benchmark on the `claude-code` backend in batches of at most 20 calls; pipeline v2 (merged Opus tier, whole-diff escalation, one all-Fable method, two cost views); routing tuned on dev (`bench-config-v1`); judge v2 for wide fixes; Tier 1 file context (`bench-config-v2`, decided from dev results before any test run); the batch 3 usage-limit fix. Usage: 190 `claude` calls (171 reviews, 19 judge), about $20.36 API-equivalent, $0 billed; no Fable calls.
 
 ---
 

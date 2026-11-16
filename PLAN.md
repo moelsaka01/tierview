@@ -1,6 +1,6 @@
 # tierview — build plan
 
-> Fable-level code review at Sonnet prices. *(Tagline is provisional: it ships only if the benchmark in §9 supports it. See §12.)*
+> Tiered Claude code review with a cost receipt. *(Tagline set after the Phase 4 benchmark. The provisional "Fable-level code review at Sonnet prices" was dropped: no Fable arm was measured, and tierview cost more than all-Sonnet. Supported claim: On a 13-bug test set it caught more bugs than all-Opus (9 vs 7, not significant: p = 0.5) with zero false alarms, at 16% lower cost per case. See `bench/results/RESULTS.md` and §12.)*
 
 tierview is an open-source CLI and GitHub Action that reviews a diff by routing each hunk to the cheapest Claude model that can handle it, escalating when a model is unsure, and printing a cost receipt. It runs on your Claude plan through the official Claude Code CLI (the default `claude-code` backend), or on the API with your own Anthropic API key (the `api` backend, for teams and the GitHub Action). See §5a.
 
@@ -386,8 +386,8 @@ Every task ends with `npm run check` (typecheck + tests) passing. Tick the box i
 - [x] P4-07 `bench/metrics.ts` + test: every metric in §9, bootstrap CI, McNemar.
 - [x] P4-08 Pilot on 5 cases in batches of ≤ 20 calls, no Fable. Report measured calls, tokens and API-equivalent cost, and the projection in batches. **Stop and ask Mohamed.**
 - [x] P4-09 Tune risk weights and thresholds on the dev split from saved outputs and Tier 0 routing recall (includes the "payment" false positive on `estimate.ts`, Phase 2 issue); commit the frozen config.
-- [ ] P4-10 Full run on the test split in batches across days, each started by Mohamed; judge audit.
-- [ ] P4-11 `bench/chart.ts` → `chart.svg`; `bench/results/RESULTS.md`; update `BUILD_LOG.md`; commit.
+- [ ] P4-10 Full run on the test split in batches across days, each started by Mohamed; judge audit. *(Full run done: all 90 runs, 11 batches, 190 calls. Audit sample ready in `bench/results/judge-audit.csv`; waiting for Mohamed's marks, then `audit.js --score` and the agreement rate in RESULTS.md.)*
+- [x] P4-11 `bench/chart.ts` → `chart.svg`; `bench/results/RESULTS.md`; update `BUILD_LOG.md`; commit.
 
 ### Phase 5 — Sonnet 5.5 — PR mode, SARIF, Action. Read §10, §8.
 - [ ] P5-01 `src/github/pr.ts` + test (mocked HTTP): parse PR URL, fetch diff, title, body, head sha.
@@ -407,7 +407,7 @@ Every task ends with `npm run check` (typecheck + tests) passing. Tick the box i
 
 ## 12. Risks and open decisions
 
-- **The tagline is a claim.** If tierview's recall on the test split is clearly below all-opus's, or its cost is nearer Opus than Sonnet, change the tagline to what the numbers say. With no measured Fable arm (§9), the tagline cannot say "Fable-level". Publishing an honest "87% of the recall at 24% of the cost" is better for this repo's audience than an unsupported slogan.
+- **The tagline is a claim (decided after Phase 4).** The tagline is now "Tiered Claude code review with a cost receipt.". "Fable-level code review at Sonnet prices" is not supported: no Fable arm was measured, and tierview's cost per case ($0.213) is nearer all-Opus ($0.254) than all-Sonnet ($0.113). The claim the test split supports, with its caveats: On a 13-bug test set it caught more bugs than all-Opus (9 vs 7, not significant: p = 0.5) with zero false alarms, at 16% lower cost per case. Publishing an honest "87% of the recall at 24% of the cost" is better for this repo's audience than an unsupported slogan.
 - **A single strong model at low effort may beat the cascade.** The planned `all-fable-low` arm was dropped (no Fable calls, §9), so this stays untested; `all-sonnet` is the only single-model low-effort arm. The write-up says so.
 - **Routing misses.** A bug in a boring-looking hunk goes to Sonnet at low effort. Routing recall (§9) quantifies this; escalation rules E1–E3 are the mitigation.
 - **Confidence calibration** may be too weak to drive escalation. If so, fall back to E2–E5 only and say so.

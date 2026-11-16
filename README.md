@@ -1,8 +1,10 @@
 # tierview
 
-AI code review that sends each hunk of a diff to the cheapest Claude model that can handle it, escalates when a model is unsure, and prints a cost receipt.
+**Tiered Claude code review with a cost receipt.**
 
-**Status: under construction.** `tierview review` works on a local diff, but nothing is benchmarked yet. The design and the task list are in [PLAN.md](PLAN.md); the record of how it is being built is in [BUILD_LOG.md](BUILD_LOG.md).
+AI code review that sends each hunk of a diff to the cheapest Claude model that can handle it, escalates when a model is unsure, and prints a cost receipt. On a 13-bug test set it caught more bugs than all-Opus (9 vs 7, not significant: p = 0.5) with zero false alarms, at 16% lower cost per case. Details, ranges and limits: [bench/results/RESULTS.md](bench/results/RESULTS.md).
+
+**Status: under construction.** `tierview review` works on a local diff, and the first benchmark is done (30 cases, small; read its limits). The design and the task list are in [PLAN.md](PLAN.md); the record of how it is being built is in [BUILD_LOG.md](BUILD_LOG.md).
 
 This README will be written in Phase 6, after the benchmark has run, so that every number in it is measured.
 
