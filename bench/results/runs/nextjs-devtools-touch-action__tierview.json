@@ -1,0 +1,179 @@
+{
+  "case_id": "nextjs-devtools-touch-action",
+  "arm": "tierview",
+  "arm_version": 4,
+  "batch": "2026-11-16T18-57-29",
+  "config_hash": "4fe1abf9f1f3",
+  "complete": true,
+  "calls": 2,
+  "wall_ms": 31105,
+  "review": {
+    "version": 1,
+    "findings": [
+      {
+        "file": "packages/next/src/next-devtools/dev-overlay/components/errors/dev-tools-indicator/draggable.tsx",
+        "start_line": 146,
+        "end_line": 146,
+        "side": "new",
+        "severity": "medium",
+        "category": "bug",
+        "title": "Removing touch-action: none can break dragging on touch devices",
+        "explanation": "Before this change, the wrapper set `touchAction: 'none'` inline. The drag logic uses only Pointer Events (pointerdown, then pointermove/pointerup on window, plus setPointerCapture once the drag passes the threshold). Without `touch-action: none`, a touch drag on the element is treated by the browser as a scroll or pan gesture. The browser then fires `pointercancel` and stops sending pointermove events. useDrag has no `pointercancel` handler, so on mobile or touch screens the indicator either won't drag or gets stuck in the 'press' state with window listeners still attached until the next pointerup. Nothing else in this diff adds touch-action back (the CSS change only removes lines). The removed `userSelect: 'none'` matters less, because body user-select is turned off once dragging starts, but text can still be selected during the press before the threshold is reached.",
+        "suggestion": "Keep `touchAction: 'none'` on the draggable wrapper, either inline or in the indicator's CSS. Also consider handling `pointercancel` the same way as `pointerup`, to clean up the window listeners.",
+        "evidence": "<div {...props} {...drag} ref={ref}>",
+        "confidence": 0.55,
+        "id": "7a11d92f7398",
+        "hunk_id": "packages/next/src/next-devtools/dev-overlay/components/errors/dev-tools-indicator/draggable.tsx#1",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      }
+    ],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "packages/next/src/next-devtools/dev-overlay/components/errors/dev-tools-indicator/draggable.tsx#1",
+        "score": 30,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "boundary",
+            "weight": 25,
+            "detail": "comparison operator changed"
+          },
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "12 changed lines"
+          },
+          {
+            "signal": "merge",
+            "weight": 0,
+            "detail": "Tier 2 and Tier 3 run the same model: one call at high effort"
+          }
+        ]
+      },
+      {
+        "hunk_id": "packages/next/src/next-devtools/dev-overlay/components/errors/dev-tools-indicator/draggable.tsx#2",
+        "score": 0,
+        "tier": 1,
+        "reasons": []
+      },
+      {
+        "hunk_id": "packages/next/src/next-devtools/dev-overlay/components/errors/dev-tools-indicator/draggable.tsx#3",
+        "score": 0,
+        "tier": 1,
+        "reasons": []
+      },
+      {
+        "hunk_id": "packages/next/src/next-devtools/dev-overlay/components/overview/segment-explorer.css#1",
+        "score": 5,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "deletion_only",
+            "weight": 5,
+            "detail": "only deletions"
+          }
+        ]
+      },
+      {
+        "hunk_id": "packages/next/src/next-devtools/dev-overlay/components/overview/segment-explorer.css#2",
+        "score": 5,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "deletion_only",
+            "weight": 5,
+            "detail": "only deletions"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 2,
+      "model_substitutions": [
+        {
+          "tier": 3,
+          "requested": "claude-fable-5-2",
+          "used": "claude-opus-5-5",
+          "reason": "Fable not enabled"
+        }
+      ],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 4,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 20840,
+          "cache_read_tokens": 994,
+          "output_tokens": 460,
+          "cache_write_1h_tokens": 20840,
+          "cost_usd": 0.0880634,
+          "direct_api_cost_usd": 0.044072
+        },
+        {
+          "tier": 2,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "hunks": 1,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 8732,
+          "cache_read_tokens": 994,
+          "output_tokens": 1085,
+          "cache_write_1h_tokens": 8732,
+          "cost_usd": 0.0917628,
+          "direct_api_cost_usd": 0.052212
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.1798262,
+      "total_direct_api_cost_usd": 0.09628400000000001,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.5353816,
+        "direct_api_cost_usd": 0.280712
+      },
+      "savings_pct": 66.4,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "Tier 2 and Tier 3 both run claude-opus-5-5, so they ran as one tier at high effort.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 31105,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}

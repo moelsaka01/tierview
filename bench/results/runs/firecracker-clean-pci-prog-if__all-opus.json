@@ -2,69 +2,16 @@
   "case_id": "firecracker-clean-pci-prog-if",
   "arm": "all-opus",
   "arm_version": 1,
-  "batch": "2026-11-16T16-30-54",
+  "batch": "2026-11-16T18-57-29",
   "config_hash": "4fe1abf9f1f3",
-  "complete": false,
+  "complete": true,
   "calls": 1,
-  "wall_ms": 10365,
+  "wall_ms": 24910,
   "review": {
     "version": 1,
     "findings": [],
     "refuted": [],
-    "not_reviewed": [
-      {
-        "hunk_id": "src/pci/src/bus.rs#1",
-        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
-      },
-      {
-        "hunk_id": "src/pci/src/bus.rs#2",
-        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
-      },
-      {
-        "hunk_id": "src/pci/src/configuration.rs#1",
-        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
-      },
-      {
-        "hunk_id": "src/pci/src/configuration.rs#2",
-        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
-      },
-      {
-        "hunk_id": "src/pci/src/configuration.rs#3",
-        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
-      },
-      {
-        "hunk_id": "src/pci/src/configuration.rs#4",
-        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
-      },
-      {
-        "hunk_id": "src/pci/src/configuration.rs#5",
-        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
-      },
-      {
-        "hunk_id": "src/pci/src/configuration.rs#6",
-        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
-      },
-      {
-        "hunk_id": "src/pci/src/configuration.rs#7",
-        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
-      },
-      {
-        "hunk_id": "src/pci/src/configuration.rs#8",
-        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
-      },
-      {
-        "hunk_id": "src/pci/src/configuration.rs#9",
-        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
-      },
-      {
-        "hunk_id": "src/pci/src/lib.rs#1",
-        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
-      },
-      {
-        "hunk_id": "src/vmm/src/devices/virtio/transport/pci/device.rs#1",
-        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
-      }
-    ],
+    "not_reviewed": [],
     "routing": [
       {
         "hunk_id": "src/pci/src/bus.rs#1",
@@ -381,39 +328,37 @@
           "hunks": 13,
           "escalated_in": 0,
           "requests": 1,
-          "input_tokens": 0,
-          "cache_write_tokens": 0,
-          "cache_read_tokens": 0,
-          "output_tokens": 0,
-          "cache_write_1h_tokens": 0,
-          "cost_usd": 0,
-          "direct_api_cost_usd": 0
+          "input_tokens": 2,
+          "cache_write_tokens": 55251,
+          "cache_read_tokens": 994,
+          "output_tokens": 1603,
+          "cache_write_1h_tokens": 55251,
+          "cost_usd": 0.4742748,
+          "direct_api_cost_usd": 0.248648
         }
       ],
       "skipped_hunks": 0,
-      "not_reviewed_hunks": 13,
-      "total_cost_usd": 0,
-      "total_direct_api_cost_usd": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.4742748,
+      "total_direct_api_cost_usd": 0.248648,
       "baseline": {
         "model": "claude-fable-5-2",
         "method": "actual_tokens_at_baseline_prices",
-        "cost_usd": 0,
-        "direct_api_cost_usd": 0
+        "cost_usd": 0.9483508,
+        "direct_api_cost_usd": 0.497296
       },
-      "savings_pct": 0,
+      "savings_pct": 50,
       "budget": {
         "max_cost_usd": null,
         "degraded": false
       },
       "warnings": [
         "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
-        "tier 3 call failed for src/pci/src/bus.rs#1, src/pci/src/bus.rs#2, src/pci/src/configuration.rs#1, src/pci/src/configuration.rs#2, src/pci/src/configuration.rs#3, src/pci/src/configuration.rs#4, src/pci/src/configuration.rs#5, src/pci/src/configuration.rs#6, src/pci/src/configuration.rs#7, src/pci/src/configuration.rs#8, src/pci/src/configuration.rs#9, src/pci/src/lib.rs#1, src/vmm/src/devices/virtio/transport/pci/device.rs#1: error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)",
         "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
       ],
-      "wall_ms": 10364,
+      "wall_ms": 24910,
       "prices_as_of": "2026-11-16"
     }
   },
-  "judge_pending": [],
-  "stopped": "call error (usage limit), found after test batch 3; re-run"
+  "judge_pending": []
 }

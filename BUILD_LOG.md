@@ -7,7 +7,7 @@ One entry per phase: which model did the work, at what effort, from what prompt,
 | 1 | Plan and scaffold | Fable 5.2 (high) | done 2026-11-16 |
 | 2 | Tier 0, config, dry-run | Sonnet 5.5 (medium) | done 2026-11-16 |
 | 3 | LLM tiers, escalation, receipt, backends | Opus 5.5 (high) | done 2026-11-16 |
-| 4 | Benchmark | Opus 5.5 (high) | in progress: dev split done; `bench-config-v2` frozen; test split 30 of 60 runs valid |
+| 4 | Benchmark | Opus 5.5 (high) | in progress: dev split done; `bench-config-v2` frozen; test split 43 of 60 runs valid |
 | 5 | PR mode, SARIF, GitHub Action | Sonnet 5.5 | not started |
 | 6 | README and release | Sonnet 5.5 | not started |
 
@@ -487,6 +487,18 @@ Fixes (no `claude` calls; tests added; 243 pass):
 The runner is not part of the config hash (it decides which runs count, not how a run is measured), so `bench-config-v2` / `4fe1abf9f1f3` stands.
 
 Test split so far: 30 of 60 runs valid (26 from batches 1 and 2, 4 from batch 3). 30 runs left, about 42 to 60 calls: 3 batches.
+
+**Test batch 4 (2026-11-16, Mohamed: "Run test batch 4"; hash verified).** 19 `claude` calls (cap 20): 16 reviews and 3 Opus judge calls; **no failed calls**, no Fable. API-equivalent $2.41 via Claude Code. It re-ran the 10 runs invalidated after batch 3 (old files archived) and ran tierview on `nextjs-devtools-touch-action`.
+
+| case | tierview | all-sonnet | all-opus |
+|---|---|---|---|
+| dpdk-procinfo-eeprom-loop (buggy, wide) | **caught** (Opus judge: "error on one port aborts the dump for all remaining ports" is the bug; 2 other findings about an unbounded EEPROM length judged no match) (2 calls, $0.241) | missed: 1 finding (EEPROM length), judge no match (1, $0.139) | **caught** (Opus judge) (1, $0.287) |
+| firecracker-clean-balloon-error | 1 finding below medium (1, $0.057) | 1 below medium (1, $0.057) | **1 medium finding (FP)** (1, $0.126) |
+| firecracker-clean-pci-prog-if | 0 (1, $0.232) | 0 (1, $0.233) | 0 (1, $0.474) |
+| nextjs-clean-head-ppr-resume | 2 below medium (2, $0.156) | 1 below medium (1, $0.070) | 2 below medium (1, $0.162) |
+| nextjs-devtools-touch-action (buggy) | **caught** by rule (2, $0.180) | next batch | next batch |
+
+Test split so far: 43 of 60 runs valid. 17 runs left (about 39 planned calls): 2 batches.
 
 ---
 

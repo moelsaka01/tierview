@@ -2,29 +2,36 @@
   "case_id": "firecracker-clean-balloon-error",
   "arm": "all-sonnet",
   "arm_version": 1,
-  "batch": "2026-11-16T16-30-54",
+  "batch": "2026-11-16T18-57-29",
   "config_hash": "4fe1abf9f1f3",
-  "complete": false,
+  "complete": true,
   "calls": 1,
-  "wall_ms": 9727,
+  "wall_ms": 14959,
   "review": {
     "version": 1,
-    "findings": [],
-    "refuted": [],
-    "not_reviewed": [
+    "findings": [
       {
-        "hunk_id": "src/vmm/src/devices/virtio/balloon/device.rs#1",
-        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
-      },
-      {
+        "file": "src/vmm/src/devices/virtio/balloon/device.rs",
+        "start_line": 3,
+        "end_line": 3,
+        "side": "new",
+        "severity": "low",
+        "category": "error-handling",
+        "title": "Error reports requested size as the limit in its message",
+        "explanation": "The variant's message is 'Requested memory should be less than {0}MiB', so {0} is meant to be the limit. Here it is given the requested amount_mib, which is larger than the guest memory size. A user who asks for 2048 MiB on a 1024 MiB guest sees 'should be less than 2048MiB', which is wrong and misleading.",
+        "suggestion": "Pass the actual limit: return Err(BalloonError::TooMuchMemoryRequested(mem_size_mib(mem) as u32)), using a checked conversion.",
+        "evidence": "return Err(BalloonError::TooMuchMemoryRequested(amount_mib));",
+        "confidence": 0.8,
+        "id": "157aeca479b5",
         "hunk_id": "src/vmm/src/devices/virtio/balloon/device.rs#2",
-        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
-      },
-      {
-        "hunk_id": "src/vmm/src/devices/virtio/balloon/mod.rs#1",
-        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
+        "model": "claude-sonnet-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
       }
     ],
+    "refuted": [],
+    "not_reviewed": [],
     "routing": [
       {
         "hunk_id": "src/vmm/src/devices/virtio/balloon/device.rs#1",
@@ -106,39 +113,37 @@
           "hunks": 3,
           "escalated_in": 0,
           "requests": 1,
-          "input_tokens": 0,
-          "cache_write_tokens": 0,
-          "cache_read_tokens": 0,
-          "output_tokens": 0,
-          "cache_write_1h_tokens": 0,
-          "cost_usd": 0,
-          "direct_api_cost_usd": 0
+          "input_tokens": 2,
+          "cache_write_tokens": 11992,
+          "cache_read_tokens": 994,
+          "output_tokens": 934,
+          "cache_write_1h_tokens": 11992,
+          "cost_usd": 0.0574114,
+          "direct_api_cost_usd": 0.031116
         }
       ],
       "skipped_hunks": 0,
-      "not_reviewed_hunks": 3,
-      "total_cost_usd": 0,
-      "total_direct_api_cost_usd": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.0574114,
+      "total_direct_api_cost_usd": 0.031116,
       "baseline": {
         "model": "claude-fable-5-2",
         "method": "actual_tokens_at_baseline_prices",
-        "cost_usd": 0,
-        "direct_api_cost_usd": 0
+        "cost_usd": 0.22944679999999998,
+        "direct_api_cost_usd": 0.124464
       },
-      "savings_pct": 0,
+      "savings_pct": 75,
       "budget": {
         "max_cost_usd": null,
         "degraded": false
       },
       "warnings": [
         "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
-        "tier 3 call failed for src/vmm/src/devices/virtio/balloon/device.rs#1, src/vmm/src/devices/virtio/balloon/device.rs#2, src/vmm/src/devices/virtio/balloon/mod.rs#1: error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)",
         "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
       ],
-      "wall_ms": 9727,
+      "wall_ms": 14959,
       "prices_as_of": "2026-11-16"
     }
   },
-  "judge_pending": [],
-  "stopped": "call error (usage limit), found after test batch 3; re-run"
+  "judge_pending": []
 }

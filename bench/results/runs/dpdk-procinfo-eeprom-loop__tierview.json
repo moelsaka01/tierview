@@ -2,41 +2,78 @@
   "case_id": "dpdk-procinfo-eeprom-loop",
   "arm": "tierview",
   "arm_version": 4,
-  "batch": "2026-11-16T16-30-54",
+  "batch": "2026-11-16T18-57-29",
   "config_hash": "4fe1abf9f1f3",
-  "complete": false,
+  "complete": true,
   "calls": 2,
-  "wall_ms": 21080,
+  "wall_ms": 40675,
   "review": {
     "version": 1,
     "findings": [
       {
         "file": "app/proc-info/main.c",
-        "start_line": 1614,
+        "start_line": 1615,
         "end_line": 1618,
         "side": "new",
         "severity": "medium",
         "category": "bug",
-        "title": "EEPROM length from driver not bounded by 1024-byte buffer",
-        "explanation": "eeprom_info.length is taken from module_info.eeprom_len, which is reported by the driver. The destination buffer is a fixed EEPROM_DUMP_CHUNKSIZE (1024) bytes. If a module reports a larger EEPROM, rte_eth_dev_get_module_eeprom can write past the stack buffer. rte_hexdump would then read past it too.",
-        "suggestion": "Check module_info.eeprom_len against sizeof(bytes_eeprom). Either reject larger values or read in chunks of EEPROM_DUMP_CHUNKSIZE, advancing the offset each time.",
+        "title": "Driver-reported EEPROM length not bounded by fixed stack buffer",
+        "explanation": "eeprom_info.length is set straight from module_info.eeprom_len, which the PMD reports, and eeprom_info.data points to a fixed stack array of EEPROM_DUMP_CHUNKSIZE bytes. rte_eth_dev_get_module_eeprom() checks only that data is non-NULL and length is non-zero; it never checks the caller's buffer size. If a driver reports an eeprom_len larger than EEPROM_DUMP_CHUNKSIZE, the driver writes past the end of bytes_eeprom and corrupts the stack. Common SFF lengths today (256, 512, 640) fit in 1024 bytes, so this takes an unusual or buggy PMD, or a larger module type such as CMIS, to trigger. The prior finding's second point, that eeprom_info is not zero-initialised, does not cause a problem: the get_module_eeprom path uses only data, offset and length, and all three are set.",
+        "suggestion": "Bound the length before the read, e.g. `if (module_info.eeprom_len > sizeof(bytes_eeprom)) { fprintf(stderr, ...); continue; }`, or clamp it to sizeof(bytes_eeprom). Another option is to malloc a buffer of eeprom_len bytes.",
         "evidence": "eeprom_info.length = module_info.eeprom_len;",
         "confidence": 0.55,
-        "id": "9cfd0b0eff51",
+        "id": "0e5dfd87a22d",
+        "hunk_id": "app/proc-info/main.c#6",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [
+          1
+        ],
+        "also_reported_by": []
+      },
+      {
+        "file": "app/proc-info/main.c",
+        "start_line": 1615,
+        "end_line": 1616,
+        "side": "new",
+        "severity": "medium",
+        "category": "bug",
+        "title": "EEPROM length not bounded by fixed 1024-byte stack buffer",
+        "explanation": "eeprom_info.length is taken from the driver-reported module_info.eeprom_len and the driver writes that many bytes into bytes_eeprom[EEPROM_DUMP_CHUNKSIZE]. If a PMD reports a length over 1024, the stack buffer overflows. Also, eeprom_info is not zero-initialized, so other fields such as the type field hold garbage.",
+        "suggestion": "Clamp or reject when module_info.eeprom_len > sizeof(bytes_eeprom), and memset eeprom_info to 0 before use.",
+        "evidence": "eeprom_info.length = module_info.eeprom_len;",
+        "confidence": 0.5,
+        "id": "a88bec73a596",
         "hunk_id": "app/proc-info/main.c#6",
         "model": "claude-sonnet-5-5",
         "tier": 1,
         "escalated_from": [],
         "also_reported_by": []
+      },
+      {
+        "file": "app/proc-info/main.c",
+        "start_line": 1607,
+        "end_line": 1623,
+        "side": "new",
+        "severity": "low",
+        "category": "error-handling",
+        "title": "Error on one port aborts the dump for all remaining ports",
+        "explanation": "When rte_eth_dev_get_module_info() or rte_eth_dev_get_module_eeprom() fails for a port, the function returns. These calls commonly fail, for example with -ENOTSUP when the PMD has no support or with an error when no module is plugged in. So one port without a module stops the dump for every later port in the mask, even ports that have readable modules.",
+        "suggestion": "Use `continue` instead of `return` in both error branches so the remaining ports are still dumped.",
+        "evidence": "return;",
+        "confidence": 0.5,
+        "id": "ce8a6f56b18a",
+        "hunk_id": "app/proc-info/main.c#6",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [
+          1
+        ],
+        "also_reported_by": []
       }
     ],
     "refuted": [],
-    "not_reviewed": [
-      {
-        "hunk_id": "app/proc-info/main.c#6",
-        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
-      }
-    ],
+    "not_reviewed": [],
     "routing": [
       {
         "hunk_id": "app/proc-info/main.c#1",
@@ -196,12 +233,12 @@
           "escalated_in": 0,
           "requests": 1,
           "input_tokens": 2,
-          "cache_write_tokens": 31197,
-          "cache_read_tokens": 994,
-          "output_tokens": 1313,
-          "cache_write_1h_tokens": 31197,
-          "cost_usd": 0.1380214,
-          "direct_api_cost_usd": 0.073316
+          "cache_write_tokens": 32188,
+          "cache_read_tokens": 0,
+          "output_tokens": 1270,
+          "cache_write_1h_tokens": 32188,
+          "cost_usd": 0.141456,
+          "direct_api_cost_usd": 0.07288
         },
         {
           "tier": 2,
@@ -225,41 +262,37 @@
           "hunks": 0,
           "escalated_in": 1,
           "requests": 1,
-          "input_tokens": 0,
-          "cache_write_tokens": 0,
+          "input_tokens": 2,
+          "cache_write_tokens": 8394,
           "cache_read_tokens": 0,
-          "output_tokens": 0,
-          "cache_write_1h_tokens": 0,
-          "cost_usd": 0,
-          "direct_api_cost_usd": 0
+          "output_tokens": 1621,
+          "cache_write_1h_tokens": 8394,
+          "cost_usd": 0.09958,
+          "direct_api_cost_usd": 0.057604
         }
       ],
       "skipped_hunks": 0,
-      "not_reviewed_hunks": 1,
-      "total_cost_usd": 0.1380214,
-      "total_direct_api_cost_usd": 0.073316,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.241036,
+      "total_direct_api_cost_usd": 0.130484,
       "baseline": {
         "model": "claude-fable-5-2",
         "method": "actual_tokens_at_baseline_prices",
-        "cost_usd": 0.5518868,
-        "direct_api_cost_usd": 0.293264
+        "cost_usd": 0.764984,
+        "direct_api_cost_usd": 0.406728
       },
-      "savings_pct": 75,
+      "savings_pct": 68.5,
       "budget": {
         "max_cost_usd": null,
         "degraded": false
       },
       "warnings": [
         "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
-        "tier 3 call failed for app/proc-info/main.c#6: error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)",
         "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
       ],
-      "wall_ms": 21079,
+      "wall_ms": 40673,
       "prices_as_of": "2026-11-16"
     }
   },
-  "judge_pending": [
-    "9cfd0b0eff51"
-  ],
-  "stopped": "call error (usage limit), found after test batch 3; re-run"
+  "judge_pending": []
 }

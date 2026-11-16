@@ -1,0 +1,293 @@
+{
+  "case_id": "nextjs-clean-head-ppr-resume",
+  "arm": "all-opus",
+  "arm_version": 1,
+  "batch": "2026-11-16T18-57-29",
+  "config_hash": "4fe1abf9f1f3",
+  "complete": true,
+  "calls": 1,
+  "wall_ms": 34138,
+  "review": {
+    "version": 1,
+    "findings": [
+      {
+        "file": "packages/next/src/client/components/router-reducer/reducers/find-head-in-cache.ts",
+        "start_line": 59,
+        "end_line": 60,
+        "side": "new",
+        "severity": "low",
+        "category": "bug",
+        "title": "Search-param-free key built from wrong prefix",
+        "explanation": "The search-param-free key is built from `keyPrefix`, which can contain search params, instead of from the `keyPrefixWithoutSearchParams` parameter that was added for this purpose. The result is correct today only because search params appear just in the leaf __PAGE__ segment key. If any non-leaf segment key ever carries search params, the server-side head key will no longer match the prerendered key, and the PPR resume mismatch this change fixes will come back.",
+        "suggestion": "Use `keyPrefixWithoutSearchParams + '/' + cacheKeyWithoutSearchParams` as the fourth argument.",
+        "evidence": "      keyPrefix + '/' + cacheKeyWithoutSearchParams",
+        "confidence": 0.8,
+        "id": "a8dc63d84be9",
+        "hunk_id": "packages/next/src/client/components/router-reducer/reducers/find-head-in-cache.ts#3",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      },
+      {
+        "file": "test/e2e/app-dir/resuming-head-runtime-search-param/app/page.tsx",
+        "start_line": 6,
+        "end_line": 24,
+        "side": "new",
+        "severity": "low",
+        "category": "test",
+        "title": "Fixture nests <p> inside <p> (invalid HTML)",
+        "explanation": "DynamicHole renders a <p> inside the outer <p>. That is invalid HTML: React warns about it in dev, and it can cause a hydration error. If the HTML parser or React places the inner node elsewhere, the test's `p p` selector stops matching, making the test fragile.",
+        "suggestion": "Make the outer or inner element a <div> or <span>, and update the selectors to match.",
+        "evidence": "  return <p>Dynamic Hole</p>",
+        "confidence": 0.5,
+        "id": "2e52e285d8a4",
+        "hunk_id": "test/e2e/app-dir/resuming-head-runtime-search-param/app/page.tsx#1",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      }
+    ],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "packages/next/src/client/components/app-router.tsx#1",
+        "score": 30,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "boundary",
+            "weight": 25,
+            "detail": "comparison operator changed"
+          },
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "13 changed lines"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "packages/next/src/client/components/router-reducer/reducers/find-head-in-cache.ts#1",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "11 changed lines"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "packages/next/src/client/components/router-reducer/reducers/find-head-in-cache.ts#2",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "packages/next/src/client/components/router-reducer/reducers/find-head-in-cache.ts#3",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "test/e2e/app-dir/resuming-head-runtime-search-param/app/layout.tsx#1",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "11 changed lines"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "test/e2e/app-dir/resuming-head-runtime-search-param/app/page.tsx#1",
+        "score": 15,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "concurrency",
+            "weight": 25,
+            "detail": "async/await added"
+          },
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "25 changed lines"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "test/e2e/app-dir/resuming-head-runtime-search-param/next.config.js#1",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "11 changed lines"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "test/e2e/app-dir/resuming-head-runtime-search-param/resuming-head-runtime-search-param.test.ts#1",
+        "score": 15,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "concurrency",
+            "weight": 25,
+            "detail": "async/await added"
+          },
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "26 changed lines"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 1,
+      "model_substitutions": [],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 2,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 8,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 13643,
+          "cache_read_tokens": 994,
+          "output_tokens": 2644,
+          "cache_write_1h_tokens": 13643,
+          "cost_usd": 0.16223079999999998,
+          "direct_api_cost_usd": 0.103036
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.16223079999999998,
+      "total_direct_api_cost_usd": 0.103036,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.32426279999999996,
+        "direct_api_cost_usd": 0.206072
+      },
+      "savings_pct": 50,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 34137,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}

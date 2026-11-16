@@ -1,0 +1,315 @@
+{
+  "case_id": "dpdk-procinfo-eeprom-loop",
+  "arm": "all-opus",
+  "arm_version": 1,
+  "batch": "2026-11-16T16-30-54",
+  "config_hash": "4fe1abf9f1f3",
+  "complete": false,
+  "calls": 1,
+  "wall_ms": 7798,
+  "review": {
+    "version": 1,
+    "findings": [],
+    "refuted": [],
+    "not_reviewed": [
+      {
+        "hunk_id": "app/proc-info/main.c#1",
+        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
+      },
+      {
+        "hunk_id": "app/proc-info/main.c#2",
+        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
+      },
+      {
+        "hunk_id": "app/proc-info/main.c#3",
+        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
+      },
+      {
+        "hunk_id": "app/proc-info/main.c#4",
+        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
+      },
+      {
+        "hunk_id": "app/proc-info/main.c#5",
+        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
+      },
+      {
+        "hunk_id": "app/proc-info/main.c#6",
+        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
+      },
+      {
+        "hunk_id": "app/proc-info/main.c#7",
+        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
+      },
+      {
+        "hunk_id": "doc/guides/tools/proc_info.rst#1",
+        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
+      },
+      {
+        "hunk_id": "doc/guides/tools/proc_info.rst#2",
+        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
+      }
+    ],
+    "routing": [
+      {
+        "hunk_id": "app/proc-info/main.c#1",
+        "score": 10,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "7 hunks in this file"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "52 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "app/proc-info/main.c#2",
+        "score": 10,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "7 hunks in this file"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "52 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "app/proc-info/main.c#3",
+        "score": 10,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "7 hunks in this file"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "52 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "app/proc-info/main.c#4",
+        "score": 10,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "7 hunks in this file"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "52 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "app/proc-info/main.c#5",
+        "score": 10,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "7 hunks in this file"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "52 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "app/proc-info/main.c#6",
+        "score": 20,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 10,
+            "detail": "42 changed lines"
+          },
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "7 hunks in this file"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "52 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "app/proc-info/main.c#7",
+        "score": 10,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "7 hunks in this file"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "52 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "doc/guides/tools/proc_info.rst#1",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "doc/guides/tools/proc_info.rst#2",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 1,
+      "model_substitutions": [],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 2,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 9,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 9,
+      "total_cost_usd": 0,
+      "total_direct_api_cost_usd": 0,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0,
+        "direct_api_cost_usd": 0
+      },
+      "savings_pct": 0,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "tier 3 call failed for app/proc-info/main.c#1, app/proc-info/main.c#2, app/proc-info/main.c#3, app/proc-info/main.c#4, app/proc-info/main.c#5, app/proc-info/main.c#6, app/proc-info/main.c#7, doc/guides/tools/proc_info.rst#1, doc/guides/tools/proc_info.rst#2: error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 7797,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": [],
+  "stopped": "call error (usage limit), found after test batch 3; re-run"
+}

@@ -2,29 +2,36 @@
   "case_id": "firecracker-clean-balloon-error",
   "arm": "all-opus",
   "arm_version": 1,
-  "batch": "2026-11-16T16-30-54",
+  "batch": "2026-11-16T18-57-29",
   "config_hash": "4fe1abf9f1f3",
-  "complete": false,
+  "complete": true,
   "calls": 1,
-  "wall_ms": 10090,
+  "wall_ms": 30231,
   "review": {
     "version": 1,
-    "findings": [],
-    "refuted": [],
-    "not_reviewed": [
+    "findings": [
       {
-        "hunk_id": "src/vmm/src/devices/virtio/balloon/device.rs#1",
-        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
-      },
-      {
+        "file": "src/vmm/src/devices/virtio/balloon/device.rs",
+        "start_line": 459,
+        "end_line": 461,
+        "side": "new",
+        "severity": "medium",
+        "category": "bug",
+        "title": "Error reports requested amount as the limit instead of guest memory size",
+        "explanation": "TooMuchMemoryRequested's display is \"Requested memory should be less than {0}MiB\", but here {0} is the requested amount_mib, not the limit mem_size_mib(mem). A 4096 MiB request on a 2048 MiB guest gives \"Requested memory should be less than 4096MiB\", which misstates the limit to API users.",
+        "suggestion": "Pass the limit, e.g. `BalloonError::TooMuchMemoryRequested(u32::try_from(mem_size_mib(mem)).unwrap_or(u32::MAX))`.",
+        "evidence": "return Err(BalloonError::TooMuchMemoryRequested(amount_mib));",
+        "confidence": 0.85,
+        "id": "a5f48717a09e",
         "hunk_id": "src/vmm/src/devices/virtio/balloon/device.rs#2",
-        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
-      },
-      {
-        "hunk_id": "src/vmm/src/devices/virtio/balloon/mod.rs#1",
-        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
       }
     ],
+    "refuted": [],
+    "not_reviewed": [],
     "routing": [
       {
         "hunk_id": "src/vmm/src/devices/virtio/balloon/device.rs#1",
@@ -106,39 +113,37 @@
           "hunks": 3,
           "escalated_in": 0,
           "requests": 1,
-          "input_tokens": 0,
-          "cache_write_tokens": 0,
-          "cache_read_tokens": 0,
-          "output_tokens": 0,
-          "cache_write_1h_tokens": 0,
-          "cost_usd": 0,
-          "direct_api_cost_usd": 0
+          "input_tokens": 2,
+          "cache_write_tokens": 11999,
+          "cache_read_tokens": 994,
+          "output_tokens": 1467,
+          "cache_write_1h_tokens": 11999,
+          "cost_usd": 0.1255388,
+          "direct_api_cost_usd": 0.07292
         }
       ],
       "skipped_hunks": 0,
-      "not_reviewed_hunks": 3,
-      "total_cost_usd": 0,
-      "total_direct_api_cost_usd": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.1255388,
+      "total_direct_api_cost_usd": 0.07292,
       "baseline": {
         "model": "claude-fable-5-2",
         "method": "actual_tokens_at_baseline_prices",
-        "cost_usd": 0,
-        "direct_api_cost_usd": 0
+        "cost_usd": 0.2508788,
+        "direct_api_cost_usd": 0.14584
       },
-      "savings_pct": 0,
+      "savings_pct": 50,
       "budget": {
         "max_cost_usd": null,
         "degraded": false
       },
       "warnings": [
         "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
-        "tier 3 call failed for src/vmm/src/devices/virtio/balloon/device.rs#1, src/vmm/src/devices/virtio/balloon/device.rs#2, src/vmm/src/devices/virtio/balloon/mod.rs#1: error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)",
         "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
       ],
-      "wall_ms": 10090,
+      "wall_ms": 30231,
       "prices_as_of": "2026-11-16"
     }
   },
-  "judge_pending": [],
-  "stopped": "call error (usage limit), found after test batch 3; re-run"
+  "judge_pending": []
 }

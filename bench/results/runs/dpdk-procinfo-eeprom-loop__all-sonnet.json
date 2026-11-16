@@ -2,53 +2,36 @@
   "case_id": "dpdk-procinfo-eeprom-loop",
   "arm": "all-sonnet",
   "arm_version": 1,
-  "batch": "2026-11-16T16-30-54",
+  "batch": "2026-11-16T18-57-29",
   "config_hash": "4fe1abf9f1f3",
-  "complete": false,
+  "complete": true,
   "calls": 1,
-  "wall_ms": 8085,
+  "wall_ms": 19520,
   "review": {
     "version": 1,
-    "findings": [],
-    "refuted": [],
-    "not_reviewed": [
+    "findings": [
       {
-        "hunk_id": "app/proc-info/main.c#1",
-        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
-      },
-      {
-        "hunk_id": "app/proc-info/main.c#2",
-        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
-      },
-      {
-        "hunk_id": "app/proc-info/main.c#3",
-        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
-      },
-      {
-        "hunk_id": "app/proc-info/main.c#4",
-        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
-      },
-      {
-        "hunk_id": "app/proc-info/main.c#5",
-        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
-      },
-      {
+        "file": "app/proc-info/main.c",
+        "start_line": 1615,
+        "end_line": 1616,
+        "side": "new",
+        "severity": "medium",
+        "category": "bug",
+        "title": "EEPROM length from driver not bounded by 1024-byte stack buffer",
+        "explanation": "eeprom_info.length is taken from module_info.eeprom_len, which is supplied by the PMD, and the driver then writes that many bytes into the fixed 1024-byte stack buffer bytes_eeprom. If a driver reports a larger length, the stack buffer overflows. The code never checks the length against EEPROM_DUMP_CHUNKSIZE.",
+        "suggestion": "Check module_info.eeprom_len against sizeof(bytes_eeprom). Return an error or read in chunks if it is larger. Also memset eeprom_info before use.",
+        "evidence": "eeprom_info.length = module_info.eeprom_len;",
+        "confidence": 0.5,
+        "id": "3806d63a48af",
         "hunk_id": "app/proc-info/main.c#6",
-        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
-      },
-      {
-        "hunk_id": "app/proc-info/main.c#7",
-        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
-      },
-      {
-        "hunk_id": "doc/guides/tools/proc_info.rst#1",
-        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
-      },
-      {
-        "hunk_id": "doc/guides/tools/proc_info.rst#2",
-        "reason": "tier 3 error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)"
+        "model": "claude-sonnet-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
       }
     ],
+    "refuted": [],
+    "not_reviewed": [],
     "routing": [
       {
         "hunk_id": "app/proc-info/main.c#1",
@@ -277,39 +260,37 @@
           "hunks": 9,
           "escalated_in": 0,
           "requests": 1,
-          "input_tokens": 0,
-          "cache_write_tokens": 0,
-          "cache_read_tokens": 0,
-          "output_tokens": 0,
-          "cache_write_1h_tokens": 0,
-          "cost_usd": 0,
-          "direct_api_cost_usd": 0
+          "input_tokens": 2,
+          "cache_write_tokens": 31224,
+          "cache_read_tokens": 994,
+          "output_tokens": 1386,
+          "cache_write_1h_tokens": 31224,
+          "cost_usd": 0.1388594,
+          "direct_api_cost_usd": 0.0741
         }
       ],
       "skipped_hunks": 0,
-      "not_reviewed_hunks": 9,
-      "total_cost_usd": 0,
-      "total_direct_api_cost_usd": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.1388594,
+      "total_direct_api_cost_usd": 0.0741,
       "baseline": {
         "model": "claude-fable-5-2",
         "method": "actual_tokens_at_baseline_prices",
-        "cost_usd": 0,
-        "direct_api_cost_usd": 0
+        "cost_usd": 0.5552388,
+        "direct_api_cost_usd": 0.2964
       },
-      "savings_pct": 0,
+      "savings_pct": 75,
       "budget": {
         "max_cost_usd": null,
         "degraded": false
       },
       "warnings": [
         "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
-        "tier 3 call failed for app/proc-info/main.c#1, app/proc-info/main.c#2, app/proc-info/main.c#3, app/proc-info/main.c#4, app/proc-info/main.c#5, app/proc-info/main.c#6, app/proc-info/main.c#7, doc/guides/tools/proc_info.rst#1, doc/guides/tools/proc_info.rst#2: error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)",
         "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
       ],
-      "wall_ms": 8085,
+      "wall_ms": 19520,
       "prices_as_of": "2026-11-16"
     }
   },
-  "judge_pending": [],
-  "stopped": "call error (usage limit), found after test batch 3; re-run"
+  "judge_pending": []
 }
