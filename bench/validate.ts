@@ -311,6 +311,8 @@ function makeCases(selectionFile: string): void {
     const dir = ensureClone(v.repo);
     const diff = git(dir, ["diff", "--no-color", "-U3", "-M", `${v.bug_sha}^`, v.bug_sha!]);
     writeFileSync(join(dirOut, `${s.id}.diff`), diff);
+    // The judge sees the fix (PLAN §9); the reviewer never does.
+    if (s.kind === "buggy") writeFileSync(join(dirOut, `${s.id}.fix.diff`), git(dir, ["diff", "--no-color", "-U3", "-M", `${v.fix_sha}^`, v.fix_sha]));
     const c: BenchCase = {
       id: s.id,
       kind: s.kind,

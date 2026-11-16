@@ -316,7 +316,7 @@ Baselines share the Tier 3 context builder so the only variable is model and eff
 **No Fable calls (decided at the start of Phase 4).** Mohamed has no budget for extra usage, and on some plans Fable draws on paid extra usage that `claude -p` bills without asking. So the benchmark makes **zero Fable calls**: the `all-fable` arm is not run, the planned `all-fable-low` arm is dropped (it was the strongest simple alternative to a cascade, but it needs Fable calls, so the question it answers stays open and the write-up says so), and `tierview` runs without `--allow-fable`, i.e. Tier 3 on Opus 5.5 at high effort. The all-Fable cost is **calculated** two ways and labelled as a calculation: (a) the receipt's estimator (§7), and (b) the `all-opus` arm's measured tokens priced at Fable 5.2 list prices (same request shape; Fable's real token counts would differ). The estimator's error is measured against the `all-opus` arm instead (estimator run with Opus as the baseline model, against measured all-Opus cost). The tagline check in §12 compares against `all-opus` and says so.
 
 **Scoring**:
-- A buggy case is **caught** when at least one finding (a) is in a file `F` touched and within ±10 lines of a faulty line or in the same function, and (b) is judged to describe the same defect. The judge is `claude-sonnet-5-5` at `medium`, given the fix diff, the bug description and the finding, blind to the arm. 20 random judge decisions are audited by hand and the agreement rate is published (`bench/results/judge-audit.md`).
+- A buggy case is **caught** when at least one finding describes the bug. **Judge (changed in Phase 4, Mohamed's decision): rules first, Opus only when the rules cannot decide.** Each finding of a buggy case is matched against the case's faulty lines (lines of `B` that `F` rewrote, in `B`'s numbering): **match** when it is on the new side of a faulty file and its line range is within ±3 lines of a faulty line; **no match** when it is in another file, or more than 10 lines from every faulty line and outside every faulty hunk; **ambiguous** otherwise (inside a faulty hunk or within 4–10 lines of a faulty line, or on the old side of a faulty hunk). Only ambiguous findings go to the model judge: the Tier 2 model (Opus 5.5) at `medium` on the `claude-code` backend, one call per (case, arm) with all of that run's ambiguous findings, given the fix diff, the bug description and the findings, blind to the arm. Every judgement, rule or model, is logged to `bench/results/judgements.jsonl` with its reason. 20 random judgements (both kinds) are audited by hand and the agreement rate is published (`bench/results/judge-audit.md`). Judge calls count toward the batch cap.
 - **False positives** are measured on clean cases only: findings of severity ≥ medium per case, and the share of clean cases with at least one. Unmatched findings on buggy cases are reported as "unmatched", not as false positives (they may be real).
 - **Routing recall** (free, no API): share of faulty hunks that Tier 0 routed to Tier 2 or 3. Bugs missed *because* they were routed low are reported separately. This is the failure mode a reader will ask about.
 
@@ -331,7 +331,7 @@ Baselines share the Tier 3 context builder so the only variable is model and eff
 
 **Order of work**: (1) build the 30-case dataset and **show Mohamed the case list** before any `claude` call; (2) pilot on 5 cases (3 buggy, 2 clean), all three arms, in batches of ≤ 20 calls; (3) report measured calls, tokens and API-equivalent cost per case and arm, and a projection for 30 cases as a number of batches; (4) **stop and ask Mohamed** before the full run. Tier 0 routing recall needs no calls and can be measured as soon as the dataset exists.
 
-Planning estimate, to be replaced by the pilot's numbers: tierview 2–4 calls per case, each baseline 1, the judge about 1 per (buggy case, arm) that has a finding near the fault, so roughly 5–8 calls per case with three arms, about 150–220 calls for 30 cases, or 8–11 batches of 20. Treat this as a guess until measured.
+Planning estimate, to be replaced by the pilot's numbers: tierview 2–4 calls per case, each baseline 1, the Opus judge about 1 per (buggy case, arm) with an ambiguous finding, often none, so roughly 5–8 calls per case with three arms, about 150–220 calls for 30 cases, or 8–11 batches of 20. Treat this as a guess until measured.
 
 ## 10. Outputs and integrations (Phase 5)
 
@@ -374,10 +374,10 @@ Every task ends with `npm run check` (typecheck + tests) passing. Tick the box i
 - [x] P4-01 `bench/mine.ts`: collect candidate (B, F) pairs from the §9 sources into `bench/candidates.jsonl`.
 - [x] P4-02 `bench/validate.ts` + test: blame check and filters; write `bench/cases/<id>.json`; clean-case selection.
 - [x] P4-03 Manual pass; `bench/cases/README.md` lists every case with its source link and the dev / test split.
-- [ ] P4-04 `bench/arms.ts`: the three arms (`tierview`, `all-sonnet`, `all-opus`) as config presets over the real pipeline on the `claude-code` backend; no Fable arm (§9).
-- [ ] P4-05 `bench/run.ts` + test: resumable runner in batches (≤ 20 calls per batch, stop on a usage-limit error), usage ledger `bench/results/usage.jsonl` per run (§9 Usage control).
-- [ ] P4-06 `bench/judge.ts` + test: location pre-filter, blind judge, audit sample export.
-- [ ] P4-07 `bench/metrics.ts` + test: every metric in §9, bootstrap CI, McNemar.
+- [x] P4-04 `bench/arms.ts`: the three arms (`tierview`, `all-sonnet`, `all-opus`) as config presets over the real pipeline on the `claude-code` backend; no Fable arm (§9).
+- [x] P4-05 `bench/run.ts` + test: resumable runner in batches (≤ 20 calls per batch, stop on a usage-limit error), usage ledger `bench/results/usage.jsonl` per run (§9 Usage control).
+- [x] P4-06 `bench/judge.ts` + test: rule-based match first, Opus only for ambiguous findings, every judgement logged, audit sample export.
+- [x] P4-07 `bench/metrics.ts` + test: every metric in §9, bootstrap CI, McNemar.
 - [ ] P4-08 Pilot on 5 cases in batches of ≤ 20 calls, no Fable. Report measured calls, tokens and API-equivalent cost, and the projection in batches. **Stop and ask Mohamed.**
 - [ ] P4-09 Tune risk weights and thresholds on the dev split from saved outputs and Tier 0 routing recall (includes the "payment" false positive on `estimate.ts`, Phase 2 issue); commit the frozen config.
 - [ ] P4-10 Full run on the test split in batches across days, each started by Mohamed; judge audit.

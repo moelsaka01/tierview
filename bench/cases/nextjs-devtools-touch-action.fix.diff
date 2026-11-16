@@ -1,0 +1,44 @@
+diff --git a/packages/next/src/next-devtools/dev-overlay/components/errors/dev-tools-indicator/draggable.tsx b/packages/next/src/next-devtools/dev-overlay/components/errors/dev-tools-indicator/draggable.tsx
+index 93a9e04681..c6667bb84e 100644
+--- a/packages/next/src/next-devtools/dev-overlay/components/errors/dev-tools-indicator/draggable.tsx
++++ b/packages/next/src/next-devtools/dev-overlay/components/errors/dev-tools-indicator/draggable.tsx
+@@ -143,7 +143,12 @@ export function Draggable({
+   }
+ 
+   return (
+-    <div {...props} {...drag} ref={ref}>
++    <div
++      {...props}
++      {...drag}
++      ref={ref}
++      style={{ touchAction: 'none', ...props.style }}
++    >
+       {children}
+     </div>
+   )
+diff --git a/test/development/app-dir/devtools-position/default-position.test.ts b/test/development/app-dir/devtools-position/default-position.test.ts
+index 1a162d305d..b47bc348cc 100644
+--- a/test/development/app-dir/devtools-position/default-position.test.ts
++++ b/test/development/app-dir/devtools-position/default-position.test.ts
+@@ -12,4 +12,21 @@ describe('devtools-position-default', () => {
+     expect(style).toContain('bottom: 20px')
+     expect(style).toContain('left: 20px')
+   })
++
++  it('should disable browser touch gestures on the draggable indicator', async () => {
++    const browser = await next.browser('/')
++    await getDevIndicatorPosition(browser)
++
++    const touchAction = await browser.eval(() => {
++      const portal = Array.from(
++        document.querySelectorAll('nextjs-portal')
++      ).find((p) => p.shadowRoot?.querySelector('[data-nextjs-toast]'))
++      const indicator = portal?.shadowRoot?.querySelector('[data-nextjs-toast]')
++      const draggable = indicator?.firstElementChild
++
++      return draggable ? getComputedStyle(draggable).touchAction : null
++    })
++
++    expect(touchAction).toBe('none')
++  })
+ })

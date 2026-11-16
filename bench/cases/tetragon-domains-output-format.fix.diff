@@ -1,0 +1,34 @@
+diff --git a/cmd/tetra/tracingpolicy/tracingpolicy.go b/cmd/tetra/tracingpolicy/tracingpolicy.go
+index 8b6eaaaa9..ea3a42ad7 100644
+--- a/cmd/tetra/tracingpolicy/tracingpolicy.go
++++ b/cmd/tetra/tracingpolicy/tracingpolicy.go
+@@ -246,7 +246,7 @@ func tpListCmd() *cobra.Command {
+ }
+ 
+ func tpListDomainsCmd() *cobra.Command {
+-	var output string
++	var output *option.Enum
+ 	ret := &cobra.Command{
+ 		Use:   "domains",
+ 		Short: "list loaded tracing policies domains",
+@@ -263,7 +263,7 @@ func tpListDomainsCmd() *cobra.Command {
+ 				return fmt.Errorf("failed to list domains: %w", err)
+ 			}
+ 
+-			switch output {
++			switch output.Value {
+ 			case "json":
+ 				b, err := res.MarshalJSON()
+ 				if err != nil {
+@@ -277,8 +277,10 @@ func tpListDomainsCmd() *cobra.Command {
+ 			return nil
+ 		},
+ 	}
++
++	output, _ = option.NewEnum([]string{"text", "json"}, "text")
+ 	flags := ret.Flags()
+-	flags.StringVarP(&output, common.KeyOutput, "o", "text", "Output format. text or json")
++	flags.VarP(output, common.KeyOutput, "o", "Output format "+output.Allowed())
+ 	return ret
+ }
+ 

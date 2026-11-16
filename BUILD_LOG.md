@@ -7,7 +7,7 @@ One entry per phase: which model did the work, at what effort, from what prompt,
 | 1 | Plan and scaffold | Fable 5.2 (high) | done 2026-11-16 |
 | 2 | Tier 0, config, dry-run | Sonnet 5.5 (medium) | done 2026-11-16 |
 | 3 | LLM tiers, escalation, receipt, backends | Opus 5.5 (high) | done 2026-11-16 |
-| 4 | Benchmark | Opus 5.5 (high) | in progress: dataset done, no model calls yet |
+| 4 | Benchmark | Opus 5.5 (high) | in progress: dataset and harness done, no model calls yet |
 | 5 | PR mode, SARIF, GitHub Action | Sonnet 5.5 | not started |
 | 6 | README and release | Sonnet 5.5 | not started |
 
@@ -232,7 +232,22 @@ Then do Phase 4 with these limits: I have no money, so no Fable calls at all (th
 
 **Usage so far.** $0; zero `claude` calls. GitHub API: about 1,100 read-only requests.
 
-**Next.** Show Mohamed the case list (done in chat), then P4-04 to P4-07 (arms, runner with usage ledger, judge, metrics) and the pilot in batches of at most 20 calls, each started by Mohamed.
+**Session 1, continued: harness. Zero `claude` calls.**
+
+Mohamed approved the case list unchanged and asked for: a limitations section in `bench/cases/README.md` (C-heavy mix, older and calmer clean set so false-positive rates may be optimistic, only 7 dev bugs so the test split gives the headline numbers); a rule-based judge first, with Opus only for ambiguous findings and every judgement logged; then the arms, runner, judge and metrics, stopping before pilot batch 1.
+
+- PLAN §9 judge rewritten: rules first (match within ±3 lines of a faulty line; no match in another file or more than 10 lines away outside every faulty hunk; ambiguous otherwise), Opus 5.5 `medium` only for ambiguous findings, one call per (case, arm), blind to arm and model; every judgement in `bench/results/judgements.jsonl`.
+- `bench/cases/<id>.fix.diff` for the 20 buggy cases (the judge sees the fix; the reviewer never does).
+- P4-04 `bench/arms.ts`: `tierview` (Fable policy applied, Tier 3 on Opus high), `all-sonnet` (Sonnet low), `all-opus` (Opus medium); baselines route every non-generated hunk to Tier 3 with a `min_tier: 3` rule. Model IDs come from the config.
+- P4-05 `bench/run.ts`: batches of 1 to 20 calls (above 20 is refused); review and judge calls share the cap; runs that do not fit are left for the next batch; the pipeline's `maxCalls` is the hard stop; a usage-limit or rate-limit error stops the batch and leaves the run incomplete; finished runs are never re-run; pending judgements are finished first in the next batch. Per run: `bench/results/runs/<case>__<arm>.json`; per run and judge call: `bench/results/usage.jsonl`; per batch: `bench/results/batches.jsonl`. `--dry-run` plans a batch with zero calls. Raw `claude` results go to `bench/results/raw/` (ignored).
+- P4-06 `bench/judge.ts`: location rule, judge prompt and schema, audit sampler. `runStructured` added to `src/llm/claude-code.ts` for the judge's schema (same isolation flags; refuses Fable).
+- P4-07 `bench/metrics.ts`: recall with bootstrap 95% CI, exact McNemar (tierview vs all-opus), false positives per clean case (severity ≥ medium), unmatched findings, tokens, API-equivalent cost per case and per bug caught, calls, latency p50/p90, escalation rate, routing recall, receipt-estimator error against all-Opus, and the calculated all-Fable cost two ways.
+- Tests: `test/bench-run.test.ts` (fake backend and fake judge only); 212 tests pass.
+- Dry run of pilot batch 1: 8 of the 15 pilot runs fit in 20 planned calls; the whole pilot is planned at about 36 calls (two batches), before escalations and retries.
+
+**Deviations.** 6. The judge is rule-first with Opus for ambiguous cases (Mohamed's decision), not Sonnet `medium` for every finding near the fault. 7. The benchmark runs from saved diffs, so churn and hotspot signals are off in every arm; tierview on a real checkout would score some hunks higher. 8. The receipt estimator prices API-shaped requests, while the all-Opus arm runs through Claude Code (about 2,100 overhead tokens per call), so its measured error includes that overhead; the write-up must say so.
+
+**Next.** Pilot batch 1 (`node .bench-build/run.js --cases pilot`), only when Mohamed starts it.
 
 ---
 

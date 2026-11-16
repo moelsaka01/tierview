@@ -227,11 +227,11 @@ export function cleanSchema(v: unknown): unknown {
 
 export const SCHEMA_JSON = JSON.stringify(cleanSchema(z.toJSONSchema(TierResponse)));
 
-export function buildArgs(req: Pick<ReviewRequest, "effort">, model: string, systemFile: string, fallbackModel?: string): string[] {
+export function buildArgs(req: Pick<ReviewRequest, "effort">, model: string, systemFile: string, fallbackModel?: string, schemaJson = SCHEMA_JSON): string[] {
   const args = [
     "-p",
     "--output-format", "json",
-    "--json-schema", SCHEMA_JSON,
+    "--json-schema", schemaJson,
     "--model", model,
     "--effort", req.effort,
     "--tools", "",
@@ -376,5 +376,37 @@ export class ClaudeCodeBackend implements ReviewBackend {
     }
     if (this.opts.cachePath) writeModelCache(this.opts.cachePath, this.cache);
     return out;
+  }
+}
+
+/**
+ * One structured `claude -p` call with any zod schema (the benchmark judge uses it). Same isolation as a review
+ * call: empty temp directory, --safe-mode, no tools. Fable is refused unless allowFable is set (PLAN §5a).
+ */
+export async function runStructured<T>(c: {
+  bin: string;
+  model: string;
+  effort: ReviewRequest["effort"];
+  system: string;
+  user: string;
+  schema: z.ZodType<T>;
+  run?: Runner;
+  timeoutMs?: number;
+  allowFable?: boolean;
+}): Promise<{ ok: boolean; value: T | null; error: string | null; model: string; usageByModel: Record<string, ModelUsage>; calls: number }> {
+  if (!c.allowFable && isFable(c.model)) throw new BackendSetupError(`refusing to request ${c.model} through Claude Code: ${FABLE_NOT_ENABLED}.`);
+  const dir = mkdtempSync(join(tmpdir(), "tierview-cc-"));
+  try {
+    const systemFile = join(dir, "system.txt");
+    writeFileSync(systemFile, c.system);
+    const schemaJson = JSON.stringify(cleanSchema(z.toJSONSchema(c.schema)));
+    const run = await (c.run ?? runProcess)(c.bin, buildArgs({ effort: c.effort }, c.model, systemFile, undefined, schemaJson), c.user, { cwd: dir, timeoutMs: c.timeoutMs ?? 900_000 });
+    const p = parseRun(run, c.model);
+    const parsed = p.structured === undefined ? null : c.schema.safeParse(p.structured);
+    const value = parsed?.success ? parsed.data : null;
+    const error = p.error ?? (p.refusal ? "refused" : value === null ? "no valid structured_output" : null);
+    return { ok: value !== null && !p.error, value, error, model: p.dominant ?? c.model, usageByModel: p.usageByModel, calls: 1 };
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
   }
 }

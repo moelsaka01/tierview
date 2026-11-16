@@ -1,0 +1,66 @@
+diff --git a/django/db/models/fields/json.py b/django/db/models/fields/json.py
+index b879714362..9acc8eac15 100644
+--- a/django/db/models/fields/json.py
++++ b/django/db/models/fields/json.py
+@@ -429,19 +429,26 @@ class JSONIn(ProcessJSONLHSMixin, lookups.In):
+             sql,
+             param,
+         )
+-        if not connection.features.has_native_json_field and (
+-            not hasattr(param, "as_sql") or isinstance(param, expressions.Value)
++        is_value = isinstance(param, expressions.Value)
++        if (
++            not connection.features.has_native_json_field
++            and (not hasattr(param, "as_sql") or is_value)
++            # A non-JSON Value(None) compiles to a literal NULL with no params,
++            # so there is nothing to encode or wrap.
++            and not (
++                is_value
++                and param.value is None
++                and not isinstance(param._output_field_or_none, JSONField)
++            )
+         ):
+-            if isinstance(param, expressions.Value) and not isinstance(
+-                param._output_field_or_none, JSONField
+-            ):
++            if is_value and not isinstance(param._output_field_or_none, JSONField):
+                 output_field = param._output_field_or_none
+                 value = param.value
+                 if output_field is not None:
+                     value = output_field.get_prep_value(value)
+                 params = [connection.ops.adapt_json_value(value, None)]
+             if connection.vendor == "oracle":
+-                value = param.value if hasattr(param, "value") else json.loads(param)
++                value = param.value if is_value else json.loads(param)
+                 sql = "%s(JSON_OBJECT('value' VALUE %%s FORMAT JSON), '$.value')"
+                 if isinstance(value, (list, dict)):
+                     sql %= "JSON_QUERY"
+diff --git a/docs/releases/6.1.3.txt b/docs/releases/6.1.3.txt
+index 705cffb0db..49c3470fa0 100644
+--- a/docs/releases/6.1.3.txt
++++ b/docs/releases/6.1.3.txt
+@@ -11,3 +11,10 @@ Bugfixes
+ 
+ * Fixed a regression in Django 6.1 where the YAML serializer crashed if passed
+   the ``sort_keys`` option (:ticket:`37405`).
++
++* Fixed a regression in Django 6.1 where a :class:`~django.db.models.Value`
++  expression with a ``None`` value and an output field other than
++  :class:`~django.db.models.JSONField` crashed on SQLite when used in a
++  top-level :class:`~django.db.models.JSONField` :lookup:`in` lookup
++  (:ticket:`37403`). Using such an expression in an ``IN`` lookup is likely
++  unintended, since SQL ``NULL`` cannot match any value.
+diff --git a/tests/model_fields/test_jsonfield.py b/tests/model_fields/test_jsonfield.py
+index 886ebee44f..c44f84ae72 100644
+--- a/tests/model_fields/test_jsonfield.py
++++ b/tests/model_fields/test_jsonfield.py
+@@ -1051,6 +1051,9 @@ class TestQuerying(TestCase):
+         tests = [
+             ([Value("7", output_field=IntegerField())], [self.objs[11]]),
+             ([Value("yes", output_field=models.CharField())], [self.objs[10]]),
++            # None with anything but JSONField is almost certainly not what the
++            # user intends--nothing is IN (NULL)--but it shouldn't crash.
++            ([Value(None, output_field=models.CharField())], []),
+         ]
+         for lookup_value, expected in tests:
+             with self.subTest(value__in=lookup_value), transaction.atomic():

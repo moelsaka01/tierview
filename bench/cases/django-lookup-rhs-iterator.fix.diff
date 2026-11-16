@@ -1,0 +1,81 @@
+diff --git a/django/db/models/lookups.py b/django/db/models/lookups.py
+index eef7bc93a5..be6a24800f 100644
+--- a/django/db/models/lookups.py
++++ b/django/db/models/lookups.py
+@@ -1,5 +1,6 @@
+ import itertools
+ import math
++from collections.abc import Iterator
+ 
+ from django.core.exceptions import EmptyResultSet, FullResultSet
+ from django.db.models.expressions import (
+@@ -292,7 +293,9 @@ class FieldGetDbPrepValueIterableMixin(FieldGetDbPrepValueMixin):
+     def get_prep_lookup(self):
+         if hasattr(self.rhs, "resolve_expression"):
+             return self.rhs
+-        if any(hasattr(value, "resolve_expression") for value in self.rhs):
++        # Prevent iterator from being consumed by any().
++        rhs = list(self.rhs) if isinstance(self.rhs, Iterator) else self.rhs
++        if any(hasattr(value, "resolve_expression") for value in rhs):
+             # Wrap direct values in Value expressions so they are handled by
+             # the database at compilation time, along with other expressions.
+             return ExpressionList(
+@@ -302,11 +305,11 @@ class FieldGetDbPrepValueIterableMixin(FieldGetDbPrepValueMixin):
+                         if hasattr(value, "resolve_expression")
+                         else Value(value, getattr(self.lhs, "output_field", None))
+                     )
+-                    for value in self.rhs
++                    for value in rhs
+                 ]
+             )
+         prepared_values = []
+-        for rhs_value in self.rhs:
++        for rhs_value in rhs:
+             if (
+                 self.prepare_rhs
+                 and hasattr(self.lhs, "output_field")
+diff --git a/docs/releases/6.1.1.txt b/docs/releases/6.1.1.txt
+index 940c815c9b..b9576a7820 100644
+--- a/docs/releases/6.1.1.txt
++++ b/docs/releases/6.1.1.txt
+@@ -50,3 +50,7 @@ Bugfixes
+   ``choices``, and where any search term matched all rows with a ``True``
+   value when an ``__exact`` lookup was used on a ``BooleanField``
+   (:ticket:`37263`).
++
++* Fixed a regression in Django 6.1 that caused ``__in`` lookups on annotations
++  to erroneously return empty querysets and ``__range`` lookups to crash when
++  passed an iterator (:ticket:`37311`).
+diff --git a/tests/lookup/tests.py b/tests/lookup/tests.py
+index 9314fa05b0..586dec3790 100644
+--- a/tests/lookup/tests.py
++++ b/tests/lookup/tests.py
+@@ -1087,6 +1087,28 @@ class LookupTests(TestCase):
+     def test_in_empty_list(self):
+         self.assertSequenceEqual(Article.objects.filter(id__in=[]), [])
+ 
++    def test_in_iterator_rhs(self):
++        tests = [
++            ("direct values", [self.a1.id, self.a2.id]),
++            ("expression", [self.a1.id, Value(self.a2.id)]),
++        ]
++        for case, values in tests:
++            with self.subTest(case=case):
++                self.assertCountEqual(
++                    Article.objects.alias(article_id=F("id")).filter(
++                        article_id__in=iter(values)
++                    ),
++                    [self.a1, self.a2],
++                )
++
++    def test_range_iterator_rhs(self):
++        self.assertCountEqual(
++            Article.objects.alias(article_id=F("id")).filter(
++                article_id__range=iter([self.a1.id, self.a2.id])
++            ),
++            [self.a1, self.a2],
++        )
++
+     def test_in_different_database(self):
+         with self.assertRaisesMessage(
+             ValueError,

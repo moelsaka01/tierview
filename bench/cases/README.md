@@ -51,3 +51,9 @@ All fixes were committed between 2026-08-23 and 2026-11-13, after mid-2026 (PLAN
 - Manual pass dropped a test-only flakiness fix (Next.js), a hardening change that is not a bug (DPDK hash seed), and a cleanup (QEMU sev helper); kept one fix per bug commit; capped each repo at 6 cases.
 - Clean commits (`bench/clean.jsonl`): non-merge, 10 to 400 lines, mostly the language, not tests only, no later commit message names them, and no line rewritten by a fix-labelled commit within 12 months. Commits whose files saw more than 10 fix-labelled commits in that year were skipped (to bound blame time), which biases the clean set toward calmer code. Dropped by hand: a translation-only commit, a header-only commit and a TypeScript version bump.
 - Known skew: C has 10 of 20 buggy cases and TypeScript only 1. Squash-merge TypeScript repos rarely name the PR that caused a bug, and most of their fixes were over 60 lines (Angular) or the link pointed at the fix's own PR (MUI).
+
+## Limitations
+
+- **C-heavy mix.** C has 10 of the 20 buggy cases (QEMU and DPDK); Python has 4, Go 3, Rust 2 and TypeScript only 1. Results say little about TypeScript, and pooled recall is mostly a statement about C code.
+- **The clean set is older and calmer.** Clean commits are from August to November 2025 (the bug fixes are from late 2026), and commits whose files had more than 10 fix-labelled commits in the following year were skipped. Busy code is where reviewers raise the most findings, so the false-positive rates measured here may be optimistic.
+- **Only 7 dev bugs for tuning.** Weights, thresholds and prompts may be tuned on the dev split only (7 buggy, 3 clean cases). That is too few to tune well and easy to overfit, so the **test split (13 buggy, 7 clean) gives the headline numbers**, and dev-split results are reported only as tuning data.

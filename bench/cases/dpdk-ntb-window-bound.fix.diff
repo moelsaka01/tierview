@@ -1,0 +1,26 @@
+diff --git a/drivers/raw/ntb/ntb_hw_amd.c b/drivers/raw/ntb/ntb_hw_amd.c
+index dba5b03671..64075501c2 100644
+--- a/drivers/raw/ntb/ntb_hw_amd.c
++++ b/drivers/raw/ntb/ntb_hw_amd.c
+@@ -166,7 +166,7 @@ amd_ntb_ioremap(const struct rte_rawdev *dev, uint64_t addr)
+ 
+ 	for (i = 0; i < ntb->peer_used_mws; i++) {
+ 		if (addr >= ntb->peer_mw_base[i] &&
+-				addr <= ntb->peer_mw_base[i] + ntb->mw_size[i]) {
++				addr < ntb->peer_mw_base[i] + ntb->mw_size[i]) {
+ 			base = amd_ntb_get_peer_mw_addr(dev, i);
+ 			mapped = (void *)(size_t)(addr - ntb->peer_mw_base[i] + (size_t)base);
+ 			break;
+diff --git a/drivers/raw/ntb/ntb_hw_intel.c b/drivers/raw/ntb/ntb_hw_intel.c
+index 78fce9ffac..47d5d39339 100644
+--- a/drivers/raw/ntb/ntb_hw_intel.c
++++ b/drivers/raw/ntb/ntb_hw_intel.c
+@@ -312,7 +312,7 @@ intel_ntb_ioremap(const struct rte_rawdev *dev, uint64_t addr)
+ 
+ 	for (i = 0; i < hw->peer_used_mws; i++) {
+ 		if (addr >= hw->peer_mw_base[i] &&
+-		    addr <= hw->peer_mw_base[i] + hw->mw_size[i]) {
++		    addr < hw->peer_mw_base[i] + hw->mw_size[i]) {
+ 			base = intel_ntb_get_peer_mw_addr(dev, i);
+ 			mapped = (void *)(size_t)(addr - hw->peer_mw_base[i] +
+ 				 (size_t)base);
