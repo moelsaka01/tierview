@@ -71,7 +71,38 @@ Build a dataset of 50–100 real bug-introducing changes from open-source repos 
 
 ---
 
-## Phase 2 — Tier 0, config, dry-run
+## Phase 2 — Tier 0, config, dry-run (2026-11-16)
+
+**Model.** Sonnet 5.5 (`claude-sonnet-5-5`), as planned.
+
+**Effort.** Not visible to the model (the app does not pass it in), so it is not recorded. *(Mohamed: fill in the level you had set.)*
+
+**Prompt.** "Read PLAN.md and BUILD_LOG.md. Do Phase 2 only. Update BUILD_LOG.md (including model and effort) and commit when done." The chat was opened in a scratch folder, so the session was moved to the tierview folder first. Two recent folders had a PLAN.md (`tierview` and `dubai-in-code`); tierview was chosen because its log says Phase 1 is done and Phase 2 is next.
+
+**Delivered.** P2-01 to P2-08, all ticked in `PLAN.md`. `src/tier0/{diff,signals,score,route}.ts`, `src/git.ts`, `src/config.ts`, `src/prices.ts`, `src/estimate.ts`, `src/root.ts`, `src/output/{terminal,json}.ts`, and `src/cli.ts` (`review --dry-run [--json] [--max-cost]`; without `--dry-run` it exits 2 with "LLM tiers arrive in Phase 3"). 121 tests in 8 files; `npm run check` and `npm run build` pass. Fixtures in `test/fixtures/*.diff` were generated from a real git repo, and the dry-run snapshots are in `test/snapshots/`. All five worked examples in PLAN §4 pass as tests. A live `node dist/bin.js review --dry-run` on this repo's working tree also worked.
+
+**Deviations from the plan, and why.**
+
+1. **`--config` default.** No longer the literal `.tierview.yml`. With no flag, the loader looks for `.tierview.yml` in the current directory and uses the defaults if it is absent; an explicit `--config` pointing at a missing file is an error.
+2. **`rules[].add`** was undefined in the plan. It is now a number of score points added before thresholds; `min_tier` / `max_tier` apply after.
+3. **`signals:` in `.tierview.yml`** overrides a category (`auth: {weight: 45}`) or a structure signal (`churn: {enabled: false}`); an unknown name is a config error.
+4. **Regex refinements in `config/default-rules.yml`** (allowed by CLAUDE.md; weights untouched): `\bf"` anchor for SQL f-strings; `eval(` / `exec(` no longer match `.eval(` / `.exec(` (they fired on `model.eval()` and `regex.exec()`); `can_?\w+` matched `canvas` and `cancel`, now only `can_x` or `canEdit`-style names; the `*.txt` docs glob excludes `requirements*.txt` so the dependencies signal can fire.
+5. **`config/estimates.json`** gained placeholders the estimator needs (per-tier context tokens, shared-context tokens, Tier 1 batch limits). Still uncalibrated; P3-10 replaces them. The estimate ignores prompt caching and escalations; the 15% reserve is printed beside the total, not added to it.
+6. **Docs files and comment-only hunks are capped at 5, not set to 5.** A one-line README change scores 0. This matches "capped" in the plan; noted because the worked example reads as if it scores 5.
+7. **Dry-run JSON** has its own shape (`dry_run: true`, `routing`, `estimate`), not the full `Review` schema, which needs a receipt that does not exist before Phase 3.
+8. **`src/tiers/batch.ts` is not used yet.** The estimator has a small private copy of the Tier 1 packing rule (12 hunks, 6k tokens). P3-03 should replace it with the real packer so the two cannot drift.
+
+**Issues.**
+
+- Keyword signals are blunt: on this repo's own diff, `estimate.ts` and `cli.ts` scored "payment" (`total` / `amount` words), `git.ts` scored "unsafe". Weights and patterns are Phase 4 work on the dev split; not touched here.
+- `--dry-run` cannot tell "no history because shallow" from "diff supplied without git"; the note says "shallow clone or no checkout".
+- Untracked files are not in `git diff`, so `review` does not see brand-new unstaged files. `git add -N` or `--staged` is the workaround; worth a README line in Phase 6.
+- The first fixture attempt rewrote whole files with CRLF endings (Python on Windows); fixed by writing with `newline=''`.
+- The first Phase 2 commit went in before this log entry was written (a script error); this entry is in the follow-up commit.
+
+**API spend this phase.** $0 (no Anthropic API calls).
+
+---
 
 *Template for each later phase:*
 
