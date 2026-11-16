@@ -30,6 +30,10 @@ budget: { max_cost_usd: null }
 receipt:
   baseline: { model: claude-fable-5-2, effort: high }
 
+# Fable on the claude-code backend is opt-in (PLAN.md §5a). On some plans Fable uses paid extra usage and
+# `claude -p` does not ask first. false: tiers set to Fable run on the Tier 2 model; --allow-fable overrides.
+allowFable: false
+
 # Which backend runs the models. Spec: PLAN.md §5a.
 backend:
   default: claude-code          # claude-code | api  (--backend overrides)

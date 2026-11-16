@@ -177,6 +177,20 @@ Run of calls 3 to 5: 48.0 s wall, 11,446 tokens, $0.08 API-equivalent; both seed
 
 ---
 
+## Fix before Phase 4 — Fable opt-in (2026-11-16)
+
+**Model.** Opus 5.5 (`claude-opus-5-5`), high effort, in the Phase 4 chat, committed separately before Phase 4 work.
+
+**Prompt.** The first part of the Phase 4 prompt (quoted in full in the Phase 4 entry): make Fable 5.2 opt-in on the claude-code backend with `--allow-fable` or `allowFable: true`; without it Tier 3 goes straight to Opus 5.5 and the receipt says "Tier 3 ran on Opus 5.5 (Fable not enabled)"; with it, warn before the first call; keep the all-Fable comparison.
+
+**Delivered.** `src/fable.ts` (policy, display names, receipt line), `allowFable: false` in `config/default-rules.yml` and the config schema, `--allow-fable` on `review` and `models`, a guard in `ClaudeCodeBackend` that refuses to start a `claude` process for Fable without opt-in (requests, `--fallback-model` and `--probe`), dry-run note, receipt line, warning on stderr before the first call. Tests: `test/fable.test.ts` plus new cases in `test/backends.test.ts` and `test/pipeline.test.ts` (193 tests). Dry-run snapshots changed: Tier 3 now shows Opus 5.5 by default. PLAN §5a, README and `.tierview.example.yml` updated.
+
+**Deviations.** The config key is camelCase (`allowFable`) because that is the name Mohamed asked for; every other key is snake_case. The substitute model is the Tier 2 model (Opus 5.5 by default), at Tier 3's own effort (high), so no new model ID enters the code.
+
+**API spend.** $0, no `claude` calls.
+
+---
+
 *Template for each later phase:*
 
 **Model.** …

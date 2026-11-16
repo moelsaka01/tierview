@@ -12,14 +12,15 @@ Estimated API-equivalent cost (claude-code backend; requests = claude calls; no 
   tier  model              effort  hunks  requests  input tok  output tok   cost
   1     claude-sonnet-5-5  low         2         1       3584         800  $0.02
   2     claude-opus-5-5    medium      1         1       3849         700  $0.03
-  3     claude-fable-5-2   high        1         1       4818        2000  $0.12
+  3     claude-opus-5-5    high        1         1       4818        2000  $0.06
 
   skipped hunks:        1
-  estimated total:      $0.16 (+ up to $0.02 escalation allowance)
+  estimated total:      $0.10 (+ up to $0.02 escalation allowance)
   all-claude-fable-5-2 baseline: $0.41 (estimated)
-  estimated savings:    54%
+  estimated savings:    70.7%
 
 Notes
+  - Tier 3 will run on Opus 5.5 (Fable not enabled; --allow-fable to use Fable 5.2).
   - git history unavailable (shallow clone or no checkout): churn and hotspot signals contributed 0.
   - token and output estimates are uncalibrated placeholders (config/estimates.json); treat costs as rough.
   - prices as of 2026-11-16.

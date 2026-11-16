@@ -14,6 +14,7 @@ import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { z } from "zod";
 import { type LlmTier, type ModelSubstitution, TierResponse, type Usage } from "../types";
+import { FABLE_NOT_ENABLED, isFable } from "../fable";
 import { BackendSetupError, type ModelUsage, type ReviewBackend, type ReviewRequest, type ReviewResult, addUsage, parseTierResponse } from "./backend";
 
 export interface RunResult {
@@ -212,6 +213,8 @@ export interface ClaudeCodeOptions {
   /** null disables the detection cache (tests). */
   cachePath?: string | null;
   now?: () => Date;
+  /** Fable is opt-in (PLAN §5a). Without it, this backend never starts a `claude` process for a Fable model. */
+  allowFable?: boolean;
 }
 
 /** Keywords structured outputs cannot express (§0). zod 4 adds safe-integer bounds to .int(), so strip them. */
@@ -284,6 +287,9 @@ export class ClaudeCodeBackend implements ReviewBackend {
   }
 
   private async once(req: ReviewRequest, model: string): Promise<{ parsed: ParsedRun; fallbackUsed: boolean }> {
+    if (!this.opts.allowFable && (isFable(model) || (req.fallbackModel !== undefined && isFable(req.fallbackModel)))) {
+      throw new BackendSetupError(`refusing to request ${model} through Claude Code: ${FABLE_NOT_ENABLED} (pass --allow-fable).`);
+    }
     const dir = mkdtempSync(join(tmpdir(), "tierview-cc-"));
     try {
       const systemFile = join(dir, "system.txt");
@@ -306,6 +312,10 @@ export class ClaudeCodeBackend implements ReviewBackend {
     const usageByModel: Record<string, ModelUsage> = {};
     let calls = 0;
     let model = this.resolved.get(req.model) ?? req.model;
+    if (!this.opts.allowFable && isFable(model)) {
+      return { ok: false, reason: "error", detail: `${FABLE_NOT_ENABLED}: pass --allow-fable or set allowFable: true`, model, usageByModel, calls };
+    }
+    if (!this.opts.allowFable && req.fallbackModel !== undefined && isFable(req.fallbackModel)) req = { ...req, fallbackModel: undefined };
     const cached = this.cache[req.model];
     if (cached && cached.used !== req.model) this.note(req.tier, req.model, cached.used, `cached detection from ${cached.checked.slice(0, 10)}: ${cached.reason}`, false);
 
@@ -346,6 +356,10 @@ export class ClaudeCodeBackend implements ReviewBackend {
   async probe(models: string[]): Promise<{ model: string; used: string | null; error: string | null }[]> {
     const out: { model: string; used: string | null; error: string | null }[] = [];
     for (const m of models) {
+      if (!this.opts.allowFable && isFable(m)) {
+        out.push({ model: m, used: null, error: `not probed: ${FABLE_NOT_ENABLED} (pass --allow-fable)` });
+        continue;
+      }
       const dir = mkdtempSync(join(tmpdir(), "tierview-cc-"));
       try {
         const args = ["-p", "--output-format", "json", "--model", m, "--effort", "low", "--tools", "", "--no-session-persistence", "--disable-slash-commands", "--strict-mcp-config", "--safe-mode"];

@@ -12,7 +12,7 @@ import { type CallRecord, buildReceipt } from "./receipt";
 import { limitsFor, packHunks } from "./tiers/batch";
 import { contextFor } from "./tiers/context";
 import { decideEscalation, ruleFor, sanitizeReview } from "./tiers/escalate";
-import type { Finding, HunkReview, LlmTier, Review, ScoredHunk } from "./types";
+import type { Finding, HunkReview, LlmTier, ModelSubstitution, Review, ScoredHunk } from "./types";
 
 export interface PipelineInput {
   routed: ScoredHunk[];
@@ -25,6 +25,8 @@ export interface PipelineInput {
   /** Hard cap on model calls (API requests or claude invocations). null = no cap. */
   maxCalls?: number | null;
   pr?: PrInfo;
+  /** Substitutions decided before the run (Fable not enabled, PLAN §5a); reported for tiers that made calls. */
+  substitutions?: ModelSubstitution[];
   warnings?: string[];
   now?: () => number;
 }
@@ -232,7 +234,7 @@ export async function runPipeline(x: PipelineInput): Promise<PipelineOutput> {
     refutedBy,
   );
 
-  const subs = backend.substitutions();
+  const subs = [...(x.substitutions ?? []).filter((s) => records.some((r) => r.tier === s.tier)), ...backend.substitutions()];
   if (backend.name === "claude-code") {
     warnings.push("claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills.");
     if (process.env.ANTHROPIC_API_KEY) warnings.push("ANTHROPIC_API_KEY is set, so Claude Code may bill that key instead of your plan.");

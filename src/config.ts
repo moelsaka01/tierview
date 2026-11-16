@@ -62,6 +62,8 @@ const ConfigSchema = z.object({
   }),
   budget: z.object({ max_cost_usd: z.number().positive().nullable() }),
   receipt: z.object({ baseline: TierModel }),
+  /** Opt-in for Fable on the claude-code backend (PLAN §5a). camelCase as the user-facing key; --allow-fable sets it too. */
+  allowFable: z.boolean().default(false),
   backend: z.object({
     default: z.enum(["claude-code", "api"]),
     claude_code: z.object({

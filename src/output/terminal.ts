@@ -1,5 +1,6 @@
 // Plain-text terminal output (no colour, so it is stable in logs and snapshots).
 import type { Plan } from "../estimate";
+import { substitutionLine } from "../fable";
 import type { Receipt, Review, ScoredHunk } from "../types";
 
 export const usd = (n: number) => `$${n < 0.01 && n > 0 ? n.toFixed(4) : n.toFixed(2)}`;
@@ -76,7 +77,7 @@ export function renderReceipt(r: Receipt): string[] {
   out.push(`  all-${r.baseline.model}: ${usd(r.baseline.cost_usd)} (${r.baseline.method}${apiEq ? ", API prices" : ""}) -> ${r.savings_pct}% ${r.savings_pct >= 0 ? "less" : "more"}`);
   out.push(`  skipped hunks: ${r.skipped_hunks}   not reviewed: ${r.not_reviewed_hunks}   wall time: ${(r.wall_ms / 1000).toFixed(1)}s`);
   if (r.budget.max_cost_usd !== null) out.push(`  --max-cost: ${usd(r.budget.max_cost_usd)}${r.budget.degraded ? " (plan degraded to fit)" : ""}`);
-  for (const s of r.model_substitutions) out.push(`  model fallback: tier ${s.tier} asked for ${s.requested}, ran ${s.used} (${s.reason})`);
+  for (const s of r.model_substitutions) out.push(`  ${substitutionLine(s)}`);
   return out;
 }
 

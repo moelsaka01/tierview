@@ -1,7 +1,11 @@
 // P3-08 receipt and output, P3-09 pipeline with the fake backend.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { runReview } from "../src/cli";
+import { FABLE_WARNING, displayName } from "../src/fable";
 import { loadEstimates } from "../src/estimate";
 import { renderReview } from "../src/output/terminal";
 import { runPipeline } from "../src/pipeline";
@@ -127,7 +131,7 @@ describe("pipeline", () => {
     expect(review.receipt.model_substitutions).toHaveLength(1);
     const text = renderReview(review);
     expect(text).toContain("API-equivalent");
-    expect(text).toContain(`model fallback: tier 3 asked for ${cfg.models.tier3.model}, ran ${cfg.models.tier2.model}`);
+    expect(text).toContain(`Tier 3 ran on ${displayName(cfg.models.tier2.model)} instead of ${displayName(cfg.models.tier3.model)} (not on plan)`);
     expect(text).toContain(`all-${cfg.receipt.baseline.model}`);
   });
 });
@@ -151,6 +155,56 @@ describe("review command", () => {
     expect(await runReview({ failOn: "critical" }, io(new FakeBackend(() => ({}))).io)).toBe(0);
     expect(await runReview({ maxCost: 0.0005 }, io(new FakeBackend(() => ({}))).io)).toBe(3);
     expect(await runReview({ failOn: "urgent" }, io(new FakeBackend(() => ({}))).io)).toBe(2);
+  });
+
+  it("claude-code without opt-in: Tier 3 goes straight to Opus, never Fable, and the receipt says so", async () => {
+    const b = new FakeBackend(() => ({}), "claude-code", 1);
+    const { s, io: i } = io(b);
+    expect(await runReview({}, i)).toBe(0);
+    expect(b.requests.some((r) => /fable/i.test(r.model) || /fable/i.test(r.fallbackModel ?? ""))).toBe(false);
+    expect(b.requests.find((r) => r.tier === 3)!.model).toBe(cfg.models.tier2.model);
+    expect(b.requests.find((r) => r.tier === 3)!.effort).toBe(cfg.models.tier3.effort);
+    expect(s.out).toContain("Tier 3 ran on Opus 5.5 (Fable not enabled)");
+    expect(s.out).toContain(`all-${cfg.receipt.baseline.model}`); // the all-Fable comparison stays (a calculation)
+    expect(s.err).not.toContain("paid extra usage");
+  });
+
+  it("claude-code with --allow-fable: requests Fable and warns before the first call", async () => {
+    const { s, io: i } = io(new FakeBackend(() => ({})));
+    let errAtFirstCall: string | null = null;
+    const b = new FakeBackend(() => {
+      errAtFirstCall ??= s.err;
+      return {};
+    }, "claude-code", 1);
+    i.backend = b;
+    await runReview({ allowFable: true }, i);
+    expect(b.requests.find((r) => r.tier === 3)!.model).toBe(cfg.models.tier3.model);
+    expect(errAtFirstCall).toContain(FABLE_WARNING.trim());
+    expect(s.out).not.toContain("Fable not enabled");
+  });
+
+  it("allowFable: true in .tierview.yml enables Fable; the api backend is unaffected", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tierview-cfg-"));
+    const file = join(dir, ".tierview.yml");
+    writeFileSync(file, "allowFable: true\n");
+    const b = new FakeBackend(() => ({}), "claude-code", 1);
+    const { s, io: i } = io(b);
+    await runReview({ config: file }, i);
+    expect(b.requests.find((r) => r.tier === 3)!.model).toBe(cfg.models.tier3.model);
+    expect(s.err).toContain("paid extra usage");
+    const api = new FakeBackend(() => ({}));
+    await runReview({ backend: "api" }, io(api).io);
+    expect(api.requests.find((r) => r.tier === 3)!.model).toBe(cfg.models.tier3.model);
+  });
+
+  it("dry-run on claude-code says Tier 3 will run on Opus without opt-in", async () => {
+    const { s, io: i } = io(new FakeBackend(() => ({}), "claude-code"));
+    await runReview({ dryRun: true }, i);
+    expect(s.out).toContain("Tier 3 will run on Opus 5.5 (Fable not enabled");
+    const on = io(new FakeBackend(() => ({}), "claude-code"));
+    await runReview({ dryRun: true, allowFable: true }, on.io);
+    expect(on.s.out).not.toContain("Fable not enabled");
+    expect(on.s.err).toBe(""); // no calls in a dry run, so no warning
   });
 
   it("prints a receipt with tokens per tier", async () => {

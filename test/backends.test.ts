@@ -174,7 +174,7 @@ describe("claude-code backend (fake runner)", () => {
     const cachePath = join(dir, "m.json");
     const ranOpus = cliJson({ modelUsage: { [`${T2}[1m]`]: { inputTokens: 10, outputTokens: 50, cacheReadInputTokens: 0, cacheCreationInputTokens: 0, costUSD: 0.01 } } });
     const f = fakeRunner(ranOpus, ranOpus);
-    const cc = new ClaudeCodeBackend({ bin: "claude", run: f.run, cachePath });
+    const cc = new ClaudeCodeBackend({ bin: "claude", run: f.run, cachePath, allowFable: true });
     const r = await cc.review(req({ tier: 3, model: T3, effort: "high", fallbackModel: T2 }));
     expect(r.model).toBe(T2);
     expect(cc.substitutions()).toEqual([expect.objectContaining({ tier: 3, requested: T3, used: T2 })]);
@@ -184,7 +184,7 @@ describe("claude-code backend (fake runner)", () => {
     expect(readModelCache(cachePath)[T3]!.used).toBe(T2);
     // A new run reads the cache and goes straight to the fallback.
     const f2 = fakeRunner(ranOpus);
-    const cc2 = new ClaudeCodeBackend({ bin: "claude", run: f2.run, cachePath });
+    const cc2 = new ClaudeCodeBackend({ bin: "claude", run: f2.run, cachePath, allowFable: true });
     await cc2.review(req({ tier: 3, model: T3, effort: "high", fallbackModel: T2 }));
     expect(f2.seen[0]!.args[f2.seen[0]!.args.indexOf("--model") + 1]).toBe(T2);
     expect(cc2.substitutions()[0]!.reason).toMatch(/^cached detection/);
@@ -194,11 +194,26 @@ describe("claude-code backend (fake runner)", () => {
     const err = cliJson({ is_error: true, subtype: "error_during_execution", result: "There's an issue with the selected model", structured_output: undefined, modelUsage: {} });
     const ok = cliJson({ modelUsage: { [T2]: { inputTokens: 1, outputTokens: 1, cacheReadInputTokens: 0, cacheCreationInputTokens: 0 } } });
     const f = fakeRunner(err, ok);
-    const cc = new ClaudeCodeBackend({ bin: "claude", run: f.run, cachePath: null });
+    const cc = new ClaudeCodeBackend({ bin: "claude", run: f.run, cachePath: null, allowFable: true });
     const r = await cc.review(req({ tier: 3, model: T3, fallbackModel: T2 }));
     expect(r.ok).toBe(true);
     expect(r.calls).toBe(2);
     expect(cc.substitutions()[0]!.used).toBe(T2);
+  });
+
+  it("never starts a claude process for Fable unless allowFable is set", async () => {
+    const f = fakeRunner(cliJson(), cliJson());
+    const cc = new ClaudeCodeBackend({ bin: "claude", run: f.run, cachePath: null });
+    expect(await cc.review(req({ tier: 3, model: T3, effort: "high", fallbackModel: T2 }))).toMatchObject({ ok: false, calls: 0, detail: expect.stringContaining("Fable not enabled") });
+    expect(f.seen).toHaveLength(0);
+    // A Fable fallback is dropped rather than requested.
+    await cc.review(req({ tier: 2, model: T2, fallbackModel: T3 }));
+    expect(f.seen).toHaveLength(1);
+    expect(f.seen[0]!.args).not.toContain(T3);
+    // The probe skips Fable too.
+    const probe = await cc.probe([T3]);
+    expect(probe[0]!.error).toContain("Fable not enabled");
+    expect(f.seen).toHaveLength(1);
   });
 
   it("retries a missing structured_output once, then fails as parse", async () => {

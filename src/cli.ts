@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { Command } from "commander";
 import { ConfigError, type Config, loadConfig } from "./config";
 import { estimatePlan, loadEstimates } from "./estimate";
+import { FABLE_NOT_ENABLED, FABLE_WARNING, applyFablePolicy, displayName, isFable, usesFable } from "./fable";
 import { type FileSource, fileChurn, fileSource, getDiff, isShallow } from "./git";
 import { BackendSetupError, type ReviewBackend } from "./llm/backend";
 import { ClaudeCodeBackend, defaultCachePath, readModelCache, resolveClaudeBinary, verifyClaudeBinary } from "./llm/claude-code";
@@ -29,6 +30,7 @@ export interface ReviewOptions {
   failOn?: string;
   backend?: string;
   config?: string;
+  allowFable?: boolean;
 }
 
 export interface Io {
@@ -49,7 +51,7 @@ function pickBackend(opt: string | undefined, cfg: Config): Backend {
   return b;
 }
 
-export async function makeBackend(name: Backend, cfg: Config): Promise<ReviewBackend> {
+export async function makeBackend(name: Backend, cfg: Config, allowFable = false): Promise<ReviewBackend> {
   if (name === "api") return new ApiBackend({ concurrency: cfg.backend.api.concurrency });
   const bin = resolveClaudeBinary({ configured: cfg.backend.claude_code.binary });
   if (!bin) {
@@ -58,7 +60,7 @@ export async function makeBackend(name: Backend, cfg: Config): Promise<ReviewBac
     );
   }
   await verifyClaudeBinary(bin);
-  return new ClaudeCodeBackend({ bin, timeoutMs: cfg.backend.claude_code.timeout_s * 1000, cachePath: defaultCachePath() });
+  return new ClaudeCodeBackend({ bin, timeoutMs: cfg.backend.claude_code.timeout_s * 1000, cachePath: defaultCachePath(), allowFable });
 }
 
 /** `review`: dry-run or a full run. Returns the exit code. */
@@ -76,8 +78,10 @@ export async function runReview(opts: ReviewOptions, io: Io): Promise<number> {
       io.err(`tierview: --fail-on must be one of ${SEVERITY_ORDER.join(", ")}.\n`);
       return EXIT.USAGE;
     }
-    const cfg = loadConfig({ cwd: io.cwd, path: opts.config });
-    const backendName = pickBackend(opts.backend, cfg);
+    const loaded = loadConfig({ cwd: io.cwd, path: opts.config });
+    const backendName = io.backend?.name ?? pickBackend(opts.backend, loaded);
+    const allowFable = !!opts.allowFable || loaded.allowFable;
+    const { cfg, substitutions } = applyFablePolicy(loaded, backendName, allowFable);
     const diffOpts = { base: opts.base, head: opts.head, staged: opts.staged, includeUntracked: opts.includeUntracked, cwd: io.cwd };
     const supplied = io.diff ?? (opts.diffFile !== undefined ? readFileSync(opts.diffFile, "utf8") : undefined);
     const diffText = supplied ?? getDiff(diffOpts);
@@ -105,18 +109,22 @@ export async function runReview(opts: ReviewOptions, io: Io): Promise<number> {
     const prices = loadPrices();
     if (!est.calibrated) warnings.push("token and output estimates are uncalibrated placeholders (config/estimates.json); treat costs as rough.");
     const maxCost = opts.maxCost ?? cfg.budget.max_cost_usd;
+    const plannedSubs = substitutions.filter((s) => routed.some((h) => h.tier === s.tier));
 
     if (opts.dryRun) {
       const plan = estimatePlan(routed, cfg, prices, est, backendName);
-      const view: DryRunView = { routed, plan, warnings: [...warnings, `prices as of ${prices.as_of}.`], maxCost };
+      const subNotes = plannedSubs.map((s) => `Tier ${s.tier} will run on ${displayName(s.used)} (${FABLE_NOT_ENABLED}; --allow-fable to use ${displayName(s.requested)}).`);
+      const view: DryRunView = { routed, plan, warnings: [...subNotes, ...warnings, `prices as of ${prices.as_of}.`], maxCost };
       io.out(opts.json ? dryRunJson({ ...view, pricesAsOf: prices.as_of }) : renderDryRun(view));
       return EXIT.OK;
     }
 
-    const backend = io.backend ?? (await makeBackend(backendName, cfg));
+    const backend = io.backend ?? (await makeBackend(backendName, cfg, allowFable));
+    // Opt-in Fable (PLAN §5a): warn before the first call.
+    if (backendName === "claude-code" && allowFable && usesFable(cfg)) io.err(FABLE_WARNING);
     if (supplied !== undefined && !io.files) warnings.push("diff supplied without a checkout: Tier 2 and 3 saw no surrounding file context.");
     const fileSrc = io.files ?? (supplied === undefined ? fileSource(diffOpts) : () => null);
-    const { review, budgetExhausted } = await runPipeline({ routed, cfg, backend, files: fileSrc, prices, est, maxCost, maxCalls: opts.maxCalls ?? null, warnings });
+    const { review, budgetExhausted } = await runPipeline({ routed, cfg, backend, files: fileSrc, prices, est, maxCost, maxCalls: opts.maxCalls ?? null, substitutions, warnings });
     io.out(opts.json ? reviewJson(review) : renderReview(review));
     if (opts.failOn && review.findings.some((f) => atOrAbove(f.severity, opts.failOn as Severity))) return EXIT.FINDINGS;
     if (budgetExhausted) return EXIT.BUDGET;
@@ -133,16 +141,19 @@ export async function runReview(opts: ReviewOptions, io: Io): Promise<number> {
 }
 
 /** `models`: which tier models Claude Code actually runs on this plan (cached, or probed with --probe). */
-export async function runModels(opts: { probe?: boolean; config?: string }, io: Io): Promise<number> {
+export async function runModels(opts: { probe?: boolean; config?: string; allowFable?: boolean }, io: Io): Promise<number> {
   try {
     const cfg = loadConfig({ cwd: io.cwd, path: opts.config });
+    const allowFable = !!opts.allowFable || cfg.allowFable;
     const models = [...new Set([cfg.models.tier1.model, cfg.models.tier2.model, cfg.models.tier3.model])];
     const cachePath = defaultCachePath();
     if (opts.probe) {
       const bin = resolveClaudeBinary({ configured: cfg.backend.claude_code.binary });
       if (!bin) throw new BackendSetupError("Claude Code CLI not found (see `tierview review --help`).");
-      io.err(`${await verifyClaudeBinary(bin)}: probing ${models.length} model(s), one tiny call each.\n`);
-      const cc = new ClaudeCodeBackend({ bin, cachePath });
+      const probed = models.filter((m) => allowFable || !isFable(m));
+      io.err(`${await verifyClaudeBinary(bin)}: probing ${probed.length} model(s), one tiny call each.\n`);
+      if (allowFable && probed.some(isFable)) io.err(FABLE_WARNING);
+      const cc = new ClaudeCodeBackend({ bin, cachePath, allowFable });
       for (const r of await cc.probe(models)) {
         io.out(`${r.model}: ${r.used === r.model ? "available" : r.used ? `ran ${r.used} instead` : `unavailable (${r.error ?? "no usage reported"})`}\n`);
       }
@@ -150,6 +161,10 @@ export async function runModels(opts: { probe?: boolean; config?: string }, io: 
     }
     const cache = readModelCache(cachePath);
     for (const m of models) {
+      if (!allowFable && isFable(m)) {
+        io.out(`${m}: ${FABLE_NOT_ENABLED} (pass --allow-fable or set allowFable: true; Tier 3 runs on ${displayName(cfg.models.tier2.model)})\n`);
+        continue;
+      }
       const c = cache[m];
       io.out(`${m}: ${c ? `${c.used === m ? "available" : `runs as ${c.used}`} (checked ${c.checked.slice(0, 10)}: ${c.reason})` : "not checked yet (run `tierview models --probe`, or a review will detect it)"}\n`);
     }
@@ -176,7 +191,8 @@ function addSharedOptions(cmd: Command): Command {
     .option("--json", "print the review as JSON")
     .option("--sarif <file>", "write SARIF 2.1.0 to a file")
     .option("--fail-on <severity>", "exit 1 if a finding is at or above this severity")
-    .option("--config <file>", "path to a config file (default: .tierview.yml in the current directory)");
+    .option("--config <file>", "path to a config file (default: .tierview.yml in the current directory)")
+    .option("--allow-fable", "claude-code backend: allow Fable 5.2 (may use paid extra usage on some plans)");
 }
 
 export function buildProgram(): Command {
@@ -203,7 +219,8 @@ export function buildProgram(): Command {
     .description("show which tier models Claude Code runs on your plan")
     .option("--probe", "check now with one tiny claude call per model")
     .option("--config <file>", "path to a config file")
-    .action(async (opts: { probe?: boolean; config?: string }) => {
+    .option("--allow-fable", "also probe Fable 5.2 (may use paid extra usage on some plans)")
+    .action(async (opts: { probe?: boolean; config?: string; allowFable?: boolean }) => {
       process.exitCode = await runModels(opts, stdio);
     });
 
