@@ -1,0 +1,137 @@
+{
+  "case_id": "tailscale-halfclose-shutdown",
+  "arm": "all-sonnet",
+  "arm_version": 1,
+  "batch": "2026-11-16T14-46-22",
+  "config_hash": "1e7dfed407d8",
+  "complete": true,
+  "calls": 1,
+  "wall_ms": 13730,
+  "review": {
+    "version": 1,
+    "findings": [],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "wgengine/netstack/netstack.go#1",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "7 changed lines"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "wgengine/netstack/netstack.go#2",
+        "score": 65,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "concurrency",
+            "weight": 25,
+            "detail": "`err = <-connClosed`"
+          },
+          {
+            "signal": "error_handling_removed",
+            "weight": 20,
+            "detail": "`if err != nil {`"
+          },
+          {
+            "signal": "boundary",
+            "weight": 10,
+            "detail": "comparison operator changed"
+          },
+          {
+            "signal": "size",
+            "weight": 10,
+            "detail": "36 changed lines"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 1,
+      "model_substitutions": [],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 2,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 2,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 13196,
+          "cache_read_tokens": 994,
+          "output_tokens": 629,
+          "cache_write_1h_tokens": 13196,
+          "cost_usd": 0.0591774,
+          "direct_api_cost_usd": 0.030474
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.0591774,
+      "total_direct_api_cost_usd": 0.030474,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.2365108,
+        "direct_api_cost_usd": 0.121896
+      },
+      "savings_pct": 75,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 13730,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}

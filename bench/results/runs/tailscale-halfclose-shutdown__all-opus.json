@@ -1,0 +1,176 @@
+{
+  "case_id": "tailscale-halfclose-shutdown",
+  "arm": "all-opus",
+  "arm_version": 1,
+  "batch": "2026-11-16T14-46-22",
+  "config_hash": "1e7dfed407d8",
+  "complete": true,
+  "calls": 1,
+  "wall_ms": 32993,
+  "review": {
+    "version": 1,
+    "findings": [
+      {
+        "file": "wgengine/netstack/netstack.go",
+        "start_line": 1517,
+        "end_line": 1553,
+        "side": "new",
+        "severity": "medium",
+        "category": "bug",
+        "title": "Copy error is handled as a half-close and forwardTCP waits for both directions",
+        "explanation": "Before this change, forwardTCP returned when either copy finished and closed both connections. Now it waits for both copies even if a copy failed with a real error, such as a client RST or reset. In that case it only does a half-close: CloseWrite on the backend and CloseRead on the client. If the backend ignores the FIN and stays idle, io.Copy(client, backend) blocks on backend.Read forever. That leaks two goroutines, the backend socket, the netstack endpoint and the RegisterIPPortIdentity mapping. Netstack keepalives don't help because the read is blocked on the loopback backend, and the HUP-driven ctx cancel only covers dialing.",
+        "suggestion": "Use half-close only when io.Copy returns nil (clean EOF). On a non-nil error, close both client and backend completely so the other copy unblocks. Another option is to add an idle/linger timeout after the first direction finishes.",
+        "evidence": "_, err := io.Copy(backend, client)",
+        "confidence": 0.55,
+        "id": "4c5d5597fb26",
+        "hunk_id": "wgengine/netstack/netstack.go#2",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      },
+      {
+        "file": "wgengine/netstack/netstack.go",
+        "start_line": 1515,
+        "end_line": 1527,
+        "side": "new",
+        "severity": "low",
+        "category": "bug",
+        "title": "Backend that isn't a tcpCloser never gets EOF, so the proxy can hang",
+        "explanation": "If forwardDialFunc returns a net.Conn without CloseRead/CloseWrite, the backend gets no EOF when the client finishes sending. Many backends wait for EOF before responding or closing, so io.Copy(client, backend) never returns. Because the function now waits for both directions, the connection hangs forever. Before, it was torn down once the first direction finished.",
+        "suggestion": "When backendIsTCPCloser is false, keep the old behaviour: once one direction ends, close backend (and client) completely.",
+        "evidence": "backendTCPCloser, backendIsTCPCloser := backend.(tcpCloser)",
+        "confidence": 0.5,
+        "id": "b994d33c010c",
+        "hunk_id": "wgengine/netstack/netstack.go#2",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      }
+    ],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "wgengine/netstack/netstack.go#1",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "7 changed lines"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "wgengine/netstack/netstack.go#2",
+        "score": 65,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "concurrency",
+            "weight": 25,
+            "detail": "`err = <-connClosed`"
+          },
+          {
+            "signal": "error_handling_removed",
+            "weight": 20,
+            "detail": "`if err != nil {`"
+          },
+          {
+            "signal": "boundary",
+            "weight": 10,
+            "detail": "comparison operator changed"
+          },
+          {
+            "signal": "size",
+            "weight": 10,
+            "detail": "36 changed lines"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 1,
+      "model_substitutions": [],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 2,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 2,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 13196,
+          "cache_read_tokens": 994,
+          "output_tokens": 2377,
+          "cache_write_1h_tokens": 13196,
+          "cost_usd": 0.1533148,
+          "direct_api_cost_usd": 0.095908
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.1533148,
+      "total_direct_api_cost_usd": 0.095908,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.3064308,
+        "direct_api_cost_usd": 0.191816
+      },
+      "savings_pct": 50,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 32993,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}

@@ -7,7 +7,7 @@ One entry per phase: which model did the work, at what effort, from what prompt,
 | 1 | Plan and scaffold | Fable 5.2 (high) | done 2026-11-16 |
 | 2 | Tier 0, config, dry-run | Sonnet 5.5 (medium) | done 2026-11-16 |
 | 3 | LLM tiers, escalation, receipt, backends | Opus 5.5 (high) | done 2026-11-16 |
-| 4 | Benchmark | Opus 5.5 (high) | in progress: dataset and harness done, no model calls yet |
+| 4 | Benchmark | Opus 5.5 (high) | in progress: pilot done (31 calls), full run not started |
 | 5 | PR mode, SARIF, GitHub Action | Sonnet 5.5 | not started |
 | 6 | README and release | Sonnet 5.5 | not started |
 
@@ -283,7 +283,34 @@ Projection from measured calls per case (tierview 2.3, each baseline 1.3, judge 
 
 Direct API is about half of via-Claude-Code: the per-call overhead is written to Claude Code's 1-hour cache, priced at 2x input. Headline all-Fable (all-opus tokens at Fable rates): $0.68 per case via Claude Code, $0.39 direct API.
 
-**Next.** Pilot batch 2: dry run plans 17 calls (4 tierview re-runs at v2, 3 Tailscale runs).
+**Pilot batch 2 (2026-11-16, run by me at Mohamed's request: "run batch yourself").** 12 `claude` calls (cap 20): 11 reviews and 1 Opus judge call; no Fable, no errors. 17 calls had been planned (escalation and judge reservations not all used). API-equivalent $0.93 via Claude Code. It re-ran the 4 tierview pilot cases on pipeline v2 (old runs archived in `bench/results/runs-archive/`) and ran the 3 Tailscale runs. The pilot is complete: 15 runs, all current.
+
+| case | arm | calls | tokens | via Claude Code | direct API | wall |
+|---|---|---:|---:|---:|---:|---:|
+| cilium-clean-fqdn-bootstrap | tierview | 2 | 12,622 | $0.070 | $0.037 | 22 s |
+| django-legend-attrs-mutation | tierview | 1 | 11,783 | $0.020 | $0.033 | 18 s |
+| dpdk-ntb-window-bound | tierview | 2 | 45,323 | $0.427 | $0.296 | 107 s |
+| nextjs-clean-default-export-errors | tierview | 2 | 11,322 | $0.060 | $0.035 | 34 s |
+| tailscale-halfclose-shutdown | tierview / all-sonnet / all-opus | 2 / 1 / 1 | 15,492 / 14,821 / 16,569 | $0.140 / $0.059 / $0.153 | $0.098 / $0.031 / $0.096 | 60 / 14 / 33 s |
+| tailscale-halfclose-shutdown | judge (tierview) | 1 | 3,155 | $0.027 | $0.027 | 10 s |
+
+**Pilot results, 5 cases (3 buggy, 2 clean), dev split.** Far too small for claims; recorded to steer the next steps.
+
+| arm | recall | FP / clean | calls / case | $ / case via Claude Code | $ / case direct API | same tokens at Fable rates (CC / direct) |
+|---|---|---:|---:|---:|---:|---|
+| tierview (v2) | 2/3 | 0 | 1.8 | $0.143 | $0.100 | $0.316 / $0.226 |
+| all-sonnet | 2/3 | 0 | 1.2 | $0.136 | $0.071 | $0.542 / $0.286 |
+| all-opus | 3/3 | 0 | 1.2 | $0.304 | $0.174 | $0.608 / $0.349 |
+
+Observations:
+- **Pipeline v2 works as intended:** every tierview run is at most one Sonnet call and one Opus call (was up to 4 calls). On `dpdk-ntb-window-bound` it now costs $0.43 instead of $0.62, below all-opus ($0.57 in batch 1).
+- **tierview missed the Django bug this time.** Its faulty hunk scores 0 and goes to Sonnet at low effort; in batch 1 Sonnet flagged it and escalated, in batch 2 it raised nothing. Same input, different answer: run-to-run variance at Tier 1 is real and one run per (case, arm) cannot measure it. This is also the routing-recall problem (1 of 7 dev bugs routed to Tier 2+).
+- **The location rule may be lenient.** On Tailscale, the faulty lines span about 20 lines, and the findings matched by rule (for tierview and all-opus) describe related half-close problems in that block, not obviously the ENOTCONN failure the fix addresses. The one ambiguous finding went to Opus, which said "no match". The hand audit of 20 judgements (PLAN §9) must check rule matches too; tightening the rule for wide faulty regions is an option.
+- **Direct API can exceed via Claude Code** when a call gets Claude Code cache hits (Django: $0.033 vs $0.020): the direct view prices all non-overhead input at the uncached rate. Documented behaviour of the formula, not a bug.
+
+Projection from the pilot: about 1.8 + 1.2 + 1.2 = 4.2 review calls per case plus about 0.2 judge calls per buggy case, so the other 25 cases need about 110 calls, roughly 6 batches of 20.
+
+**Next.** Stop and ask Mohamed before the full run (P4-08). Open questions for him: whether to tighten the match rule before more judgements accumulate, and whether to tune routing on the dev split (P4-09) before running the test split.
 
 ---
 

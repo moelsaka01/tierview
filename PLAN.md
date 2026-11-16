@@ -383,7 +383,7 @@ Every task ends with `npm run check` (typecheck + tests) passing. Tick the box i
 - [x] P4-05 `bench/run.ts` + test: resumable runner in batches (≤ 20 calls per batch, stop on a usage-limit error), usage ledger `bench/results/usage.jsonl` per run (§9 Usage control).
 - [x] P4-06 `bench/judge.ts` + test: rule-based match first, Opus only for ambiguous findings, every judgement logged, audit sample export.
 - [x] P4-07 `bench/metrics.ts` + test: every metric in §9, bootstrap CI, McNemar.
-- [ ] P4-08 Pilot on 5 cases in batches of ≤ 20 calls, no Fable. Report measured calls, tokens and API-equivalent cost, and the projection in batches. **Stop and ask Mohamed.**
+- [x] P4-08 Pilot on 5 cases in batches of ≤ 20 calls, no Fable. Report measured calls, tokens and API-equivalent cost, and the projection in batches. **Stop and ask Mohamed.**
 - [ ] P4-09 Tune risk weights and thresholds on the dev split from saved outputs and Tier 0 routing recall (includes the "payment" false positive on `estimate.ts`, Phase 2 issue); commit the frozen config.
 - [ ] P4-10 Full run on the test split in batches across days, each started by Mohamed; judge audit.
 - [ ] P4-11 `bench/chart.ts` → `chart.svg`; `bench/results/RESULTS.md`; update `BUILD_LOG.md`; commit.

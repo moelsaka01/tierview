@@ -1,55 +1,15 @@
 {
   "case_id": "django-legend-attrs-mutation",
   "arm": "tierview",
-  "batch": "2026-11-16T14-15-03",
+  "arm_version": 2,
+  "batch": "2026-11-16T14-46-22",
   "config_hash": "1e7dfed407d8",
   "complete": true,
-  "calls": 2,
-  "wall_ms": 41763,
+  "calls": 1,
+  "wall_ms": 18257,
   "review": {
     "version": 1,
-    "findings": [
-      {
-        "file": "django/forms/boundfield.py",
-        "start_line": 195,
-        "end_line": 201,
-        "side": "new",
-        "severity": "medium",
-        "category": "bug",
-        "title": "legend_tag now mutates the caller's attrs dict when adding required class",
-        "explanation": "The old code always made a new dict (`{**(attrs or {}), \"for\": ...}`) whenever id_for_label was truthy, so the caller's dict was never changed. With this change the copy only happens when tag != \"legend\". For legend_tag, `attrs = attrs or {}` keeps the caller's own dict. If the field is required and the form defines required_css_class, line 201 (`attrs[\"class\"] += ...`) or line 203 then changes that dict in place. A caller who passes the same attrs dict to more than one legend_tag call, or keeps using it afterwards, gets the class appended again each time (e.g. \"x required required\"). The same thing can happen to a shared dict, such as a module-level constant.",
-        "suggestion": "Always copy the dict: `attrs = {**(attrs or {})}` and then `if tag != \"legend\": attrs[\"for\"] = id_for_label`. Or, simpler: `attrs = {**(attrs or {}), \"for\": id_for_label}` followed by `if tag == \"legend\": attrs.pop(\"for\")`.",
-        "evidence": "attrs = attrs or {}",
-        "confidence": 0.72,
-        "id": "96b59167303c",
-        "hunk_id": "django/forms/boundfield.py#1",
-        "model": "claude-opus-5-5",
-        "tier": 2,
-        "escalated_from": [
-          1
-        ],
-        "also_reported_by": []
-      },
-      {
-        "file": "django/forms/boundfield.py",
-        "start_line": 195,
-        "end_line": 197,
-        "side": "new",
-        "severity": "medium",
-        "category": "bug",
-        "title": "legend path no longer copies attrs; caller's dict mutated",
-        "explanation": "Previously attrs was always copied via dict unpacking. For legend, attrs is now the caller's own dict. The later required_css_class branch does attrs['class'] += ..., which mutates the caller's dict. Reusing the same attrs dict across calls appends the class repeatedly.",
-        "suggestion": "Copy it: attrs = dict(attrs or {}), or build the copy before the tag check.",
-        "evidence": "attrs = attrs or {}",
-        "confidence": 0.55,
-        "id": "ac1ad74aa1a4",
-        "hunk_id": "django/forms/boundfield.py#1",
-        "model": "claude-sonnet-5-5",
-        "tier": 1,
-        "escalated_from": [],
-        "also_reported_by": []
-      }
-    ],
+    "findings": [],
     "refuted": [],
     "not_reviewed": [],
     "routing": [
@@ -313,7 +273,7 @@
     "receipt": {
       "backend": "claude-code",
       "cost_basis": "api_equivalent",
-      "calls": 2,
+      "calls": 1,
       "model_substitutions": [],
       "tiers": [
         {
@@ -324,23 +284,27 @@
           "escalated_in": 0,
           "requests": 1,
           "input_tokens": 2,
-          "cache_write_tokens": 9134,
-          "cache_read_tokens": 994,
-          "output_tokens": 2058,
-          "cost_usd": 0.057219400000000004
+          "cache_write_tokens": 615,
+          "cache_read_tokens": 9515,
+          "output_tokens": 1651,
+          "cache_write_1h_tokens": 615,
+          "cost_usd": 0.0199255,
+          "direct_api_cost_usd": 0.032574
         },
         {
           "tier": 2,
           "model": "claude-opus-5-5",
           "effort": "medium",
           "hunks": 0,
-          "escalated_in": 1,
-          "requests": 1,
-          "input_tokens": 2,
-          "cache_write_tokens": 4417,
-          "cache_read_tokens": 994,
-          "output_tokens": 1234,
-          "cost_usd": 0.0602228
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
         },
         {
           "tier": 3,
@@ -353,18 +317,22 @@
           "cache_write_tokens": 0,
           "cache_read_tokens": 0,
           "output_tokens": 0,
-          "cost_usd": 0
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
         }
       ],
       "skipped_hunks": 0,
       "not_reviewed_hunks": 0,
-      "total_cost_usd": 0.1174422,
+      "total_cost_usd": 0.0199255,
+      "total_direct_api_cost_usd": 0.032574,
       "baseline": {
         "model": "claude-fable-5-2",
-        "method": "estimated",
-        "cost_usd": 1.574168
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.077799,
+        "direct_api_cost_usd": 0.130296
       },
-      "savings_pct": 92.5,
+      "savings_pct": 74.4,
       "budget": {
         "max_cost_usd": null,
         "degraded": false
@@ -373,7 +341,7 @@
         "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
         "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
       ],
-      "wall_ms": 41763,
+      "wall_ms": 18257,
       "prices_as_of": "2026-11-16"
     }
   },
