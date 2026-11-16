@@ -14,7 +14,7 @@ function withYml(body: string): string {
 describe("loadConfig", () => {
   it("loads the defaults when there is no .tierview.yml", () => {
     const cfg = loadConfig({ cwd: mkdtempSync(join(tmpdir(), "tierview-empty-")) });
-    expect(cfg.thresholds).toEqual({ tier2: 30, tier3: 60 });
+    expect(cfg.thresholds).toEqual({ tier2: 25, tier3: 60 });
     expect(cfg.categories.auth?.weight).toBe(35);
     expect(cfg.structure.size.at(-1)?.[0]).toBe(Infinity);
   });

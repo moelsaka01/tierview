@@ -116,7 +116,8 @@ Rules for every phase: pure functions for scoring, routing, escalation, merge an
 | infra | path: Dockerfile, `.github/workflows/`, terraform, k8s, helm | 20 |
 | assertions-removed | test hunk whose assertion count drops | 20 |
 | dependencies | path: `package.json`, `requirements*.txt`, `go.mod`, `Cargo.toml`, `pom.xml` | 15 |
-| boundary | a comparison operator or index arithmetic changed on a modified line | 10 |
+| boundary | a comparison operator or index arithmetic changed on a modified line; an if/while/for condition rewritten; a new `<`/`<=`/`>`/`>=` check against arithmetic or a size-like name (last two added in P4-09) | 25 (was 10; P4-09) |
+| memory | content: allocation, free and lifetime calls (`malloc`/`free`, `*_alloc(`/`*_free(`/`*_unref(`, `rte_*malloc`, `g_free`, `Box::into_raw`, `mem::forget`…) (added in P4-09) | 25 |
 
 Structure points (added to the category sum):
 
@@ -133,7 +134,7 @@ Structure points (added to the category sum):
 
 Reductions and caps: test file with no test signal −15; `docs` file, or a hunk that is only comments / whitespace / import reordering → score capped at 5. Churn needs local git history; with a shallow clone or in PR mode without a checkout, churn and hotspot contribute 0 and the receipt says so.
 
-**Routing thresholds** (configurable): score < 30 → Tier 1; 30–59 → Tier 2; ≥ 60 → Tier 3. Then apply `.tierview.yml` rules in order: `ignore` globs (tier 0), then `rules[]` entries with `paths` plus any of `min_tier`, `max_tier`, `add`.
+**Routing thresholds** (configurable): score < 25 → Tier 1; 25–59 → Tier 2; ≥ 60 → Tier 3 (Tier 2 threshold was 30 until P4-09; with Fable off, Tiers 2 and 3 merge, so 25 is the Opus threshold). Then apply `.tierview.yml` rules in order: `ignore` globs (tier 0), then `rules[]` entries with `paths` plus any of `min_tier`, `max_tier`, `add`.
 
 Worked examples (use as tests): `src/auth/login.py`, 12 changed lines, f-string SQL → auth 35 + sql 30 + size 5 = 70 → Tier 3. `src/auth/session.ts`, 8 lines, nothing else → 35 + 5 = 40 → Tier 2. `src/utils/format.ts`, 20 lines → 5 → Tier 1. `README.md` → capped at 5 → Tier 1. `package-lock.json` → generated → skipped.
 
@@ -303,7 +304,7 @@ The project's credibility rests on this, so the design favours claims that survi
 
 **Backend** (changed in Phase 3): the whole benchmark, judge included, runs on the **`claude-code` backend** on Mohamed's Claude Pro plan. There is no API key and no dollar budget. The constraint is the plan's usage limits, so the benchmark runs **in batches across days** and records usage for every run (see Usage control).
 
-**Size**: about **30 cases: 20 buggy + 10 clean**, at least 4 languages (from C, Python, TypeScript/JavaScript, Go, Rust, Java), no repo over 20% of cases. **Split**: 10 cases are the dev split (includes the 5 pilot cases); the other 20 are the test split. Thresholds and prompts may be tuned only on dev. Before the full run, commit the frozen config and record its hash in the results. With about 14 buggy test cases the confidence intervals are wide; the write-up reports them and makes no claim the intervals do not support.
+**Size**: about **30 cases: 20 buggy + 10 clean**, at least 4 languages (from C, Python, TypeScript/JavaScript, Go, Rust, Java), no repo over 20% of cases. **Split**: 10 cases are the dev split (includes the 5 pilot cases); the other 20 are the test split. Thresholds and prompts may be tuned only on dev. Before the full run, commit the frozen config and record its hash in the results. **Frozen after P4-09: config hash `8b8d0f208dd5`** (`config/default-rules.yml` + `prices.json` + `estimates.json`; tierview arm version 3). With about 14 buggy test cases the confidence intervals are wide; the write-up reports them and makes no claim the intervals do not support.
 
 **Contamination**: models may have seen these fixes in training. Record `F`'s date, prefer fixes after mid-2026, and report results separately for the post-cutoff subset. The comparison between arms is relative, which limits the damage, and the write-up says this plainly.
 
@@ -384,7 +385,7 @@ Every task ends with `npm run check` (typecheck + tests) passing. Tick the box i
 - [x] P4-06 `bench/judge.ts` + test: rule-based match first, Opus only for ambiguous findings, every judgement logged, audit sample export.
 - [x] P4-07 `bench/metrics.ts` + test: every metric in §9, bootstrap CI, McNemar.
 - [x] P4-08 Pilot on 5 cases in batches of ≤ 20 calls, no Fable. Report measured calls, tokens and API-equivalent cost, and the projection in batches. **Stop and ask Mohamed.**
-- [ ] P4-09 Tune risk weights and thresholds on the dev split from saved outputs and Tier 0 routing recall (includes the "payment" false positive on `estimate.ts`, Phase 2 issue); commit the frozen config.
+- [x] P4-09 Tune risk weights and thresholds on the dev split from saved outputs and Tier 0 routing recall (includes the "payment" false positive on `estimate.ts`, Phase 2 issue); commit the frozen config.
 - [ ] P4-10 Full run on the test split in batches across days, each started by Mohamed; judge audit.
 - [ ] P4-11 `bench/chart.ts` → `chart.svg`; `bench/results/RESULTS.md`; update `BUILD_LOG.md`; commit.
 

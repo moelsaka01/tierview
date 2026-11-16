@@ -34,6 +34,12 @@ const cases: Case[] = [
   ["crypto", "src/a.py", ["+requests.get(u, verify=False)"], []],
   ["payment", "src/billing/x.ts", ["+const a = 1;"], []],
   ["payment", "src/a.ts", ["+await stripe.charges.create(c);"], ["+await mail.send(c);"]],
+  // Phase 4 (P4-09): a rewritten condition, a new bounds check, and allocation / lifetime calls.
+  ["boundary", "src/a.c", ["-\tif (f & (A | B | C))", "+\tif (f & (A | C))"], ["-\tx = f(a);", "+\tx = g(a);"]],
+  ["boundary", "src/a.c", ["+\t    addr <= base[i] + size[i]) {"], ["+\tVec<u8> v = Vec::new();", "+\tif (ready) {"]],
+  ["boundary", "src/a.py", ["+    while i < len(items):"], ["+    for item in items:"]],
+  ["memory", "src/a.c", ["+\tbuf = rte_zmalloc(NULL, n, 0);", "+\tmlx5_free(pool->name);"], ["+\tbuf = make_buffer(n);"]],
+  ["memory", "src/a.rs", ["+    let p = Box::into_raw(b);"], ["+    let b = Box::new(1);"]],
   // Phase 4: the estimate.ts false positive, git checkout, and a budget Ledger class are not payment code.
   ["payment", "src/estimate.ts", ["+order.amount_cents -= refundCents;", "+const totalCents = a + b;"], ["+  const total = tiers.reduce((a, t) => a + t.cost_usd, 0);", "+    const price = priceFor(m.model, prices);", "+  run(`git checkout ${ref}`);", "+const ledger = new Ledger(x.maxCost);"]],
   ["sql", "src/a.py", ['+q = f"select * from t where id = {i}"'], ['+print("hello")']],
@@ -55,7 +61,7 @@ const cases: Case[] = [
   ["assertions_removed", "test/a.test.ts", ["-  expect(a).toBe(1);"], [" expect(a).toBe(1);", "-  expect(a).toBe(1);", "+  expect(a).toBe(2);"]],
   ["dependencies", "package.json", ['+  "x": "1"'], []],
   ["dependencies", "requirements.txt", ["+requests==2"], []],
-  ["boundary", "src/a.ts", ["-if (i < n) {", "+if (i <= n) {"], ["-if (i < n) {", "+if (j < n) {"]],
+  ["boundary", "src/a.ts", ["-if (i < n) {", "+if (i <= n) {"], ["-const ok = i < n;", "+const ok = j < n;"]],
   ["boundary", "src/a.ts", ["-const x = a[i];", "+const x = a[i - 1];"], ["-const x = a[i];", "+const y = a[i];"]],
 ];
 

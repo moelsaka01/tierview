@@ -15,7 +15,7 @@ models:
   tier2: { model: claude-opus-5-5, effort: medium }
   tier3: { model: claude-fable-5-2, effort: high }
 
-thresholds: { tier2: 30, tier3: 60 }
+thresholds: { tier2: 25, tier3: 60 }   # Phase 4 (P4-09, dev split): tier2 30 -> 25
 
 escalation:
   tier1_min_confidence: 0.7
@@ -242,10 +242,20 @@ categories:
       - '(^|/)(package\.json|requirements[^/]*\.txt|pyproject\.toml|go\.mod|Cargo\.toml|pom\.xml|build\.gradle(\.kts)?|Gemfile)$'
 
   boundary:
-    weight: 10
+    weight: 25                     # Phase 4 (P4-09, dev split): 10 -> 25
     logic:
       - comparison_operator_changed
       - index_arithmetic_changed
+      - condition_changed          # Phase 4: an if/while/for condition rewritten
+      - bounds_check_added         # Phase 4: new `<`/`<=`/`>`/`>=` check against arithmetic or a size-like name
+
+  # Phase 4: allocation, free and object-lifetime calls (leaks, double frees, use after free).
+  memory:
+    weight: 25
+    content:
+      - '\b(malloc|calloc|realloc|free|kfree|kmalloc|kzalloc|kvfree|vmalloc|vfree|g_malloc0?|g_new0?|g_free|strdup|mmap|munmap)\s*\('
+      - '\b\w+_(alloc|allocate|zalloc|free|release|destroy|unref|put)\s*\('
+      - '\b(Box::(from_raw|into_raw|leak)|mem::(forget|transmute)|ManuallyDrop|std::alloc)\b'
 
 structure:
   size: [[5, 0], [30, 5], [100, 10], [.inf, 15]]   # [max changed lines, points]

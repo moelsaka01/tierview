@@ -71,7 +71,7 @@ describe("score mechanics", () => {
 
 describe("routing", () => {
   it("applies thresholds at their boundaries", () => {
-    expect([29, 30, 59, 60].map((s) => tierForScore(s, cfg))).toEqual([1, 2, 2, 3]);
+    expect([24, 25, 59, 60].map((s) => tierForScore(s, cfg))).toEqual([1, 2, 2, 3]); // tier2 threshold 25 since P4-09
   });
 
   const withYml = (rules: object) => ({ ...cfg, ...rules });
@@ -110,6 +110,6 @@ describe("routing", () => {
   });
 
   it("loads thresholds from .tierview.yml", () => {
-    expect(loadConfig({ cwd: "test/fixtures" }).thresholds.tier2).toBe(30);
+    expect(loadConfig({ cwd: "test/fixtures" }).thresholds.tier2).toBe(25);
   });
 });

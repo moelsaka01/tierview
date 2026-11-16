@@ -61,6 +61,9 @@ const count = (xs: string[], re: RegExp) => xs.filter((x) => re.test(x)).length;
 const TEST_FN = /^\s*(it|test)\s*\(|\bdef test_|\bfunc Test\w+|@Test\b|#\[test\]|\b(it|test)\.each\b/;
 const ASSERT = /\bexpect\s*\(|\bassert\w*\b|\.should\b|\bt\.(Error|Fatal)f?\s*\(|\bself\.assert\w*/;
 const AWAIT = /\b(await|async)\b/;
+const COND = /^\s*(\}\s*)?(if|else\s+if|elif|while|for|unless)\b/;
+const BOUNDS = /\s(<=|>=|<|>)\s+[^;{]*?(\s[+-]\s|\b(size|len|length|count|end|limit|max|cap|capacity|bound)\w*)/i;
+const norm = (t: string) => t.replace(/\s+/g, "");
 const CMP = /<=|>=|===|!==|==|!=|=>|->|<<|>>|<|>/g;
 
 function comparisons(s: string): string {
@@ -130,6 +133,14 @@ function logicFires(name: string, h: Hunk, kind: FileKind): string | null {
       return modifiedPairs(h).some(([a, b]) => comparisons(a) !== comparisons(b)) ? "comparison operator changed" : null;
     case "index_arithmetic_changed":
       return modifiedPairs(h).some(([a, b]) => brackets(a) !== brackets(b)) ? "index arithmetic changed" : null;
+    case "condition_changed":
+      // Phase 4: an if/while/for condition rewritten on a modified line (e.g. a flag dropped from a mask test).
+      return modifiedPairs(h).some(([a, b]) => COND.test(a) && COND.test(b) && norm(a) !== norm(b)) ? "condition changed" : null;
+    case "bounds_check_added": {
+      // Phase 4: a new relational check against arithmetic or a size-like name (the off-by-one class).
+      const hit = h.lines.find((l) => l.kind === "add" && BOUNDS.test(l.text));
+      return hit ? `bounds check: ${hit.text.trim().slice(0, 50)}` : null;
+    }
     default:
       return null;
   }

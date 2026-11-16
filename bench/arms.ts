@@ -11,8 +11,9 @@ export type Arm = (typeof ARMS)[number];
 /**
  * Bumped when an arm's behaviour changes; saved runs of an older version are stale and re-run.
  * tierview v2 (2026-11-16): Tier 2 and Tier 3 merged into one Opus call, whole-diff escalation (PLAN §6).
+ * tierview v3 (2026-11-16): frozen config after P4-09 routing tuning (boundary 25, memory 25, Opus threshold 25).
  */
-export const ARM_VERSION: Record<Arm, number> = { tierview: 2, "all-sonnet": 1, "all-opus": 1 };
+export const ARM_VERSION: Record<Arm, number> = { tierview: 3, "all-sonnet": 1, "all-opus": 1 };
 
 export interface ArmPreset {
   arm: Arm;

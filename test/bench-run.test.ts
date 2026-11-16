@@ -234,7 +234,7 @@ describe("pipeline v2 in the benchmark", () => {
     expect(reqs[1]!.model).toBe(cfg.models.tier2.model);
     expect(reqs[1]!.effort).toBe("high");
     const r = readRun(dir, "dpdk-ntb-window-bound", "tierview")!;
-    expect(r.arm_version).toBe(2);
+    expect(r.arm_version).toBe(3);
     expect(r.review.receipt.tiers[1]!.requests).toBe(0);
     expect(r.review.receipt.baseline.method).toBe("actual_tokens_at_baseline_prices");
   });

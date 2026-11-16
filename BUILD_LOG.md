@@ -7,7 +7,7 @@ One entry per phase: which model did the work, at what effort, from what prompt,
 | 1 | Plan and scaffold | Fable 5.2 (high) | done 2026-11-16 |
 | 2 | Tier 0, config, dry-run | Sonnet 5.5 (medium) | done 2026-11-16 |
 | 3 | LLM tiers, escalation, receipt, backends | Opus 5.5 (high) | done 2026-11-16 |
-| 4 | Benchmark | Opus 5.5 (high) | in progress: pilot done (31 calls), full run not started |
+| 4 | Benchmark | Opus 5.5 (high) | in progress: pilot done (31 calls), routing tuned and frozen, full run not started |
 | 5 | PR mode, SARIF, GitHub Action | Sonnet 5.5 | not started |
 | 6 | README and release | Sonnet 5.5 | not started |
 
@@ -311,6 +311,34 @@ Observations:
 Projection from the pilot: about 1.8 + 1.2 + 1.2 = 4.2 review calls per case plus about 0.2 judge calls per buggy case, so the other 25 cases need about 110 calls, roughly 6 batches of 20.
 
 **Next.** Stop and ask Mohamed before the full run (P4-08). Open questions for him: whether to tighten the match rule before more judgements accumulate, and whether to tune routing on the dev split (P4-09) before running the test split.
+
+**P4-09 routing tuning (2026-11-16, Mohamed: "Tune routing on dev first"). Dev split only, zero `claude` calls.**
+
+Method: `bench/tune.ts` reports, for a config, the dev routing recall (faulty hunk at Tier 2+) and the share of reviewable hunks sent to Opus (the cost driver), overall and on clean cases; `bench/tune-grid.ts` compares variants. The test split was not routed or looked at while tuning.
+
+What the 7 dev bugs look like at Tier 0 (before): six faulty hunks scored 0 to 15 (size and "no tests changed" only); only Tailscale (concurrency) reached Opus. The bugs are ordinary logic bugs: a flag dropped from an `if` mask (bnxt), a `<=` bounds check in new code (ntb), a macro argument (MOV width), a dict no longer copied (Django legend), a regex (Django verbatim), an IRQ never freed (i8259).
+
+Changes (general bug classes, not patterns for one case):
+1. `boundary` gains two logic signals: `condition_changed` (an if/while/for condition rewritten on a modified line) and `bounds_check_added` (a new spaced `<`/`<=`/`>`/`>=` against arithmetic or a size-like name). Weight 10 → 25: off-by-one and broken conditions are as risky as the other 25-point classes.
+2. New `memory` category, weight 25: allocation, free and lifetime calls (C, glib, DPDK-style `*_alloc(`/`*_free(`, Rust raw-box and `mem::forget`). It does not change any dev result; it is in because memory management is a classic risk the Phase 1 list missed.
+3. Tier 2 threshold 30 → 25 (with Fable off this is the Opus threshold; Tier 3's 60 is moot when merged).
+
+| config | dev routing recall | dev hunks to Opus (all / clean) |
+|---|---|---|
+| before (boundary 10, threshold 30) | 1/7 | 9% / 0% |
+| boundary 20, threshold 30 | 2/7 | 19% / 0% |
+| **chosen: boundary 25, memory 25, threshold 25** | **3/7** (bnxt, ntb, Tailscale) | **25% / 14%** |
+| boundary 30, threshold 20 | 3/7 | 25% / 14% |
+
+The other four dev bugs (MOV width, Django legend, Django verbatim, i8259 IRQ) have no Tier 0 signal at all; no weight change reaches them without sending most hunks to Opus. They depend on Sonnet raising them (and escalating), which batch 1 vs batch 2 showed is not reliable. This is the main limit of keyword routing and the README must say so.
+
+Not tuned: escalation confidence thresholds. Only 5 tierview v2 pilot runs exist on dev, too few to fit anything; they stay at 0.7 / 0.6.
+
+Caveat on independence: I chose the dataset (and so read the one-line descriptions of the test bugs) before tuning. The new signals target general classes, and no test diff was routed during tuning, but a reader should know the tuner had seen the test bug list. 7 dev bugs are also too few to tune well (cases README, Limitations).
+
+Frozen: config hash `8b8d0f208dd5`; tierview arm version 3, so the 5 tierview pilot runs (v2, old weights) are stale and re-run in the next batch (about 9 calls); the baseline arms do not depend on routing and stay. Tests: new signal cases in `test/signals.test.ts`; threshold tests updated; 229 tests pass.
+
+**Next.** Ask Mohamed: whether to tighten the location match rule before more judgements accumulate, then the test split in batches of 20 (about 6 batches) plus the dev re-runs.
 
 ---
 
