@@ -1,0 +1,362 @@
+{
+  "case_id": "django-legend-attrs-mutation",
+  "arm": "tierview",
+  "arm_version": 3,
+  "batch": "2026-11-16T15-16-52",
+  "config_hash": "3f0786b02d0a",
+  "complete": true,
+  "calls": 2,
+  "wall_ms": 28088,
+  "review": {
+    "version": 1,
+    "findings": [],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "django/forms/boundfield.py#1",
+        "score": 0,
+        "tier": 1,
+        "reasons": []
+      },
+      {
+        "hunk_id": "tests/forms_tests/tests/test_forms.py#1",
+        "score": 0,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "9 hunks in this file"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/forms_tests/tests/test_forms.py#2",
+        "score": 0,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "9 hunks in this file"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/forms_tests/tests/test_forms.py#3",
+        "score": 25,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "boundary",
+            "weight": 25,
+            "detail": "comparison operator changed"
+          },
+          {
+            "signal": "size",
+            "weight": 10,
+            "detail": "38 changed lines"
+          },
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "9 hunks in this file"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "merge",
+            "weight": 0,
+            "detail": "Tier 2 and Tier 3 run the same model: one call at high effort"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/forms_tests/tests/test_forms.py#4",
+        "score": 0,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "9 hunks in this file"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/forms_tests/tests/test_forms.py#5",
+        "score": 0,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "9 hunks in this file"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/forms_tests/tests/test_forms.py#6",
+        "score": 0,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "9 hunks in this file"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/forms_tests/tests/test_forms.py#7",
+        "score": 0,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "9 hunks in this file"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/forms_tests/tests/test_forms.py#8",
+        "score": 0,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "9 hunks in this file"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/forms_tests/tests/test_forms.py#9",
+        "score": 0,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "6 changed lines"
+          },
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "9 hunks in this file"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/forms_tests/tests/test_i18n.py#1",
+        "score": 0,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/forms_tests/widget_tests/test_clearablefileinput.py#1",
+        "score": 0,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "6 changed lines"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/forms_tests/widget_tests/test_selectdatewidget.py#1",
+        "score": 0,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/model_forms/tests.py#1",
+        "score": 0,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "6 changed lines"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/model_formsets/tests.py#1",
+        "score": 0,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/model_formsets/tests.py#2",
+        "score": 0,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 2,
+      "model_substitutions": [
+        {
+          "tier": 3,
+          "requested": "claude-fable-5-2",
+          "used": "claude-opus-5-5",
+          "reason": "Fable not enabled"
+        }
+      ],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 15,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 7797,
+          "cache_read_tokens": 994,
+          "output_tokens": 1434,
+          "cache_write_1h_tokens": 7797,
+          "cost_usd": 0.0456314,
+          "direct_api_cost_usd": 0.027726
+        },
+        {
+          "tier": 2,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "hunks": 1,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 7914,
+          "cache_read_tokens": 994,
+          "output_tokens": 307,
+          "cache_write_1h_tokens": 7914,
+          "cost_usd": 0.0696588,
+          "direct_api_cost_usd": 0.03338
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.11529020000000001,
+      "total_direct_api_cost_usd": 0.061106,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.3214456,
+        "direct_api_cost_usd": 0.177664
+      },
+      "savings_pct": 64.1,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "Tier 2 and Tier 3 both run claude-opus-5-5, so they ran as one tier at high effort.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 28088,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}

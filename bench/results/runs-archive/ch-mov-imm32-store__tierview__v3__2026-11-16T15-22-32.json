@@ -1,0 +1,291 @@
+{
+  "case_id": "ch-mov-imm32-store",
+  "arm": "tierview",
+  "arm_version": 3,
+  "batch": "2026-11-16T15-22-32",
+  "config_hash": "3f0786b02d0a",
+  "complete": true,
+  "calls": 2,
+  "wall_ms": 57778,
+  "review": {
+    "version": 1,
+    "findings": [
+      {
+        "file": "hypervisor/src/arch/x86/emulator/instructions/mov.rs",
+        "start_line": 205,
+        "end_line": 205,
+        "side": "new",
+        "severity": "high",
+        "category": "bug",
+        "title": "MOV r/m64, imm32 now writes only 4 bytes to a 64-bit memory destination",
+        "explanation": "mov_rm_imm now passes std::mem::size_of::<$bound>() as op_size to set_op. With $bound = u32, op_size is 4, so set_op writes only the low 4 bytes of the value to memory. MOV r/m64, imm32 (REX.W C7 /0) must store the sign-extended immediate as a full 8 bytes. get_op returns the sign-extended 64-bit value (Immediate32to64), but on the memory path the upper 32 bits of the destination are never written. That is wrong guest-visible behaviour, e.g. a 64-bit MMIO register write that only updates its low half. The old code (u32tou64 via imm_op!) wrote 8 bytes. Register destinations are unaffected because write_reg stores the full u64.",
+        "suggestion": "Use mov_rm_imm!(u64) for Mov_rm64_imm32 so the operand size is 8 bytes, and add a test for `mov qword ptr [mem], imm32` with a negative immediate.",
+        "evidence": "    mov_rm_imm!(u32);",
+        "confidence": 0.7,
+        "id": "c6a11aa81ff4",
+        "hunk_id": "hypervisor/src/arch/x86/emulator/instructions/mov.rs#6",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [
+          1
+        ],
+        "also_reported_by": []
+      }
+    ],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "hypervisor/src/arch/x86/emulator/instructions/mov.rs#1",
+        "score": 15,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "deletion_only",
+            "weight": 5,
+            "detail": "only deletions"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "110 source lines, no test file"
+          }
+        ]
+      },
+      {
+        "hunk_id": "hypervisor/src/arch/x86/emulator/instructions/mov.rs#2",
+        "score": 40,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "boundary",
+            "weight": 25,
+            "detail": "comparison operator changed"
+          },
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "29 changed lines"
+          },
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "110 source lines, no test file"
+          },
+          {
+            "signal": "merge",
+            "weight": 0,
+            "detail": "Tier 2 and Tier 3 run the same model: one call at high effort"
+          }
+        ]
+      },
+      {
+        "hunk_id": "hypervisor/src/arch/x86/emulator/instructions/mov.rs#3",
+        "score": 40,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "boundary",
+            "weight": 25,
+            "detail": "comparison operator changed"
+          },
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "30 changed lines"
+          },
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "110 source lines, no test file"
+          },
+          {
+            "signal": "merge",
+            "weight": 0,
+            "detail": "Tier 2 and Tier 3 run the same model: one call at high effort"
+          }
+        ]
+      },
+      {
+        "hunk_id": "hypervisor/src/arch/x86/emulator/instructions/mov.rs#4",
+        "score": 45,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "boundary",
+            "weight": 25,
+            "detail": "comparison operator changed"
+          },
+          {
+            "signal": "size",
+            "weight": 10,
+            "detail": "31 changed lines"
+          },
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "110 source lines, no test file"
+          },
+          {
+            "signal": "merge",
+            "weight": 0,
+            "detail": "Tier 2 and Tier 3 run the same model: one call at high effort"
+          }
+        ]
+      },
+      {
+        "hunk_id": "hypervisor/src/arch/x86/emulator/instructions/mov.rs#5",
+        "score": 40,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "boundary",
+            "weight": 25,
+            "detail": "comparison operator changed"
+          },
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "17 changed lines"
+          },
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "110 source lines, no test file"
+          },
+          {
+            "signal": "merge",
+            "weight": 0,
+            "detail": "Tier 2 and Tier 3 run the same model: one call at high effort"
+          }
+        ]
+      },
+      {
+        "hunk_id": "hypervisor/src/arch/x86/emulator/instructions/mov.rs#6",
+        "score": 10,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "110 source lines, no test file"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 2,
+      "model_substitutions": [
+        {
+          "tier": 3,
+          "requested": "claude-fable-5-2",
+          "used": "claude-opus-5-5",
+          "reason": "Fable not enabled"
+        }
+      ],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 2,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 2759,
+          "cache_read_tokens": 994,
+          "output_tokens": 501,
+          "cache_write_1h_tokens": 2759,
+          "cost_usd": 0.0161494,
+          "direct_api_cost_usd": 0.00832
+        },
+        {
+          "tier": 2,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "hunks": 4,
+          "escalated_in": 2,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 20543,
+          "cache_read_tokens": 994,
+          "output_tokens": 4127,
+          "cache_write_1h_tokens": 20543,
+          "cost_usd": 0.2470908,
+          "direct_api_cost_usd": 0.160296
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.2632402,
+      "total_direct_api_cost_usd": 0.168616,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.5583816,
+        "direct_api_cost_usd": 0.35387199999999996
+      },
+      "savings_pct": 52.9,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "Tier 2 and Tier 3 both run claude-opus-5-5, so they ran as one tier at high effort.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills.",
+        "calibration: 2 of 2 tier 1 hunk(s) escalated (100% > 30%)."
+      ],
+      "wall_ms": 57777,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}

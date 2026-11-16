@@ -1,12 +1,12 @@
 {
   "case_id": "qemu-i8259-irq-leak",
   "arm": "tierview",
-  "arm_version": 3,
-  "batch": "2026-11-16T15-22-32",
-  "config_hash": "3f0786b02d0a",
+  "arm_version": 4,
+  "batch": "2026-11-16T15-38-08",
+  "config_hash": "4fe1abf9f1f3",
   "complete": true,
   "calls": 2,
-  "wall_ms": 42295,
+  "wall_ms": 43118,
   "review": {
     "version": 1,
     "findings": [],
@@ -125,12 +125,12 @@
           "escalated_in": 0,
           "requests": 1,
           "input_tokens": 2,
-          "cache_write_tokens": 4903,
+          "cache_write_tokens": 15133,
           "cache_read_tokens": 994,
-          "output_tokens": 840,
-          "cache_write_1h_tokens": 4903,
-          "cost_usd": 0.028115400000000002,
-          "direct_api_cost_usd": 0.015998
+          "output_tokens": 354,
+          "cache_write_1h_tokens": 15133,
+          "cost_usd": 0.06417540000000001,
+          "direct_api_cost_usd": 0.031598
         },
         {
           "tier": 2,
@@ -155,25 +155,25 @@
           "escalated_in": 0,
           "requests": 1,
           "input_tokens": 2,
-          "cache_write_tokens": 6425,
-          "cache_read_tokens": 994,
-          "output_tokens": 2155,
-          "cache_write_1h_tokens": 6425,
-          "cost_usd": 0.09470680000000001,
-          "direct_api_cost_usd": 0.064384
+          "cache_write_tokens": 614,
+          "cache_read_tokens": 6801,
+          "output_tokens": 2198,
+          "cache_write_1h_tokens": 614,
+          "cost_usd": 0.0502402,
+          "direct_api_cost_usd": 0.065228
         }
       ],
       "skipped_hunks": 0,
       "not_reviewed_hunks": 0,
-      "total_cost_usd": 0.1228222,
-      "total_direct_api_cost_usd": 0.080382,
+      "total_cost_usd": 0.1144156,
+      "total_direct_api_cost_usd": 0.096826,
       "baseline": {
         "model": "claude-fable-5-2",
         "method": "actual_tokens_at_baseline_prices",
-        "cost_usd": 0.3014776,
-        "direct_api_cost_usd": 0.19276
+        "cost_usd": 0.35562299999999997,
+        "direct_api_cost_usd": 0.25684799999999997
       },
-      "savings_pct": 59.3,
+      "savings_pct": 67.8,
       "budget": {
         "max_cost_usd": null,
         "degraded": false
@@ -182,7 +182,7 @@
         "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
         "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
       ],
-      "wall_ms": 42295,
+      "wall_ms": 43118,
       "prices_as_of": "2026-11-16"
     }
   },

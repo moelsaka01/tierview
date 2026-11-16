@@ -1,12 +1,12 @@
 {
   "case_id": "nextjs-clean-default-export-errors",
   "arm": "tierview",
-  "arm_version": 3,
-  "batch": "2026-11-16T15-16-52",
-  "config_hash": "3f0786b02d0a",
+  "arm_version": 4,
+  "batch": "2026-11-16T15-38-08",
+  "config_hash": "4fe1abf9f1f3",
   "complete": true,
   "calls": 2,
-  "wall_ms": 27115,
+  "wall_ms": 35516,
   "review": {
     "version": 1,
     "findings": [],
@@ -69,12 +69,12 @@
           "escalated_in": 0,
           "requests": 1,
           "input_tokens": 2,
-          "cache_write_tokens": 2857,
+          "cache_write_tokens": 4134,
           "cache_read_tokens": 994,
           "output_tokens": 149,
-          "cache_write_1h_tokens": 2857,
-          "cost_usd": 0.013021399999999999,
-          "direct_api_cost_usd": 0.004996
+          "cache_write_1h_tokens": 4134,
+          "cost_usd": 0.0181294,
+          "direct_api_cost_usd": 0.00755
         },
         {
           "tier": 2,
@@ -99,25 +99,25 @@
           "escalated_in": 0,
           "requests": 1,
           "input_tokens": 2,
-          "cache_write_tokens": 5327,
-          "cache_read_tokens": 994,
-          "output_tokens": 841,
-          "cache_write_1h_tokens": 5327,
-          "cost_usd": 0.0596428,
-          "direct_api_cost_usd": 0.033712
+          "cache_write_tokens": 617,
+          "cache_read_tokens": 5708,
+          "output_tokens": 1294,
+          "cache_write_1h_tokens": 617,
+          "cost_usd": 0.0319656,
+          "direct_api_cost_usd": 0.042788
         }
       ],
       "skipped_hunks": 0,
       "not_reviewed_hunks": 0,
-      "total_cost_usd": 0.0726642,
-      "total_direct_api_cost_usd": 0.038708,
+      "total_cost_usd": 0.050095,
+      "total_direct_api_cost_usd": 0.050338,
       "baseline": {
         "model": "claude-fable-5-2",
         "method": "actual_tokens_at_baseline_prices",
-        "cost_usd": 0.1709736,
-        "direct_api_cost_usd": 0.087408
+        "cost_usd": 0.13510840000000002,
+        "direct_api_cost_usd": 0.115776
       },
-      "savings_pct": 57.5,
+      "savings_pct": 62.9,
       "budget": {
         "max_cost_usd": null,
         "degraded": false
@@ -127,7 +127,7 @@
         "Tier 2 and Tier 3 both run claude-opus-5-5, so they ran as one tier at high effort.",
         "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
       ],
-      "wall_ms": 27115,
+      "wall_ms": 35516,
       "prices_as_of": "2026-11-16"
     }
   },

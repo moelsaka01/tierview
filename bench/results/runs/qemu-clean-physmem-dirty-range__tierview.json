@@ -1,12 +1,12 @@
 {
   "case_id": "qemu-clean-physmem-dirty-range",
   "arm": "tierview",
-  "arm_version": 3,
-  "batch": "2026-11-16T15-22-32",
-  "config_hash": "3f0786b02d0a",
+  "arm_version": 4,
+  "batch": "2026-11-16T15-38-08",
+  "config_hash": "4fe1abf9f1f3",
   "complete": true,
   "calls": 1,
-  "wall_ms": 12763,
+  "wall_ms": 12882,
   "review": {
     "version": 1,
     "findings": [],
@@ -63,12 +63,12 @@
           "escalated_in": 0,
           "requests": 1,
           "input_tokens": 2,
-          "cache_write_tokens": 3219,
+          "cache_write_tokens": 15023,
           "cache_read_tokens": 994,
           "output_tokens": 271,
-          "cache_write_1h_tokens": 3219,
-          "cost_usd": 0.0156894,
-          "direct_api_cost_usd": 0.00694
+          "cache_write_1h_tokens": 15023,
+          "cost_usd": 0.0629054,
+          "direct_api_cost_usd": 0.030548
         },
         {
           "tier": 2,
@@ -103,15 +103,15 @@
       ],
       "skipped_hunks": 0,
       "not_reviewed_hunks": 0,
-      "total_cost_usd": 0.0156894,
-      "total_direct_api_cost_usd": 0.00694,
+      "total_cost_usd": 0.0629054,
+      "total_direct_api_cost_usd": 0.030548,
       "baseline": {
         "model": "claude-fable-5-2",
         "method": "actual_tokens_at_baseline_prices",
-        "cost_usd": 0.0625588,
-        "direct_api_cost_usd": 0.02776
+        "cost_usd": 0.2514228,
+        "direct_api_cost_usd": 0.122192
       },
-      "savings_pct": 74.9,
+      "savings_pct": 75,
       "budget": {
         "max_cost_usd": null,
         "degraded": false
@@ -120,7 +120,7 @@
         "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
         "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
       ],
-      "wall_ms": 12763,
+      "wall_ms": 12882,
       "prices_as_of": "2026-11-16"
     }
   },

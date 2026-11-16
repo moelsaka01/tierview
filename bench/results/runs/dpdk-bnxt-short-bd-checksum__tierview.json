@@ -1,12 +1,12 @@
 {
   "case_id": "dpdk-bnxt-short-bd-checksum",
   "arm": "tierview",
-  "arm_version": 3,
-  "batch": "2026-11-16T15-22-32",
-  "config_hash": "3f0786b02d0a",
+  "arm_version": 4,
+  "batch": "2026-11-16T15-38-08",
+  "config_hash": "4fe1abf9f1f3",
   "complete": true,
   "calls": 1,
-  "wall_ms": 29968,
+  "wall_ms": 29766,
   "review": {
     "version": 1,
     "findings": [
@@ -17,12 +17,12 @@
         "side": "new",
         "severity": "high",
         "category": "bug",
-        "title": "Checksum-only offload packets now use short BD, dropping the checksum request",
-        "explanation": "In the bnxt send path, the return value of bnxt_xmit_need_long_bd() picks the BD type. Only the long BD (its tx_bd_long_hi lflags) can carry TX_BD_LONG_LFLAGS_IP_CHKSUM and TCP_UDP_CHKSUM, and the send code only fills in those lflags inside the long_bd branch. The short BD has nowhere to put checksum offload. This change removes RTE_MBUF_F_TX_TCP_CKSUM, RTE_MBUF_F_TX_UDP_CKSUM and RTE_MBUF_F_TX_IP_CKSUM from the check. A packet that asks only for IP/L4 checksum offload, with no TSO, VLAN or tunnel, will now go out on a short BD. The hardware will not compute the checksum, so the packet leaves with a bad or zero checksum and receivers drop it. Checksum-only offload is a very common transmit setting, so ordinary traffic is affected.",
-        "suggestion": "Put RTE_MBUF_F_TX_TCP_CKSUM, RTE_MBUF_F_TX_UDP_CKSUM and RTE_MBUF_F_TX_IP_CKSUM back in the mask. If the goal is to send checksum-only packets on short BDs (for example, on hardware that supports checksum hints on short BDs), the send path must also be changed to set the checksum flags on the short BD, and that should be limited to chips that support it.",
+        "title": "Checksum offload flags no longer force long BD; checksums silently skipped",
+        "explanation": "bnxt_xmit_need_long_bd() decides whether a packet is sent with a long TX BD. On bnxt hardware, only the long BD format (tx_bd_long_hi lflags) can request IP and TCP/UDP checksum offload. In bnxt_start_xmit(), the code that sets those flags runs only when long_bd is true. With RTE_MBUF_F_TX_IP_CKSUM, RTE_MBUF_F_TX_TCP_CKSUM and RTE_MBUF_F_TX_UDP_CKSUM removed from the mask, a packet that asks only for checksum offload (no VLAN, tunnel, TSO, timestamp or TruFlow CFA action) is sent with a short BD. The NIC then never computes the checksum, so packets go out with wrong or zero checksums and receivers drop them. This is the normal path for TCP/UDP apps that rely on Tx checksum offload. (The send function was outside the visible context; this relies on the known bnxt driver structure, where upstream DPDK keeps these flags here.)",
+        "suggestion": "Put RTE_MBUF_F_TX_TCP_CKSUM, RTE_MBUF_F_TX_UDP_CKSUM and RTE_MBUF_F_TX_IP_CKSUM back in the ol_flags mask. If short BDs are meant to support checksum offload on newer chips, gate this on a chip check and add a short-BD checksum path in bnxt_start_xmit().",
         "evidence": "\tif (tx_pkt->ol_flags & (RTE_MBUF_F_TX_TCP_SEG |",
-        "confidence": 0.72,
-        "id": "3bc1bdf36a25",
+        "confidence": 0.75,
+        "id": "7feceb79f16e",
         "hunk_id": "drivers/net/bnxt/bnxt_txr.c#1",
         "model": "claude-opus-5-5",
         "tier": 3,
@@ -102,25 +102,25 @@
           "escalated_in": 0,
           "requests": 1,
           "input_tokens": 2,
-          "cache_write_tokens": 6242,
-          "cache_read_tokens": 994,
-          "output_tokens": 2059,
-          "cache_write_1h_tokens": 6242,
-          "cost_usd": 0.09132280000000001,
-          "direct_api_cost_usd": 0.061732
+          "cache_write_tokens": 612,
+          "cache_read_tokens": 6623,
+          "output_tokens": 2196,
+          "cache_write_1h_tokens": 612,
+          "cost_usd": 0.0501486,
+          "direct_api_cost_usd": 0.064468
         }
       ],
       "skipped_hunks": 0,
       "not_reviewed_hunks": 0,
-      "total_cost_usd": 0.09132280000000001,
-      "total_direct_api_cost_usd": 0.061732,
+      "total_cost_usd": 0.0501486,
+      "total_direct_api_cost_usd": 0.064468,
       "baseline": {
         "model": "claude-fable-5-2",
         "method": "actual_tokens_at_baseline_prices",
-        "cost_usd": 0.1824468,
-        "direct_api_cost_usd": 0.123464
+        "cost_usd": 0.09897260000000001,
+        "direct_api_cost_usd": 0.128936
       },
-      "savings_pct": 49.9,
+      "savings_pct": 49.3,
       "budget": {
         "max_cost_usd": null,
         "degraded": false
@@ -130,7 +130,7 @@
         "Tier 2 and Tier 3 both run claude-opus-5-5, so they ran as one tier at high effort.",
         "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
       ],
-      "wall_ms": 29968,
+      "wall_ms": 29766,
       "prices_as_of": "2026-11-16"
     }
   },

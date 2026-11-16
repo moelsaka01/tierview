@@ -1,15 +1,35 @@
 {
   "case_id": "django-legend-attrs-mutation",
   "arm": "tierview",
-  "arm_version": 3,
-  "batch": "2026-11-16T15-16-52",
-  "config_hash": "3f0786b02d0a",
+  "arm_version": 4,
+  "batch": "2026-11-16T15-38-08",
+  "config_hash": "4fe1abf9f1f3",
   "complete": true,
-  "calls": 2,
-  "wall_ms": 28088,
+  "calls": 3,
+  "wall_ms": 45513,
   "review": {
     "version": 1,
-    "findings": [],
+    "findings": [
+      {
+        "file": "django/forms/boundfield.py",
+        "start_line": 195,
+        "end_line": 197,
+        "side": "new",
+        "severity": "low",
+        "category": "bug",
+        "title": "legend_tag mutates caller's attrs dict for required fields",
+        "explanation": "The old code always copied attrs via {**attrs, ...}. Now, for tag == 'legend' no copy is made, so attrs is the caller's dict. The following required_css_class branch does attrs['class'] += ..., which mutates the caller's dict. Reusing one attrs dict across calls appends the required class repeatedly.",
+        "suggestion": "Always copy: attrs = {**(attrs or {})} and then add 'for' only when tag != 'legend'.",
+        "evidence": "attrs = attrs or {}\n                if tag != \"legend\":\n                    attrs = {**attrs, \"for\": id_for_label}",
+        "confidence": 0.7,
+        "id": "fd0f9f0ebc5a",
+        "hunk_id": "django/forms/boundfield.py#1",
+        "model": "claude-sonnet-5-5",
+        "tier": 1,
+        "escalated_from": [],
+        "also_reported_by": []
+      }
+    ],
     "refuted": [],
     "not_reviewed": [],
     "routing": [
@@ -278,7 +298,7 @@
     "receipt": {
       "backend": "claude-code",
       "cost_basis": "api_equivalent",
-      "calls": 2,
+      "calls": 3,
       "model_substitutions": [
         {
           "tier": 3,
@@ -294,14 +314,14 @@
           "effort": "low",
           "hunks": 15,
           "escalated_in": 0,
-          "requests": 1,
-          "input_tokens": 2,
-          "cache_write_tokens": 7797,
-          "cache_read_tokens": 994,
-          "output_tokens": 1434,
-          "cache_write_1h_tokens": 7797,
-          "cost_usd": 0.0456314,
-          "direct_api_cost_usd": 0.027726
+          "requests": 2,
+          "input_tokens": 4,
+          "cache_write_tokens": 62999,
+          "cache_read_tokens": 3683,
+          "output_tokens": 1891,
+          "cache_write_1h_tokens": 62999,
+          "cost_usd": 0.2712823,
+          "direct_api_cost_usd": 0.143882
         },
         {
           "tier": 2,
@@ -326,25 +346,25 @@
           "escalated_in": 0,
           "requests": 1,
           "input_tokens": 2,
-          "cache_write_tokens": 7914,
-          "cache_read_tokens": 994,
-          "output_tokens": 307,
-          "cache_write_1h_tokens": 7914,
-          "cost_usd": 0.0696588,
-          "direct_api_cost_usd": 0.03338
+          "cache_write_tokens": 613,
+          "cache_read_tokens": 8299,
+          "output_tokens": 278,
+          "cache_write_1h_tokens": 613,
+          "cost_usd": 0.0121318,
+          "direct_api_cost_usd": 0.032816
         }
       ],
       "skipped_hunks": 0,
       "not_reviewed_hunks": 0,
-      "total_cost_usd": 0.11529020000000001,
-      "total_direct_api_cost_usd": 0.061106,
+      "total_cost_usd": 0.2834141,
+      "total_direct_api_cost_usd": 0.17669800000000002,
       "baseline": {
         "model": "claude-fable-5-2",
         "method": "actual_tokens_at_baseline_prices",
-        "cost_usd": 0.3214456,
-        "direct_api_cost_usd": 0.177664
+        "cost_usd": 1.1069964,
+        "direct_api_cost_usd": 0.6411600000000001
       },
-      "savings_pct": 64.1,
+      "savings_pct": 74.4,
       "budget": {
         "max_cost_usd": null,
         "degraded": false
@@ -354,7 +374,7 @@
         "Tier 2 and Tier 3 both run claude-opus-5-5, so they ran as one tier at high effort.",
         "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
       ],
-      "wall_ms": 28088,
+      "wall_ms": 45512,
       "prices_as_of": "2026-11-16"
     }
   },

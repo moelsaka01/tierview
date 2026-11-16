@@ -1,12 +1,12 @@
 {
   "case_id": "ch-mov-imm32-store",
   "arm": "tierview",
-  "arm_version": 3,
-  "batch": "2026-11-16T15-22-32",
-  "config_hash": "3f0786b02d0a",
+  "arm_version": 4,
+  "batch": "2026-11-16T15-38-08",
+  "config_hash": "4fe1abf9f1f3",
   "complete": true,
   "calls": 2,
-  "wall_ms": 57778,
+  "wall_ms": 58643,
   "review": {
     "version": 1,
     "findings": [
@@ -17,18 +17,37 @@
         "side": "new",
         "severity": "high",
         "category": "bug",
-        "title": "MOV r/m64, imm32 now writes only 4 bytes to a 64-bit memory destination",
-        "explanation": "mov_rm_imm now passes std::mem::size_of::<$bound>() as op_size to set_op. With $bound = u32, op_size is 4, so set_op writes only the low 4 bytes of the value to memory. MOV r/m64, imm32 (REX.W C7 /0) must store the sign-extended immediate as a full 8 bytes. get_op returns the sign-extended 64-bit value (Immediate32to64), but on the memory path the upper 32 bits of the destination are never written. That is wrong guest-visible behaviour, e.g. a 64-bit MMIO register write that only updates its low half. The old code (u32tou64 via imm_op!) wrote 8 bytes. Register destinations are unaffected because write_reg stores the full u64.",
-        "suggestion": "Use mov_rm_imm!(u64) for Mov_rm64_imm32 so the operand size is 8 bytes, and add a test for `mov qword ptr [mem], imm32` with a negative immediate.",
+        "title": "MOV r/m64, imm32 now writes only 4 bytes to a memory destination",
+        "explanation": "mov_rm_imm now passes std::mem::size_of::<$bound>() as the operand size to set_op. Because Mov_rm64_imm32 is instantiated with u32, that size is 4. MOV r/m64, imm32 (REX.W C7 /0) must sign-extend the imm32 and store 8 bytes. When the destination is memory, which is the usual case since this emulator handles MMIO exits, set_op writes only the low 4 bytes. The upper 4 bytes are left unchanged and the sign extension is lost, so the device sees a 4-byte write instead of an 8-byte one. The old u32tou64 variant wrote the full sign-extended 64-bit value. Register destinations still work, assuming get_op returns the sign-extended immediate32to64 value and write_reg writes the full register.",
+        "suggestion": "Instantiate with the destination width: `mov_rm_imm!(u64);`. get_op still decodes the Immediate32to64 operand kind, so the 64-bit size is correct for both register and memory destinations. Also add a test for `mov qword [mem], imm32` with a negative immediate.",
         "evidence": "    mov_rm_imm!(u32);",
-        "confidence": 0.7,
-        "id": "c6a11aa81ff4",
+        "confidence": 0.75,
+        "id": "f4f9b615b102",
         "hunk_id": "hypervisor/src/arch/x86/emulator/instructions/mov.rs#6",
         "model": "claude-opus-5-5",
         "tier": 3,
         "escalated_from": [
           1
         ],
+        "also_reported_by": []
+      },
+      {
+        "file": "hypervisor/src/arch/x86/emulator/instructions/mov.rs",
+        "start_line": 205,
+        "end_line": 205,
+        "side": "new",
+        "severity": "high",
+        "category": "bug",
+        "title": "Mov_rm64_imm32 may now use a 4-byte operand size",
+        "explanation": "The macro passes size_of::<$bound>() to get_op and set_op. With u32 that is 4. MOV r/m64, imm32 must sign-extend the immediate and write 8 bytes. The old u32tou64 type probably gave size 8. A memory destination could now get only 4 bytes written, and a register destination could lose its sign extension.",
+        "suggestion": "Keep an operand size of 8 for this handler. Either pass the size separately from the type, or keep a type whose size_of is 8. Check that the immediate is sign-extended.",
+        "evidence": "mov_rm_imm!(u32);",
+        "confidence": 0.45,
+        "id": "2497000b4f03",
+        "hunk_id": "hypervisor/src/arch/x86/emulator/instructions/mov.rs#6",
+        "model": "claude-sonnet-5-5",
+        "tier": 1,
+        "escalated_from": [],
         "also_reported_by": []
       }
     ],
@@ -224,12 +243,12 @@
           "escalated_in": 0,
           "requests": 1,
           "input_tokens": 2,
-          "cache_write_tokens": 2759,
+          "cache_write_tokens": 7286,
           "cache_read_tokens": 994,
-          "output_tokens": 501,
-          "cache_write_1h_tokens": 2759,
-          "cost_usd": 0.0161494,
-          "direct_api_cost_usd": 0.00832
+          "output_tokens": 1036,
+          "cache_write_1h_tokens": 7286,
+          "cost_usd": 0.0396074,
+          "direct_api_cost_usd": 0.022724
         },
         {
           "tier": 2,
@@ -251,28 +270,28 @@
           "model": "claude-opus-5-5",
           "effort": "high",
           "hunks": 4,
-          "escalated_in": 2,
+          "escalated_in": 1,
           "requests": 1,
           "input_tokens": 2,
-          "cache_write_tokens": 20543,
-          "cache_read_tokens": 994,
-          "output_tokens": 4127,
-          "cache_write_1h_tokens": 20543,
-          "cost_usd": 0.2470908,
-          "direct_api_cost_usd": 0.160296
+          "cache_write_tokens": 17687,
+          "cache_read_tokens": 2336,
+          "output_tokens": 3854,
+          "cache_write_1h_tokens": 17687,
+          "cost_usd": 0.2190512,
+          "direct_api_cost_usd": 0.14878
         }
       ],
       "skipped_hunks": 0,
       "not_reviewed_hunks": 0,
-      "total_cost_usd": 0.2632402,
-      "total_direct_api_cost_usd": 0.168616,
+      "total_cost_usd": 0.2586586,
+      "total_direct_api_cost_usd": 0.171504,
       "baseline": {
         "model": "claude-fable-5-2",
         "method": "actual_tokens_at_baseline_prices",
-        "cost_usd": 0.5583816,
-        "direct_api_cost_usd": 0.35387199999999996
+        "cost_usd": 0.595866,
+        "direct_api_cost_usd": 0.388456
       },
-      "savings_pct": 52.9,
+      "savings_pct": 56.6,
       "budget": {
         "max_cost_usd": null,
         "degraded": false
@@ -281,9 +300,9 @@
         "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
         "Tier 2 and Tier 3 both run claude-opus-5-5, so they ran as one tier at high effort.",
         "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills.",
-        "calibration: 2 of 2 tier 1 hunk(s) escalated (100% > 30%)."
+        "calibration: 1 of 2 tier 1 hunk(s) escalated (50% > 30%)."
       ],
-      "wall_ms": 57777,
+      "wall_ms": 58642,
       "prices_as_of": "2026-11-16"
     }
   },

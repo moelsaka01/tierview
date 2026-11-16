@@ -414,6 +414,38 @@ Implication (not acted on; needs Mohamed's decision because the config is frozen
 - Opus call skip: already the pipeline's behaviour (Tier 3 sends nothing when it has no routed or escalated hunk); now covered by a test (a clean case with nothing routed to Opus makes exactly 1 call). The dev runs with 2 calls all had hunks routed to Opus or escalated. The runner's planner still reserves an Opus call for a possible escalation; that is planning only and spends nothing.
 - Frozen: config hash `4fe1abf9f1f3`, git tag `bench-config-v2`; tierview arm version 4 (its dev runs are stale and re-run; the baseline arms do not depend on this setting). Dry-run snapshots regenerated (Tier 1 estimate now includes context tokens). 239 tests pass.
 
+**Batch 5 (2026-11-16, tierview only, dev split, `bench-config-v2`).** 19 `claude` calls (cap 20; 20 planned with reservations): 18 reviews and 1 Opus judge call (Tailscale: both ambiguous findings "no match"); no Fable, no errors. API-equivalent $1.61 via Claude Code. All 10 tierview dev runs are v4.
+
+| case | calls | tokens | via Claude Code | direct API | result |
+|---|---:|---:|---:|---:|---|
+| ch-mov-imm32-store | 2 | 33,197 | $0.259 | $0.172 | caught |
+| django-legend-attrs-mutation | 3 | 77,769 | $0.283 | $0.177 | **caught** (missed in v2 and v3) |
+| django-verbatim-no-spaces | 2 | 49,166 | $0.360 | $0.262 | **caught** (missed in v3) |
+| dpdk-bnxt-short-bd-checksum | 1 | 9,433 | $0.050 | $0.065 | caught |
+| dpdk-ntb-window-bound | 2 | 66,816 | $0.270 | $0.306 | caught |
+| qemu-i8259-irq-leak | 2 | 26,098 | $0.114 | $0.097 | missed |
+| tailscale-halfclose-shutdown | 2 | 21,086 | $0.114 | $0.115 | missed (Opus judge: no match) |
+| cilium-clean-fqdn-bootstrap | 1 | 12,323 | $0.047 | $0.022 | 0 FP |
+| nextjs-clean-default-export-errors | 2 | 12,900 | $0.050 | $0.050 | 0 FP |
+| qemu-clean-physmem-dirty-range | 1 | 16,290 | $0.063 | $0.031 | 0 FP |
+
+**Dev split, final (tuning data; test split not run):**
+
+| arm | recall (95% CI) | FP / clean | calls / case | $ / case via Claude Code | $ / case direct API | $ / bug caught (CC / direct) |
+|---|---|---:|---:|---:|---:|---|
+| tierview v4 (`bench-config-v2`) | 5/7 = 71% (43–100%) | 0 | 1.8 | $0.161 | $0.130 | $0.290 / $0.239 |
+| all-sonnet | 5/7 = 71% (43–100%) | 0 | 1.1 | $0.111 | $0.060 | $0.194 / $0.105 |
+| all-opus | 5/7 = 71% (43–100%) | 0 | 1.1 | $0.254 | $0.155 | $0.441 / $0.274 |
+| tierview v3 (`bench-config-v1`, for comparison) | 3/7 = 43% (14–86%) | 0 | 1.7 | $0.146 | $0.098 | $0.456 / $0.309 |
+
+McNemar tierview v4 vs all-opus: both 5, neither 2, no discordant pairs (p = 1). All three arms catch the same 5 dev bugs and miss the same 2 (i8259, Tailscale).
+
+- The Tier 1 context change recovered both Django misses: tierview now matches both baselines on dev recall.
+- **Cost on dev: all-sonnet is cheapest** ($0.111 via Claude Code, $0.060 direct), then tierview ($0.161 / $0.130), then all-opus ($0.254 / $0.155). Tier 1 now carries file context (about 1.8x the tokens of v3) and most cases still make a second, Opus call; Django legend needed 2 Tier 1 calls because its 15 hunks with context passed the 40k-token pack limit. On the direct-API basis tierview is close to all-opus.
+- On 7 dev bugs none of these differences in recall is measurable; the cost ordering is the clearer signal, and it does not favour the cascade on this split.
+
+**Next.** Stop and show Mohamed the dev table before the test split (20 cases, 60 runs, about 4 to 5 batches).
+
 ---
 
 *Template for each later phase:*

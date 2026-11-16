@@ -1,0 +1,398 @@
+{
+  "case_id": "dpdk-ntb-window-bound",
+  "arm": "tierview",
+  "arm_version": 3,
+  "batch": "2026-11-16T15-16-52",
+  "config_hash": "3f0786b02d0a",
+  "complete": true,
+  "calls": 2,
+  "wall_ms": 115051,
+  "review": {
+    "version": 1,
+    "findings": [
+      {
+        "file": "drivers/raw/ntb/ntb.c",
+        "start_line": 625,
+        "end_line": 670,
+        "side": "new",
+        "severity": "high",
+        "category": "bug",
+        "title": "Aborting mid multi-segment packet corrupts the ring and frees caller mbufs",
+        "explanation": "The `goto end_of_tx` exits (ring full, zero len, NULL remap) can fire after some segments of a multi-segment packet were already copied. By then `txq->last_used` has moved past them and their sw_ring slots point at the packet's segments. However, nb_tx does not count the packet and nb_tx_free is not reduced. Three things go wrong: (1) If nb_tx > 0, `*used_cnt = txq->last_used` publishes the partial segments with no EOP, so the peer's dequeue joins them with the next packet. (2) If nb_tx == 0, the tx_used entries for those slots are never written to the remote used ring, yet last_used stays advanced. A later publish skips past them and the peer reads stale len/flags. (3) The caller still owns the rejected mbuf, because the return value excludes it, but ntb_enqueue_cleanup will later call rte_pktmbuf_free_seg on those sw_ring entries. That is a double free or use-after-free. nb_tx_free also drifts out of sync with the real ring occupancy.",
+        "suggestion": "Before copying anything, check that the whole packet fits: there must be nb_segs descriptors between last_used and avail_cnt, and each must have a non-zero len and a valid remap. Alternatively, on failure roll txq->last_used, nb_mbufs and bytes back to their values at the start of the packet, and clear the sw_ring entries that were set.",
+        "evidence": "\t\t\tif (txq->last_used == avail_cnt)\n\t\t\t\tgoto end_of_tx;",
+        "confidence": 0.75,
+        "id": "efc046a3345e",
+        "hunk_id": "drivers/raw/ntb/ntb.c#1",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      },
+      {
+        "file": "drivers/raw/ntb/ntb.c",
+        "start_line": 727,
+        "end_line": 773,
+        "side": "new",
+        "severity": "high",
+        "category": "bug",
+        "title": "RX loop consumes descriptors beyond used_cnt for multi-segment packets",
+        "explanation": "`used_nb` counts published descriptors (segments), but `count` is then used as a limit on packets. The inner `while (true)` loop walks segments until EOP and never checks against used_cnt. Example: one 3-segment packet published gives used_nb = 3, so the outer loop runs 3 times. The second iteration reads used-ring entries and sw_ring mbufs the peer has not published. Those buffers are still posted to the peer, yet they are handed to the application with stale lengths and reposted. last_used then moves past used_cnt, so on the next call `(used_cnt - last_used) & mask` wraps to a large value and the corruption continues. A partially published packet with no EOP has the same effect.",
+        "suggestion": "Track the number of remaining published descriptors and stop when `rxq->last_used == used_cnt`. Only deliver a packet once its EOP segment is within the published range; otherwise leave it for the next call.",
+        "evidence": "\tused_nb = (used_cnt - rxq->last_used) & (rxq->nb_rx_desc - 1);\n\tcount = RTE_MIN(count, used_nb);",
+        "confidence": 0.75,
+        "id": "4c4f3efeef3e",
+        "hunk_id": "drivers/raw/ntb/ntb.c#2",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      },
+      {
+        "file": "drivers/raw/ntb/ntb.c",
+        "start_line": 754,
+        "end_line": 779,
+        "side": "new",
+        "severity": "high",
+        "category": "error-handling",
+        "title": "mbuf alloc failure mid-packet leaks mbufs and desyncs the RX ring",
+        "explanation": "When the allocation fails, the current segment has already been taken: last_used was advanced and buffers[nb_rx] set, but nb_rx is not incremented. The partial chain is never returned to the caller and is leaked, and the rest of the packet's segments are read as a new packet on the next call. last_avail is not advanced for this slot, so the posted-buffer count shrinks permanently. If nb_rx == 0 while nb_mbufs > 0 (failure on a later segment of the first packet), the `if (nb_rx)` block is skipped. The new descriptors are never written to the remote rx_desc_ring and avail_cnt is never updated, even though last_avail moved. Those desc slots keep the addresses of mbufs that were already handed out, so the peer can later write into application-owned memory.",
+        "suggestion": "Allocate the replacement mbuf before consuming a slot. On failure, stop before touching last_used, or free the partial chain and roll back state. Always publish rx_desc and avail_cnt when nb_mbufs > 0, not only when nb_rx > 0.",
+        "evidence": "\t\t\t\tNTB_LOG(ERR, \"recv alloc mbuf failed.\");\n\t\t\t\tgoto end_of_rx;",
+        "confidence": 0.7,
+        "id": "ddfde90fa8ef",
+        "hunk_id": "drivers/raw/ntb/ntb.c#2",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      },
+      {
+        "file": "drivers/raw/ntb/ntb_hw_intel.c",
+        "start_line": 173,
+        "end_line": 183,
+        "side": "new",
+        "severity": "medium",
+        "category": "security",
+        "title": "ioremap bound check is off by one and ignores the copy length",
+        "explanation": "The window check uses `<=`, so `addr == peer_mw_base + mw_size` is accepted and maps to the first byte past the BAR mapping. The function also never receives or checks the length that will be written. In ntb_enqueue_bufs the peer controls both the descriptor's addr and len, and the code then copies up to `len` bytes to the returned pointer. A buggy or hostile peer can post an address near the end of the window, and the memcpy then writes past the mmapped BAR into whatever local memory is mapped after it.",
+        "suggestion": "Use `addr < base + size` and pass the length in, rejecting the address unless `addr - base + len <= mw_size[i]` (watch for overflow). Also return NULL when intel_ntb_get_peer_mw_addr returns NULL.",
+        "evidence": "\t\t    addr <= hw->peer_mw_base[i] + hw->mw_size[i]) {",
+        "confidence": 0.7,
+        "id": "816bfb122108",
+        "hunk_id": "drivers/raw/ntb/ntb_hw_intel.c#1",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      },
+      {
+        "file": "drivers/raw/ntb/ntb.c",
+        "start_line": 682,
+        "end_line": 687,
+        "side": "new",
+        "severity": "medium",
+        "category": "concurrency",
+        "title": "Write barrier comes after the used_cnt publish instead of before it",
+        "explanation": "The payload memcpy and the tx_used_ring writes have to be visible to the peer before it sees the new used_cnt. Here rte_wmb() is placed after `*txq->used_cnt = ...`, so neither the compiler nor the CPU is required to order those stores before the index update. The peer can see the new index while the used entries or data are still stale. ntb_queue_init does this correctly, with rte_wmb() before the index store. There is also no read barrier between loading avail_cnt and reading the descriptors.",
+        "suggestion": "Move rte_wmb() so it runs before `*txq->used_cnt = txq->last_used;`, and add rte_rmb() after reading `*txq->avail_cnt`.",
+        "evidence": "\t\t*txq->used_cnt = txq->last_used;\n\t\trte_wmb();",
+        "confidence": 0.65,
+        "id": "48e1723261cc",
+        "hunk_id": "drivers/raw/ntb/ntb.c#1",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      },
+      {
+        "file": "drivers/raw/ntb/ntb.c",
+        "start_line": 788,
+        "end_line": 793,
+        "side": "new",
+        "severity": "medium",
+        "category": "concurrency",
+        "title": "Descriptor writes are not ordered before the avail_cnt publish",
+        "explanation": "The new rx descriptors written to the peer's ring must be visible before the avail_cnt update, but rte_wmb() comes after the index store. The peer can see the new avail_cnt and read stale addr/len values, then write payload into freed or application-owned mbufs. There is also no read barrier between reading used_cnt and reading the used-ring entries.",
+        "suggestion": "Call rte_wmb() before `*rxq->avail_cnt = rxq->last_avail;`, and add rte_rmb() after loading `*rxq->used_cnt`.",
+        "evidence": "\t\t*rxq->avail_cnt = rxq->last_avail;\n\t\trte_wmb();",
+        "confidence": 0.65,
+        "id": "d56cf75612ca",
+        "hunk_id": "drivers/raw/ntb/ntb.c#2",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      },
+      {
+        "file": "drivers/raw/ntb/ntb.c",
+        "start_line": 589,
+        "end_line": 589,
+        "side": "new",
+        "severity": "low",
+        "category": "api-contract",
+        "title": "Queue id from context is used without range validation",
+        "explanation": "`context` is now an index into `tx_queues`, but it is never checked against hw->queue_pairs, and tx_queues may be NULL before configure. A bad queue id gives an out-of-bounds read and a NULL dereference. The old code used context as a size, so existing callers passing a byte count would now index far out of bounds.",
+        "suggestion": "Return 0 (or an error) when `(size_t)context >= hw->queue_pairs` or when tx_queues is NULL. Apply the same check in dequeue.",
+        "evidence": "\tstruct ntb_tx_queue *txq = hw->tx_queues[(size_t)context];",
+        "confidence": 0.5,
+        "id": "fc8c6c56b66b",
+        "hunk_id": "drivers/raw/ntb/ntb.c#1",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      }
+    ],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "doc/guides/rawdevs/ntb.rst#1",
+        "score": 5,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 10,
+            "detail": "48 changed lines"
+          },
+          {
+            "signal": "cap",
+            "weight": -5,
+            "detail": "documentation file: score capped at 5"
+          }
+        ]
+      },
+      {
+        "hunk_id": "doc/guides/rawdevs/ntb.rst#2",
+        "score": 5,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "10 changed lines"
+          }
+        ]
+      },
+      {
+        "hunk_id": "drivers/raw/ntb/ntb.c#1",
+        "score": 70,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "concurrency",
+            "weight": 25,
+            "detail": "`volatile struct ntb_desc *tx_item;`"
+          },
+          {
+            "signal": "boundary",
+            "weight": 25,
+            "detail": "comparison operator changed"
+          },
+          {
+            "signal": "size",
+            "weight": 15,
+            "detail": "136 changed lines"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "266 source lines, no test file"
+          }
+        ]
+      },
+      {
+        "hunk_id": "drivers/raw/ntb/ntb.c#2",
+        "score": 95,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "concurrency",
+            "weight": 25,
+            "detail": "`volatile struct ntb_used *rx_item;`"
+          },
+          {
+            "signal": "boundary",
+            "weight": 25,
+            "detail": "comparison operator changed"
+          },
+          {
+            "signal": "memory",
+            "weight": 25,
+            "detail": "`rxm_t = rte_mbuf_raw_alloc(rxq->mpool);`"
+          },
+          {
+            "signal": "size",
+            "weight": 15,
+            "detail": "104 changed lines"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "266 source lines, no test file"
+          }
+        ]
+      },
+      {
+        "hunk_id": "drivers/raw/ntb/ntb.c#3",
+        "score": 5,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "266 source lines, no test file"
+          }
+        ]
+      },
+      {
+        "hunk_id": "drivers/raw/ntb/ntb.h#1",
+        "score": 5,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "266 source lines, no test file"
+          }
+        ]
+      },
+      {
+        "hunk_id": "drivers/raw/ntb/ntb.h#2",
+        "score": 5,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "266 source lines, no test file"
+          }
+        ]
+      },
+      {
+        "hunk_id": "drivers/raw/ntb/ntb_hw_intel.c#1",
+        "score": 35,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "boundary",
+            "weight": 25,
+            "detail": "bounds check: addr <= hw->peer_mw_base[i] + hw->mw_size[i]) {"
+          },
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "21 changed lines"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "266 source lines, no test file"
+          },
+          {
+            "signal": "merge",
+            "weight": 0,
+            "detail": "Tier 2 and Tier 3 run the same model: one call at high effort"
+          }
+        ]
+      },
+      {
+        "hunk_id": "drivers/raw/ntb/ntb_hw_intel.c#2",
+        "score": 5,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "266 source lines, no test file"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 2,
+      "model_substitutions": [
+        {
+          "tier": 3,
+          "requested": "claude-fable-5-2",
+          "used": "claude-opus-5-5",
+          "reason": "Fable not enabled"
+        }
+      ],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 6,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 5183,
+          "cache_read_tokens": 994,
+          "output_tokens": 544,
+          "cache_write_1h_tokens": 5183,
+          "cost_usd": 0.0262754,
+          "direct_api_cost_usd": 0.013598
+        },
+        {
+          "tier": 2,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "hunks": 3,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 27999,
+          "cache_read_tokens": 994,
+          "output_tokens": 9597,
+          "cache_write_1h_tokens": 27999,
+          "cost_usd": 0.4161388,
+          "direct_api_cost_usd": 0.29952
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.4424142,
+      "total_direct_api_cost_usd": 0.313118,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.9369816,
+        "direct_api_cost_usd": 0.653432
+      },
+      "savings_pct": 52.8,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "Tier 2 and Tier 3 both run claude-opus-5-5, so they ran as one tier at high effort.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 115051,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}

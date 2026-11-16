@@ -1,12 +1,12 @@
 {
   "case_id": "cilium-clean-fqdn-bootstrap",
   "arm": "tierview",
-  "arm_version": 3,
-  "batch": "2026-11-16T15-16-52",
-  "config_hash": "3f0786b02d0a",
+  "arm_version": 4,
+  "batch": "2026-11-16T15-38-08",
+  "config_hash": "4fe1abf9f1f3",
   "complete": true,
   "calls": 1,
-  "wall_ms": 11029,
+  "wall_ms": 10336,
   "review": {
     "version": 1,
     "findings": [],
@@ -46,12 +46,12 @@
           "escalated_in": 0,
           "requests": 1,
           "input_tokens": 2,
-          "cache_write_tokens": 616,
-          "cache_read_tokens": 3128,
+          "cache_write_tokens": 11109,
+          "cache_read_tokens": 994,
           "output_tokens": 218,
-          "cache_write_1h_tokens": 616,
-          "cost_usd": 0.0049608000000000005,
-          "direct_api_cost_usd": 0.005472
+          "cache_write_1h_tokens": 11109,
+          "cost_usd": 0.0467194,
+          "direct_api_cost_usd": 0.02219
         },
         {
           "tier": 2,
@@ -86,15 +86,15 @@
       ],
       "skipped_hunks": 0,
       "not_reviewed_hunks": 0,
-      "total_cost_usd": 0.0049608000000000005,
-      "total_direct_api_cost_usd": 0.005472,
+      "total_cost_usd": 0.0467194,
+      "total_direct_api_cost_usd": 0.02219,
       "baseline": {
         "model": "claude-fable-5-2",
         "method": "actual_tokens_at_baseline_prices",
-        "cost_usd": 0.019217599999999998,
-        "direct_api_cost_usd": 0.021888
+        "cost_usd": 0.18667879999999998,
+        "direct_api_cost_usd": 0.08876
       },
-      "savings_pct": 74.2,
+      "savings_pct": 75,
       "budget": {
         "max_cost_usd": null,
         "degraded": false
@@ -103,7 +103,7 @@
         "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
         "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
       ],
-      "wall_ms": 11028,
+      "wall_ms": 10336,
       "prices_as_of": "2026-11-16"
     }
   },
