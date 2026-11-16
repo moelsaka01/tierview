@@ -1,6 +1,6 @@
 // JSON output. The dry-run shape is its own thing; the full Review shape (PLAN §8) arrives in Phase 3.
 import type { Plan } from "../estimate";
-import type { ScoredHunk } from "../types";
+import type { Review, ScoredHunk } from "../types";
 import type { DryRunView } from "./terminal";
 
 export function dryRunJson(v: DryRunView & { pricesAsOf: string }): string {
@@ -19,4 +19,9 @@ export function dryRunJson(v: DryRunView & { pricesAsOf: string }): string {
       2,
     ) + "\n"
   );
+}
+
+/** The full Review (PLAN §8). */
+export function reviewJson(r: Review): string {
+  return `${JSON.stringify(r, null, 2)}\n`;
 }

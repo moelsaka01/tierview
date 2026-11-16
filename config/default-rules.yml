@@ -26,6 +26,22 @@ escalation:
 
 budget: { max_cost_usd: null }
 
+# The counterfactual every receipt prices: every reviewed hunk sent to this model as a Tier 3 request.
+receipt:
+  baseline: { model: claude-fable-5-2, effort: high }
+
+# Which backend runs the models. Spec: PLAN.md §5a.
+backend:
+  default: claude-code          # claude-code | api  (--backend overrides)
+  claude_code:
+    binary: null                # path to the official `claude` binary; null = PATH, then ~/.local/bin
+    max_hunks_per_call: 40      # hunks per `claude -p` call (all tiers batch across files)
+    max_tokens_per_call: 40000  # estimated input tokens per call
+    timeout_s: 900
+  api:
+    max_tokens: 16000
+    concurrency: 4
+
 ignore: []
 rules: []
 

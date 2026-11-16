@@ -1,10 +1,14 @@
 // Local git access. Spec: PLAN.md §3, §4 (churn needs history; shallow clone -> zeros).
 import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 export interface DiffOptions {
   base?: string;
   head?: string;
   staged?: boolean;
+  /** Also diff untracked, non-ignored files as new files. Working-tree diffs only. */
+  includeUntracked?: boolean;
   cwd?: string;
 }
 
@@ -18,7 +22,52 @@ export function getDiff(opts: DiffOptions = {}): string {
   if (opts.staged) args.push("--cached");
   args.push(opts.base ?? "HEAD");
   if (opts.head) args.push(opts.head);
-  return git(args, opts.cwd);
+  let out = git(args, opts.cwd);
+  if (opts.includeUntracked) {
+    if (opts.head || opts.staged) throw new Error("--include-untracked only works on a working-tree diff (no --head, no --staged)");
+    for (const f of untrackedFiles(opts.cwd)) out += diffNewFile(f, opts.cwd);
+  }
+  return out;
+}
+
+/** Untracked files that are not ignored, relative to the repo root, sorted. */
+export function untrackedFiles(cwd?: string): string[] {
+  const root = repoRoot(cwd);
+  return git(["ls-files", "--others", "--exclude-standard", "-z"], root)
+    .split("\0")
+    .filter(Boolean)
+    .sort();
+}
+
+/** `git diff --no-index /dev/null <file>`: the file as an all-added diff (exit code 1 means "differs"). */
+function diffNewFile(path: string, cwd?: string): string {
+  try {
+    return git(["diff", "--no-color", "-U3", "--no-index", "--", "/dev/null", path], repoRoot(cwd));
+  } catch (e) {
+    const err = e as { status?: number; stdout?: string };
+    if (err.status === 1 && typeof err.stdout === "string") return err.stdout;
+    throw e;
+  }
+}
+
+export function repoRoot(cwd?: string): string {
+  return git(["rev-parse", "--show-toplevel"], cwd).trim();
+}
+
+/** Reads the new side of a file for context: working tree, the index (staged) or a ref. null when absent. */
+export type FileSource = (path: string) => string | null;
+
+export function fileSource(opts: DiffOptions = {}): FileSource {
+  const root = repoRoot(opts.cwd);
+  return (path) => {
+    try {
+      if (opts.head) return git(["show", `${opts.head}:${path}`], root);
+      if (opts.staged) return git(["show", `:${path}`], root);
+      return readFileSync(join(root, path), "utf8");
+    } catch {
+      return null;
+    }
+  };
 }
 
 export function isShallow(cwd?: string): boolean {

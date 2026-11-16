@@ -1,4 +1,4 @@
-tierview dry run: 5 hunk(s) in 5 file(s). No API calls made.
+tierview dry run: 5 hunk(s) in 5 file(s). No model calls made.
 
 Routing (highest risk first)
   hunk                   +/-    score  tier  why
@@ -8,16 +8,16 @@ Routing (highest risk first)
   README.md#1            +1/-1      0  1     no signals
   package-lock.json#1    +1/-1      0  skip  generated or vendored file, never sent to a model
 
-Estimated cost (no caching discount, before escalations)
-  tier  model              effort  hunks  requests  input tok  output tok     cost
-  1     claude-sonnet-5-5  low         2         1       1184         500  $0.0074
-  2     claude-opus-5-5    medium      1         1       1449         700    $0.02
-  3     claude-fable-5-2   high        1         1       2418        2000    $0.10
+Estimated API-equivalent cost (claude-code backend; requests = claude calls; no caching discount, before escalations)
+  tier  model              effort  hunks  requests  input tok  output tok   cost
+  1     claude-sonnet-5-5  low         2         1       3584         800  $0.02
+  2     claude-opus-5-5    medium      1         1       3849         700  $0.03
+  3     claude-fable-5-2   high        1         1       4818        2000  $0.12
 
   skipped hunks:        1
-  estimated total:      $0.13 (+ up to $0.02 escalation allowance)
-  all-claude-fable-5-2 baseline: $0.40 (estimated)
-  estimated savings:    63.5%
+  estimated total:      $0.16 (+ up to $0.02 escalation allowance)
+  all-claude-fable-5-2 baseline: $0.41 (estimated)
+  estimated savings:    54%
   --max-cost:           $0.0010 (this plan would be degraded to fit)
 
 Notes

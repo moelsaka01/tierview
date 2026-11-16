@@ -61,6 +61,17 @@ const ConfigSchema = z.object({
     max_rate: z.number().min(0).max(1),
   }),
   budget: z.object({ max_cost_usd: z.number().positive().nullable() }),
+  receipt: z.object({ baseline: TierModel }),
+  backend: z.object({
+    default: z.enum(["claude-code", "api"]),
+    claude_code: z.object({
+      binary: z.string().nullable(),
+      max_hunks_per_call: z.number().int().positive(),
+      max_tokens_per_call: z.number().int().positive(),
+      timeout_s: z.number().positive(),
+    }),
+    api: z.object({ max_tokens: z.number().int().positive(), concurrency: z.number().int().positive() }),
+  }),
   ignore: z.array(z.string()),
   rules: z.array(Rule),
   file_kinds: z.object({

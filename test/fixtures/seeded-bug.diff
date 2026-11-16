@@ -1,0 +1,21 @@
+diff --git a/src/auth/login.py b/src/auth/login.py
+index 1111111..2222222 100644
+--- a/src/auth/login.py
++++ b/src/auth/login.py
+@@ -10,6 +10,6 @@ def login(db, username, password):
+     if not username or not password:
+         return None
+-    row = db.execute("SELECT id, pw_hash FROM users WHERE name = ?", (username,)).fetchone()
++    row = db.execute(f"SELECT id, pw_hash FROM users WHERE name = '{username}'").fetchone()
+     if row is None:
+         return None
+     if not verify(password, row[1]):
+diff --git a/src/utils/paginate.ts b/src/utils/paginate.ts
+index 3333333..4444444 100644
+--- a/src/utils/paginate.ts
++++ b/src/utils/paginate.ts
+@@ -1,3 +1,3 @@
+ export function lastPage(total: number, pageSize: number): number {
+-  return Math.ceil(total / pageSize);
++  return Math.floor(total / pageSize);
+ }

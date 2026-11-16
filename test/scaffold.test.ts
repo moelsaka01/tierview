@@ -9,9 +9,9 @@ const prices = JSON.parse(readFileSync("config/prices.json", "utf8"));
 const rules = parse(readFileSync("config/default-rules.yml", "utf8"));
 
 describe("scaffold", () => {
-  it("exposes the review and pr commands", () => {
+  it("exposes the review, models and pr commands", () => {
     const names = buildProgram().commands.map((c) => c.name());
-    expect(names).toEqual(["review", "pr"]);
+    expect(names).toEqual(["review", "models", "pr"]);
   });
 
   it("has a price for every configured tier model", () => {

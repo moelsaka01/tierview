@@ -127,7 +127,25 @@ export const TierReceipt = z.object({
 });
 export type TierReceipt = z.infer<typeof TierReceipt>;
 
+export const Backend = z.enum(["claude-code", "api"]);
+export type Backend = z.infer<typeof Backend>;
+
+export const ModelSubstitution = z.object({
+  tier: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+  requested: z.string(),
+  used: z.string(),
+  reason: z.string(),
+});
+export type ModelSubstitution = z.infer<typeof ModelSubstitution>;
+
 export const Receipt = z.object({
+  /** Which backend ran the models. */
+  backend: Backend,
+  /** "billed": API list-price cost of this run. "api_equivalent": claude-code backend; tokens priced at API list prices, not what the plan bills. */
+  cost_basis: z.enum(["billed", "api_equivalent"]),
+  /** Model calls made (API requests or `claude -p` invocations), retries included. */
+  calls: z.number().int(),
+  model_substitutions: z.array(ModelSubstitution),
   tiers: z.array(TierReceipt),
   skipped_hunks: z.number().int(),
   not_reviewed_hunks: z.number().int(),
@@ -166,6 +184,8 @@ export type Review = z.infer<typeof Review>;
 export interface Usage {
   input_tokens: number;
   cache_creation_input_tokens: number;
+  /** Part of cache_creation_input_tokens written with the 1-hour TTL (Claude Code on a plan uses it). */
+  cache_creation_1h_input_tokens?: number;
   cache_read_input_tokens: number;
   output_tokens: number;
 }

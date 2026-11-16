@@ -1,6 +1,6 @@
 // Plain-text terminal output (no colour, so it is stable in logs and snapshots).
 import type { Plan } from "../estimate";
-import type { ScoredHunk } from "../types";
+import type { Receipt, Review, ScoredHunk } from "../types";
 
 export const usd = (n: number) => `$${n < 0.01 && n > 0 ? n.toFixed(4) : n.toFixed(2)}`;
 
@@ -29,7 +29,7 @@ export interface DryRunView {
 export function renderDryRun(v: DryRunView): string {
   const out: string[] = [];
   const { routed, plan } = v;
-  out.push(`tierview dry run: ${routed.length} hunk(s) in ${new Set(routed.map((h) => h.file)).size} file(s). No API calls made.`, "");
+  out.push(`tierview dry run: ${routed.length} hunk(s) in ${new Set(routed.map((h) => h.file)).size} file(s). No model calls made.`, "");
 
   const order = [...routed].sort((a, b) => (a.tier === 0 ? 1 : 0) - (b.tier === 0 ? 1 : 0) || b.score - a.score || a.id.localeCompare(b.id));
   out.push("Routing (highest risk first)");
@@ -40,7 +40,7 @@ export function renderDryRun(v: DryRunView): string {
     ).map((l) => `  ${l}`),
   );
 
-  out.push("", "Estimated cost (no caching discount, before escalations)");
+  out.push("", plan.backend === "claude-code" ? "Estimated API-equivalent cost (claude-code backend; requests = claude calls; no caching discount, before escalations)" : "Estimated cost (no caching discount, before escalations)");
   const rows = [["tier", "model", "effort", "hunks", "requests", "input tok", "output tok", "cost"]];
   for (const t of plan.tiers) {
     rows.push([String(t.tier), t.model, t.effort, String(t.hunks), String(t.requests), String(t.input_tokens), String(t.output_tokens), usd(t.cost_usd)]);
@@ -54,5 +54,53 @@ export function renderDryRun(v: DryRunView): string {
   if (v.maxCost !== null) out.push(`  --max-cost:           ${usd(v.maxCost)}${plan.total_usd + plan.reserve_usd > v.maxCost ? " (this plan would be degraded to fit)" : ""}`);
 
   if (v.warnings.length) out.push("", "Notes", ...v.warnings.map((w) => `  - ${w}`));
+  return out.join("\n") + "\n";
+}
+
+// ---- Full review --------------------------------------------------------
+
+const n = (x: number) => x.toLocaleString("en-US");
+
+export function renderReceipt(r: Receipt): string[] {
+  const apiEq = r.cost_basis === "api_equivalent";
+  const out: string[] = [];
+  out.push(apiEq ? `Receipt (claude-code backend: ${r.calls} claude call(s); cost is API-equivalent at list prices as of ${r.prices_as_of}, not what your plan bills)` : `Receipt (api backend: ${r.calls} request(s); list prices as of ${r.prices_as_of})`);
+  const rows = [["tier", "model", "effort", "hunks", "+escalated", apiEq ? "calls" : "requests", "input", "cache write", "cache read", "output", apiEq ? "API-eq cost" : "cost"]];
+  for (const t of r.tiers) {
+    rows.push([String(t.tier), t.model, t.effort, String(t.hunks), String(t.escalated_in), String(t.requests), n(t.input_tokens), n(t.cache_write_tokens), n(t.cache_read_tokens), n(t.output_tokens), usd(t.cost_usd)]);
+  }
+  out.push(...table(rows, [3, 4, 5, 6, 7, 8, 9, 10]).map((l) => `  ${l}`));
+  const tok = r.tiers.reduce((a, t) => a + t.input_tokens + t.cache_write_tokens + t.cache_read_tokens + t.output_tokens, 0);
+  out.push("");
+  out.push(`  total:                ${usd(r.total_cost_usd)}${apiEq ? " API-equivalent" : ""} (${n(tok)} tokens)`);
+  out.push(`  all-${r.baseline.model}: ${usd(r.baseline.cost_usd)} (${r.baseline.method}${apiEq ? ", API prices" : ""}) -> ${r.savings_pct}% ${r.savings_pct >= 0 ? "less" : "more"}`);
+  out.push(`  skipped hunks: ${r.skipped_hunks}   not reviewed: ${r.not_reviewed_hunks}   wall time: ${(r.wall_ms / 1000).toFixed(1)}s`);
+  if (r.budget.max_cost_usd !== null) out.push(`  --max-cost: ${usd(r.budget.max_cost_usd)}${r.budget.degraded ? " (plan degraded to fit)" : ""}`);
+  for (const s of r.model_substitutions) out.push(`  model fallback: tier ${s.tier} asked for ${s.requested}, ran ${s.used} (${s.reason})`);
+  return out;
+}
+
+export function renderReview(v: Review): string {
+  const out: string[] = [];
+  const reviewed = v.routing.filter((h) => h.tier !== 0).length;
+  out.push(`tierview: ${v.findings.length} finding(s) in ${reviewed} reviewed hunk(s).`, "");
+  for (const f of v.findings) {
+    const lines = f.start_line === f.end_line ? `${f.start_line}` : `${f.start_line}-${f.end_line}`;
+    out.push(`[${f.severity}] ${f.file}:${lines}${f.side === "old" ? " (deleted line)" : ""}  ${f.title}`);
+    out.push(`  ${f.category}, confidence ${f.confidence.toFixed(2)}, tier ${f.tier} ${f.model}${f.escalated_from.length ? ` (escalated from tier ${f.escalated_from.join(", ")})` : ""}`);
+    if (f.explanation) out.push(`  ${f.explanation}`);
+    if (f.evidence) out.push(`  > ${f.evidence}`);
+    if (f.suggestion) out.push(`  fix: ${f.suggestion}`);
+    if (f.also_reported_by.length) out.push(`  also reported by: ${f.also_reported_by.join(", ")}`);
+    out.push("");
+  }
+  if (v.refuted.length) out.push(`${v.refuted.length} lower-tier finding(s) refuted by a higher tier (see --json).`, "");
+  if (v.not_reviewed.length) {
+    out.push("Not reviewed");
+    for (const x of v.not_reviewed) out.push(`  ${x.hunk_id}: ${x.reason}`);
+    out.push("");
+  }
+  out.push(...renderReceipt(v.receipt));
+  if (v.receipt.warnings.length) out.push("", "Notes", ...v.receipt.warnings.map((w) => `  - ${w}`));
   return out.join("\n") + "\n";
 }

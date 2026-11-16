@@ -1,12 +1,24 @@
 {
   "calibrated": false,
-  "note": "Placeholders for --dry-run and the all-Fable baseline. Calibrate in P3-10 from real usage, then set calibrated to true.",
-  "chars_per_token": 3.0,
-  "system_prompt_tokens": 700,
+  "note": "Partly measured in P3-10 (4 claude-code requests, 2026-11-16): per-call Claude Code overhead, system prompt size, Tier 1 and Tier 2 output. Tier 3 output on Fable is not measured yet (the live test ran Tier 3 on Opus), and n is tiny, so calibrated stays false. Phase 4 replaces these.",
+  "chars_per_token": 3,
+  "system_prompt_tokens": 1000,
   "shared_context_tokens_per_file": 20,
   "shared_context_tokens_per_hunk": 12,
-  "context_tokens_per_hunk": { "tier1": 0, "tier2": 600, "tier3": 1500 },
-  "output_tokens_per_hunk": { "tier1": 250, "tier2": 700, "tier3": 2000 },
-  "tier1_batch": { "max_hunks": 12, "max_tokens": 6000 },
-  "escalation_reserve": 0.15
+  "context_tokens_per_hunk": {
+    "tier1": 0,
+    "tier2": 600,
+    "tier3": 1500
+  },
+  "output_tokens_per_hunk": {
+    "tier1": 400,
+    "tier2": 700,
+    "tier3": 2000
+  },
+  "tier1_batch": {
+    "max_hunks": 12,
+    "max_tokens": 6000
+  },
+  "escalation_reserve": 0.15,
+  "claude_code_overhead_tokens_per_call": 2100
 }

@@ -47,11 +47,33 @@ export function priceFor(model: string, prices: Prices = loadPrices()): ModelPri
 /** USD cost of one response. */
 export function costOf(usage: Usage, model: string, prices: Prices = loadPrices()): number {
   const p = priceFor(model, prices);
+  const oneHour = Math.min(usage.cache_creation_1h_input_tokens ?? 0, usage.cache_creation_input_tokens);
   return (
     (usage.input_tokens * p.input +
-      usage.cache_creation_input_tokens * p.cache_write_5m +
+      (usage.cache_creation_input_tokens - oneHour) * p.cache_write_5m +
+      oneHour * (p.cache_write_1h ?? p.cache_write_5m) +
       usage.cache_read_input_tokens * p.cache_read +
       usage.output_tokens * p.output) /
     1e6
   );
+}
+
+/**
+ * Cost of usage spread over several models (claude-code may report more than one). Models missing from
+ * config/prices.json fall back to the cost the backend reported, and are listed in `unpriced`.
+ */
+export function costOfModels(
+  byModel: Record<string, { usage: Usage; reportedCostUsd?: number }>,
+  prices: Prices = loadPrices(),
+): { cost: number; unpriced: string[] } {
+  let cost = 0;
+  const unpriced: string[] = [];
+  for (const [model, u] of Object.entries(byModel)) {
+    if (prices.models[model]) cost += costOf(u.usage, model, prices);
+    else {
+      cost += u.reportedCostUsd ?? 0;
+      unpriced.push(model);
+    }
+  }
+  return { cost, unpriced };
 }

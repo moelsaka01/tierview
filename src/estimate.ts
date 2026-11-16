@@ -6,7 +6,8 @@ import type { Config } from "./config";
 import { type Prices, loadPrices, priceFor } from "./prices";
 import { configPath } from "./root";
 import { formatHunk } from "./tier0/diff";
-import type { LlmTier, ScoredHunk } from "./types";
+import { limitsFor, packHunks } from "./tiers/batch";
+import type { Backend, LlmTier, ScoredHunk } from "./types";
 
 const PerTier = z.object({ tier1: z.number(), tier2: z.number(), tier3: z.number() });
 const EstimatesFile = z.object({
@@ -20,6 +21,8 @@ const EstimatesFile = z.object({
   output_tokens_per_hunk: PerTier,
   tier1_batch: z.object({ max_hunks: z.number(), max_tokens: z.number() }),
   escalation_reserve: z.number(),
+  /** Tokens Claude Code adds to every `claude -p` call (its structured-output tool and second turn). */
+  claude_code_overhead_tokens_per_call: z.number().default(0),
 });
 export type Estimates = z.infer<typeof EstimatesFile>;
 
@@ -48,6 +51,7 @@ export interface Plan {
   /** Allowance for escalations (escalation_reserve x total). Not included in total_usd. */
   reserve_usd: number;
   baseline: { model: string; method: "estimated"; cost_usd: number };
+  backend: Backend;
   /** Savings of total_usd + reserve_usd against the baseline, as a percentage. */
   savings_pct: number;
   skipped_hunks: number;
@@ -56,24 +60,10 @@ export interface Plan {
 
 const key = (t: LlmTier) => `tier${t}` as "tier1" | "tier2" | "tier3";
 
-/** Groups hunks into requests: Tier 1 packs across files (<= max hunks and tokens); Tiers 2 and 3 are one per file. */
-function requestsFor(tier: LlmTier, hunks: ScoredHunk[], tokens: Map<string, number>, est: Estimates): number {
+function requestsFor(tier: LlmTier, hunks: ScoredHunk[], tokens: Map<string, number>, cfg: Config, est: Estimates, backend: Backend): number {
   if (hunks.length === 0) return 0;
-  if (tier !== 1) return new Set(hunks.map((h) => h.file)).size;
-  let requests = 1;
-  let n = 0;
-  let t = 0;
-  for (const h of hunks) {
-    const ht = tokens.get(h.id) as number;
-    if (n > 0 && (n >= est.tier1_batch.max_hunks || t + ht > est.tier1_batch.max_tokens)) {
-      requests++;
-      n = 0;
-      t = 0;
-    }
-    n++;
-    t += ht;
-  }
-  return requests;
+  const ctx = est.context_tokens_per_hunk[key(tier)];
+  return packHunks(hunks, limitsFor(backend, tier, cfg, est), (h) => (tokens.get(h.id) as number) + (backend === "claude-code" ? ctx : 0)).length;
 }
 
 function estimateTier(
@@ -84,19 +74,22 @@ function estimateTier(
   prices: Prices,
   est: Estimates,
   tokens: Map<string, number>,
+  backend: Backend,
+  model = cfg.models[key(tier)].model,
+  outputPerHunk = est.output_tokens_per_hunk[key(tier)],
 ): TierEstimate {
   const m = cfg.models[key(tier)];
-  const p = priceFor(m.model, prices);
-  const requests = requestsFor(tier, hunks, tokens, est);
+  const p = priceFor(model, prices);
+  const requests = requestsFor(tier, hunks, tokens, cfg, est, backend);
   const files = new Set(all.map((h) => h.file)).size;
   const shared = files * est.shared_context_tokens_per_file + all.length * est.shared_context_tokens_per_hunk;
-  const perRequest = est.system_prompt_tokens + shared;
+  const perRequest = est.system_prompt_tokens + shared + (backend === "claude-code" ? est.claude_code_overhead_tokens_per_call : 0);
   let input = requests * perRequest;
   for (const h of hunks) input += (tokens.get(h.id) as number) + est.context_tokens_per_hunk[key(tier)];
-  const output = hunks.length * est.output_tokens_per_hunk[key(tier)];
+  const output = Math.round(hunks.length * outputPerHunk);
   return {
     tier,
-    model: m.model,
+    model,
     effort: m.effort,
     hunks: hunks.length,
     requests,
@@ -106,27 +99,46 @@ function estimateTier(
   };
 }
 
+/**
+ * The all-Fable baseline (§7): every reviewable hunk as a Tier 3 API request (one per file, same context
+ * builder), priced at the receipt's baseline model (config `receipt.baseline`, Fable 5.2 by default). `outputPerHunk` comes from the run's own Tier 3 usage
+ * when it reviewed >= 3 hunks.
+ */
+export function estimateBaseline(
+  routed: ScoredHunk[],
+  cfg: Config,
+  prices: Prices = loadPrices(),
+  est: Estimates = loadEstimates(),
+  outputPerHunk?: number,
+): { model: string; method: "estimated"; cost_usd: number } {
+  const reviewable = routed.filter((h) => h.tier !== 0);
+  const tokens = new Map(reviewable.map((h) => [h.id, estimateTokens(formatHunk(h), est)]));
+  const b = estimateTier(3, reviewable, reviewable, cfg, prices, est, tokens, "api", cfg.receipt.baseline.model, outputPerHunk);
+  return { model: b.model, method: "estimated", cost_usd: b.cost_usd };
+}
+
 export function estimatePlan(
   routed: ScoredHunk[],
   cfg: Config,
   prices: Prices = loadPrices(),
   est: Estimates = loadEstimates(),
+  backend: Backend = "api",
 ): Plan {
   const reviewable = routed.filter((h) => h.tier !== 0);
   const tokens = new Map(reviewable.map((h) => [h.id, estimateTokens(formatHunk(h), est)]));
   const tiers = ([1, 2, 3] as LlmTier[]).map((t) =>
-    estimateTier(t, reviewable.filter((h) => h.tier === t), reviewable, cfg, prices, est, tokens),
+    estimateTier(t, reviewable.filter((h) => h.tier === t), reviewable, cfg, prices, est, tokens, backend),
   );
   const total = tiers.reduce((a, t) => a + t.cost_usd, 0);
-  // Baseline: every reviewable hunk as a Tier 3 request, same context builder.
-  const base = estimateTier(3, reviewable, reviewable, cfg, prices, est, tokens);
+  const base = estimateBaseline(routed, cfg, prices, est);
   const reserve = total * est.escalation_reserve;
   return {
     tiers,
     total_usd: total,
     reserve_usd: reserve,
-    baseline: { model: base.model, method: "estimated", cost_usd: base.cost_usd },
+    baseline: base,
     savings_pct: base.cost_usd > 0 ? Math.round((1 - (total + reserve) / base.cost_usd) * 1000) / 10 : 0,
+    backend,
     skipped_hunks: routed.length - reviewable.length,
     calibrated: est.calibrated,
   };

@@ -1,0 +1,9 @@
+diff --git a/src/utils/paginate.ts b/src/utils/paginate.ts
+index 3333333..4444444 100644
+--- a/src/utils/paginate.ts
++++ b/src/utils/paginate.ts
+@@ -1,3 +1,3 @@
+ export function lastPage(total: number, pageSize: number): number {
+-  return Math.ceil(total / pageSize);
++  return Math.floor(total / pageSize);
+ }

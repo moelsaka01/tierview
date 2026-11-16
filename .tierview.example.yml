@@ -3,7 +3,11 @@ version: 1
 
 thresholds: { tier2: 30, tier3: 60 }
 
-budget: { max_cost_usd: 1.00 }
+budget: { max_cost_usd: 1.00 }   # API-equivalent USD on the claude-code backend
+
+backend:
+  default: claude-code           # or api (needs ANTHROPIC_API_KEY)
+  claude_code: { max_hunks_per_call: 40 }
 
 ignore:
   - "docs/**"

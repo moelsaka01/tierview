@@ -2,11 +2,11 @@
 
 One entry per phase: which model did the work, at what effort, from what prompt, and what went wrong or changed. Each phase runs in a fresh chat; the plan is [PLAN.md](PLAN.md).
 
-| Phase | Scope | Planned model | Status |
+| Phase | Scope | Model (effort) | Status |
 |---|---|---|---|
-| 1 | Plan and scaffold | Fable 5.2 | done 2026-11-16 |
-| 2 | Tier 0, config, dry-run | Sonnet 5.5 | done 2026-11-16 |
-| 3 | LLM tiers, escalation, receipt | Opus 5.5 | not started |
+| 1 | Plan and scaffold | Fable 5.2 (high) | done 2026-11-16 |
+| 2 | Tier 0, config, dry-run | Sonnet 5.5 (medium) | done 2026-11-16 |
+| 3 | LLM tiers, escalation, receipt, backends | Opus 5.5 (high) | done 2026-11-16 |
 | 4 | Benchmark | Opus 5.5 | not started |
 | 5 | PR mode, SARIF, GitHub Action | Sonnet 5.5 | not started |
 | 6 | README and release | Sonnet 5.5 | not started |
@@ -17,7 +17,7 @@ One entry per phase: which model did the work, at what effort, from what prompt,
 
 **Model.** The chat started on Sonnet 5.5 (`claude-sonnet-5-5`) by mistake. Sonnet did the lookups: two web searches and two page reads for the competitor check, and the pricing page. The session was then switched to Fable 5.2 (`claude-fable-5-2`), which wrote `PLAN.md`, the scaffold and this log.
 
-**Effort.** Session default. The app does not show the effort level to the model, so it is not recorded here. *(Mohamed: fill in if you set one.)*
+**Effort.** High (recorded by Mohamed in Phase 3; the app does not show the effort level to the model).
 
 **Tooling.** Claude Code desktop app, Windows 11, Node 24.14, npm 11.9.
 
@@ -75,7 +75,7 @@ Build a dataset of 50–100 real bug-introducing changes from open-source repos 
 
 **Model.** Sonnet 5.5 (`claude-sonnet-5-5`), as planned.
 
-**Effort.** Not visible to the model (the app does not pass it in), so it is not recorded. *(Mohamed: fill in the level you had set.)*
+**Effort.** Medium (recorded by Mohamed in Phase 3).
 
 **Prompt.** "Read PLAN.md and BUILD_LOG.md. Do Phase 2 only. Update BUILD_LOG.md (including model and effort) and commit when done." The chat was opened in a scratch folder, so the session was moved to the tierview folder first. Two recent folders had a PLAN.md (`tierview` and `dubai-in-code`); tierview was chosen because its log says Phase 1 is done and Phase 2 is next.
 
@@ -101,6 +101,79 @@ Build a dataset of 50–100 real bug-introducing changes from open-source repos 
 - The first Phase 2 commit went in before this log entry was written (a script error); this entry is in the follow-up commit.
 
 **API spend this phase.** $0 (no Anthropic API calls).
+
+---
+
+## Phase 3 — LLM tiers, escalation, receipt, backends (2026-11-16)
+
+**Model.** Opus 5.5 (`claude-opus-5-5`), as planned.
+
+**Effort.** High (stated by Mohamed in the prompt).
+
+**Tooling.** Claude Code desktop app, Windows 11, Node 24.14; Claude Code CLI 2.1.322 (native install in `~/.local/bin`, not on PATH) for the live test.
+
+**Prompt.** Verbatim:
+
+<details>
+<summary>Phase 3 prompt</summary>
+
+Read PLAN.md and BUILD_LOG.md, then do Phase 3 with this change: I have no API key and won't create one. Add a pluggable backend layer:
+
+1. `claude-code` backend (the default): run the official Claude Code CLI in non-interactive mode, with the tier's model, structured JSON output and no tools needed. Check the current Claude Code CLI docs for the exact flags. Only ever invoke the official `claude` binary; never read, copy or reuse its credentials. Batch hunks per tier to keep the number of calls low.
+2. `api` backend: the Anthropic SDK with a user-supplied `ANTHROPIC_API_KEY`, kept for teams and the GitHub Action. Write it and unit-test it with mocks only; I can't run it live.
+3. Cost receipt: for the claude-code backend, show tokens and "API-equivalent cost", including the all-Fable comparison.
+4. Detect which models my plan allows in Claude Code. If Fable 5.2 isn't available, fall back to Opus 5.5 for Tier 3 and report it.
+5. Add `--include-untracked` (new files are currently skipped).
+6. Update PLAN.md: the benchmark becomes about 30 cases on the claude-code backend, run in batches across days within Pro limits, with no dollar budget; record usage per run.
+7. Live-test only on small diffs, at most 5 `claude` calls total.
+8. In BUILD_LOG, record Phase 1 as Fable 5.2 high, Phase 2 as Sonnet 5.5 medium and Phase 3 as Opus 5.5 high. Commit when done.
+
+</details>
+
+One follow-up question during the phase: before the live test I asked whether one Tier 3 call may go to Fable 5.2, because the docs say `claude -p` bills Fable to usage credits without asking on plans where Fable draws on them. Answer: **"Skip Fable, use Opus."** The live test ran Tier 3 on Opus 5.5 through a temporary config.
+
+**Docs checked** (2026-11-16): `claude --help` (2.1.322); code.claude.com/docs/en/headless, cli-reference, model-config, agent-sdk/cost-tracking; the claude-api skill (refusal and fallback section, TypeScript SDK README). Facts used are in PLAN §5a.
+
+**Delivered.** P3-01 to P3-10, all ticked. New: `src/llm/backend.ts` (interface), `src/llm/claude-code.ts` (backend, binary resolution and `--version` check, result parsing, model detection with `--fallback-model` and a 7-day cache in `~/.tierview/claude-code-models.json`, `probe`), `test/fake-client.ts`. Implemented: `src/llm/client.ts` (api backend), `src/llm/prompts.ts`, `src/tiers/{batch,context,escalate}.ts`, `src/budget.ts`, `src/merge.ts`, `src/receipt.ts`, `src/pipeline.ts`, review and receipt output in `src/output/{terminal,json}.ts`. CLI: `tierview review` now runs the tiers, with `--backend`, `--max-calls`, `--diff-file`, `--include-untracked`, `--fail-on`, `--json`, `--max-cost`, and `tierview models [--probe]`. 184 tests in 12 files (63 new); `npm run check` and `npm run build` pass. Both backends are tested with mocks only; the claude-code tests also replay one recorded live result (`test/fixtures/claude-result-tier1.json`, session id removed).
+
+**Live test (P3-10), claude-code backend, 5 `claude` calls in total, Tier 3 on Opus:**
+
+| Call | Diff | Tier, model, effort | Input-side tokens (input + cache write + cache read) | Output | API-equivalent | Result |
+|---|---|---|---:|---:|---:|---|
+| 1 | `seeded-bug-small.diff` | 1, Sonnet 5.5, low | 0 | 0 | $0 | failed, no usage reported (see Issues) |
+| 2 | same | 1, Sonnet 5.5, low | 2 + 3,096 + 0 | 380 | $0.0162 | found the off-by-one (high); escalation stopped by `--max-calls 1` |
+| 3 | `seeded-bug.diff` | 3, Opus 5.5, high | 2 + 3,273 + 0 | 573 | $0.0377 | SQL injection via f-string, critical, confidence 0.97 |
+| 4 | same | 1, Sonnet 5.5, low | 2 + 2,138 + 994 | 364 | $0.0123 | off-by-one, high, escalated (E3) |
+| 5 | same | 2, Opus 5.5, medium | 2 + 2,451 + 994 | 653 | $0.0329 | confirmed the off-by-one; Sonnet listed under "also reported by" |
+
+Run of calls 3 to 5: 48.0 s wall, 11,446 tokens, $0.08 API-equivalent; both seeded bugs found, nothing else reported. Total for the phase: about $0.10 API-equivalent, **$0 billed** (Pro plan usage, no Fable). Each call had two turns (Claude Code's structured-output tool). The 994 cache-read tokens are Claude Code's own prefix from the previous call on the same model. tierview's tier prompts differ per tier, so they do not share a cache across tiers.
+
+**Deviations from the plan, and why.**
+
+1. **Backend layer (Mohamed's change).** New PLAN §5a; `claude-code` is the default; `api` is kept for teams and the Action. The interface is `ReviewBackend` in `src/llm/backend.ts`; only `src/llm/client.ts` imports the SDK.
+2. **P3-10 rewritten.** The plan asked for an API run with `--max-cost 0.50` and a check that `cache_read_input_tokens > 0` on a multi-request tier. With no key, the run used the claude-code backend with at most 5 calls on two tiny diffs. Each tier sent one call, so the API caching rule (marker only at ≥ 2 requests, first request awaited) is unit-tested but **not verified live**.
+3. **Server-side refusal fallback: not enabled** (the decision PLAN §5 left to this phase). The claude-api skill recommends `fallbacks: "default"` by default. tierview already escalates a refused hunk to the next tier's model, and a server-side switch inside a request would mix two models' output and prices in one review. Refusals stay explicit: E5 escalation, or `not_reviewed` at Tier 3.
+4. **Receipt schema extended** (PLAN §8 updated): `backend`, `cost_basis` (`api_equivalent` on claude-code), `calls`, `model_substitutions`. `Usage` gained `cache_creation_1h_input_tokens`, because Claude Code on a plan writes 1-hour cache and those tokens cost `cache_write_1h`.
+5. **Baseline model decoupled from Tier 3.** New config `receipt.baseline` (Fable 5.2 high). Without it, overriding Tier 3 to Opus turned "all-Fable" into "all-Opus", which the first live receipt showed.
+6. **Config additions:** `backend` (default, claude-code batch limits and timeout, api max_tokens and concurrency) and `receipt.baseline`. `.tierview.example.yml` shows `backend`.
+7. **Batching differs by backend.** api: as planned (Tier 1 packs, Tiers 2 and 3 one request per file). claude-code: every tier packs across files (40 hunks, 40k estimated tokens), concurrency 1. Each call carries about 2,100 tokens of Claude Code overhead, so fewer, bigger calls are cheaper and use less of the plan. `estimate.ts` now uses the real packer (closes Phase 2 deviation 8).
+8. **Extra CLI options:** `--max-calls` (hard cap on model calls; needed to keep the live test at 5 and for Pro-limit batches), `--diff-file` (P3-10 needs a saved diff; Phase 4 will too), `tierview models [--probe]`.
+9. **A blocked escalation keeps the lower tier's review.** When `--max-cost` or `--max-calls` stops an escalation, the hunk is not listed as `not_reviewed`; a note names it, and the exit code is still 3.
+10. **Small rule choices:** E4b allows 3 lines of slack around the hunk (the diff's own context lines); `--fail-on` (exit 1) takes precedence over a budget stop (exit 3); claude-code's worst-case reservation assumes 32k output tokens, since `claude -p` has no max-tokens flag.
+11. **`config/estimates.json` partly calibrated:** `system_prompt_tokens` 700 → 1000, Tier 1 output 250 → 400 (measured 364 and 380), new `claude_code_overhead_tokens_per_call` 2100. Tier 3 output on Fable was not measured, so `calibrated` stays false. Dry-run snapshots were regenerated: the claude-code plan now counts the overhead per call.
+12. **PLAN §9 rewritten (Mohamed's change):** about 30 cases (20 buggy, 10 clean, 10 dev / 20 test, 5-case pilot) on the claude-code backend, batches across days capped by `--max-calls`, no dollar budget, `bench/results/usage.jsonl` per run. Fable arms only if Fable is available and approved, otherwise all-Fable is reported as an estimate. P4-04, P4-05, P4-08 and P4-10, §12 and the Phase 4 kickoff prompt were updated to match. The `CLAUDE.md` line about the "$ spend cap" now says "hard call cap per batch", and it asks before live `claude` calls too. Two README lines no longer say "nothing reviews code yet" or "bring your own key" only.
+
+**Issues.**
+
+- **The first live call was wasted.** zod 4 adds safe-integer `minimum`/`maximum` to `.int()` in `z.toJSONSchema`, and structured outputs reject numeric ranges. The call returned no usage in about 4 s. Most likely cause, not proven: the raw output was not kept. The schema is now cleaned (`cleanSchema`, tested), and the next call worked. The failure reason was also hidden, because the hunk escalated and then hit `--max-calls`, so it read "budget". Fixes: every failed call now adds a receipt note with its reason, and `TIERVIEW_DEBUG_DIR` dumps each raw `claude` result.
+- **API-equivalent cost was 29% low at first.** It priced 1-hour cache writes at the 5-minute rate: $0.0115 against Claude Code's own $0.0162 on call 2. It is fixed and now matches to the cent; a test replays the recorded result.
+- **Shell escaping mangled files twice.** Inline Python/Node edit scripts turned `\n` into real newlines and `\0` into a NUL byte (in `test/git.test.ts`, `src/git.ts`, `src/cli.ts`, `src/output/json.ts`). Typecheck caught all of them, and they were repaired. Later edits used script files or the editor.
+- **Git-based tests timed out once** (the 10 s hook took 33 s on this machine). Timeouts were raised in `test/git.test.ts`.
+- `npx tsx` was run once to print the generated schema. It is not a project dependency.
+- **Not verified live:** the `api` backend as a whole (no key; mocked SDK only, though `zodOutputFormat(TierResponse)` builds without error under zod 4.6); Fable 5.2 through Claude Code (Mohamed chose to skip it); `--fallback-model` and the detection path (unit-tested with a fake runner; the live run never needed a fallback); `tierview models --probe`; `--include-untracked` end to end (tested on a temp repo, not in a live review).
+- Keyword signals are still blunt (Phase 2 issue); not touched here.
+
+**API spend this phase.** $0. Plan usage: 5 `claude -p` calls, about 14,900 tokens, about $0.10 API-equivalent.
 
 ---
 
