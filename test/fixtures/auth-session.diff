@@ -1,0 +1,22 @@
+diff --git a/src/auth/session.ts b/src/auth/session.ts
+index 5e63695..12afa5f 100644
+--- a/src/auth/session.ts
++++ b/src/auth/session.ts
+@@ -2,13 +2,13 @@ const TTL = 3600;
+ const PREFIX = "app";
+ 
+ export function cookieName(user: string): string {
+-  const base = PREFIX + "-" + user;
+-  const out = base;
++  const base = PREFIX + ":" + user;
++  const out = base.trim();
+   return out;
+ }
+ 
+ export function expiry(now: number): number {
+-  const secs = TTL;
+-  const end = now + secs;
++  const secs = TTL * 2;
++  const end = now + secs + 1;
+   return end;
+ }

@@ -1,0 +1,28 @@
+diff --git a/src/utils/format.ts b/src/utils/format.ts
+index aab19b7..7223e3b 100644
+--- a/src/utils/format.ts
++++ b/src/utils/format.ts
+@@ -1,13 +1,13 @@
+-export const f1 = (s: string) => s.trim() + "1";
+-export const f2 = (s: string) => s.trim() + "2";
+-export const f3 = (s: string) => s.trim() + "3";
+-export const f4 = (s: string) => s.trim() + "4";
+-export const f5 = (s: string) => s.trim() + "5";
+-export const f6 = (s: string) => s.trim() + "6";
+-export const f7 = (s: string) => s.trim() + "7";
+-export const f8 = (s: string) => s.trim() + "8";
+-export const f9 = (s: string) => s.trim() + "9";
+-export const f10 = (s: string) => s.trim() + "10";
++export const f1 = (s: string) => s.trim().concat("1");
++export const f2 = (s: string) => s.trim().concat("2");
++export const f3 = (s: string) => s.trim().concat("3");
++export const f4 = (s: string) => s.trim().concat("4");
++export const f5 = (s: string) => s.trim().concat("5");
++export const f6 = (s: string) => s.trim().concat("6");
++export const f7 = (s: string) => s.trim().concat("7");
++export const f8 = (s: string) => s.trim().concat("8");
++export const f9 = (s: string) => s.trim().concat("9");
++export const f10 = (s: string) => s.trim().concat("10");
+ export const f11 = (s: string) => s.trim() + "11";
+ export const f12 = (s: string) => s.trim() + "12";
+ export const f13 = (s: string) => s.trim() + "13";

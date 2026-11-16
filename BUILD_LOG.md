@@ -5,7 +5,7 @@ One entry per phase: which model did the work, at what effort, from what prompt,
 | Phase | Scope | Planned model | Status |
 |---|---|---|---|
 | 1 | Plan and scaffold | Fable 5.2 | done 2026-11-16 |
-| 2 | Tier 0, config, dry-run | Sonnet 5.5 | not started |
+| 2 | Tier 0, config, dry-run | Sonnet 5.5 | done 2026-11-16 |
 | 3 | LLM tiers, escalation, receipt | Opus 5.5 | not started |
 | 4 | Benchmark | Opus 5.5 | not started |
 | 5 | PR mode, SARIF, GitHub Action | Sonnet 5.5 | not started |

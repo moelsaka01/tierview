@@ -3,6 +3,10 @@
   "note": "Placeholders for --dry-run and the all-Fable baseline. Calibrate in P3-10 from real usage, then set calibrated to true.",
   "chars_per_token": 3.0,
   "system_prompt_tokens": 700,
+  "shared_context_tokens_per_file": 20,
+  "shared_context_tokens_per_hunk": 12,
+  "context_tokens_per_hunk": { "tier1": 0, "tier2": 600, "tier3": 1500 },
   "output_tokens_per_hunk": { "tier1": 250, "tier2": 700, "tier3": 2000 },
+  "tier1_batch": { "max_hunks": 12, "max_tokens": 6000 },
   "escalation_reserve": 0.15
 }

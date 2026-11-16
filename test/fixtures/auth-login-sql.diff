@@ -1,0 +1,23 @@
+diff --git a/src/auth/login.py b/src/auth/login.py
+index e39f3e5..ae8821a 100644
+--- a/src/auth/login.py
++++ b/src/auth/login.py
+@@ -3,14 +3,16 @@ import sqlite3
+ 
+ def find_user(conn, name):
+     cur = conn.cursor()
+-    cur.execute("SELECT id, name FROM users WHERE name = ?", (name,))
++    query = f"SELECT id, name FROM users WHERE name = '{name}'"
++    cur.execute(query)
+     row = cur.fetchone()
+     return row
+ 
+ 
+ def find_email(conn, name):
+     cur = conn.cursor()
+-    cur.execute("SELECT email FROM users WHERE name = ?", (name,))
++    query = f"SELECT email FROM users WHERE name = '{name}'"
++    cur.execute(query)
+     row = cur.fetchone()
+     return row
+ 

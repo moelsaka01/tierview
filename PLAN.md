@@ -315,14 +315,14 @@ Every task ends with `npm run check` (typecheck + tests) passing. Tick the box i
 - [x] P1-03 Scaffold, `BUILD_LOG.md`, first commit
 
 ### Phase 2 — Sonnet 5.5 — Tier 0, config, dry-run. Read §2–§4, §7 (dry-run paragraph), §8.
-- [ ] P2-01 `src/tier0/diff.ts` + `test/diff.test.ts` + fixtures `test/fixtures/*.diff`: parse unified diffs into `Hunk[]`. Covers multi-file, multi-hunk, new, deleted, renamed, binary, "no newline at end of file".
-- [ ] P2-02 `src/git.ts` + `test/git.test.ts`: `getDiff({base, head, staged})` via `git diff --no-color -U3 -M`; `fileChurn(paths, days)` from a single `git log` call; returns zeros on a shallow clone. Test against a temp repo.
-- [ ] P2-03 `src/config.ts`, `src/prices.ts` + tests: load and validate `.tierview.yml` over `config/default-rules.yml`; `costOf(usage, model)` per the §0 formula; unknown model → clear error.
-- [ ] P2-04 `src/tier0/signals.ts` + `test/signals.test.ts`: file kind, every category in §4, structure signals. Table-driven tests, at least one positive and one negative per category.
-- [ ] P2-05 `src/tier0/score.ts`, `src/tier0/route.ts` + tests: max-per-category sum, caps, thresholds, `ignore` and `rules`. The five worked examples in §4 are tests.
-- [ ] P2-06 `src/estimate.ts` + test: token estimate, per-tier cost plan, all-Fable baseline estimate, using `config/estimates.json`.
-- [ ] P2-07 `src/cli.ts`, `src/output/terminal.ts`: `tierview review [--base --head --staged] --dry-run [--json]` prints the routing table with reasons and the estimate. Without `--dry-run`, exit 2 with "LLM tiers arrive in Phase 3".
-- [ ] P2-08 Snapshot test of dry-run output on a fixture diff; update `BUILD_LOG.md`; commit.
+- [x] P2-01 `src/tier0/diff.ts` + `test/diff.test.ts` + fixtures `test/fixtures/*.diff`: parse unified diffs into `Hunk[]`. Covers multi-file, multi-hunk, new, deleted, renamed, binary, "no newline at end of file".
+- [x] P2-02 `src/git.ts` + `test/git.test.ts`: `getDiff({base, head, staged})` via `git diff --no-color -U3 -M`; `fileChurn(paths, days)` from a single `git log` call; returns zeros on a shallow clone. Test against a temp repo.
+- [x] P2-03 `src/config.ts`, `src/prices.ts` + tests: load and validate `.tierview.yml` over `config/default-rules.yml`; `costOf(usage, model)` per the §0 formula; unknown model → clear error.
+- [x] P2-04 `src/tier0/signals.ts` + `test/signals.test.ts`: file kind, every category in §4, structure signals. Table-driven tests, at least one positive and one negative per category.
+- [x] P2-05 `src/tier0/score.ts`, `src/tier0/route.ts` + tests: max-per-category sum, caps, thresholds, `ignore` and `rules`. The five worked examples in §4 are tests.
+- [x] P2-06 `src/estimate.ts` + test: token estimate, per-tier cost plan, all-Fable baseline estimate, using `config/estimates.json`.
+- [x] P2-07 `src/cli.ts`, `src/output/terminal.ts`: `tierview review [--base --head --staged] --dry-run [--json]` prints the routing table with reasons and the estimate. Without `--dry-run`, exit 2 with "LLM tiers arrive in Phase 3".
+- [x] P2-08 Snapshot test of dry-run output on a fixture diff; update `BUILD_LOG.md`; commit.
 
 ### Phase 3 — Opus 5.5 — LLM tiers, escalation, receipt. Read §0, §5–§8.
 - [ ] P3-01 `src/llm/client.ts`: `ReviewClient` interface + Anthropic implementation (`messages.parse`, effort, cache marker, refusal check, usage capture, typed-error retry). `test/fake-client.ts` for tests.

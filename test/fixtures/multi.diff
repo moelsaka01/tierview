@@ -1,0 +1,68 @@
+diff --git a/lib/big.txt b/lib/big.txt
+index bab081f..d5382bd 100644
+--- a/lib/big.txt
++++ b/lib/big.txt
+@@ -1,6 +1,6 @@
+ line 1
+ line 2
+-line 3
++line three
+ line 4
+ line 5
+ line 6
+@@ -33,7 +33,7 @@ line 32
+ line 33
+ line 34
+ line 35
+-line 36
++line thirty-six
+ line 37
+ line 38
+ line 39
+diff --git a/lib/blob.bin b/lib/blob.bin
+index b1feab4..57a606e 100644
+Binary files a/lib/blob.bin and b/lib/blob.bin differ
+diff --git a/lib/gone.txt b/lib/gone.txt
+deleted file mode 100644
+index 3b1bafd..0000000
+--- a/lib/gone.txt
++++ /dev/null
+@@ -1 +0,0 @@
+-to delete
+diff --git a/lib/old-name.txt b/lib/new-name.txt
+similarity index 90%
+rename from lib/old-name.txt
+rename to lib/new-name.txt
+index e36f5d6..79c8820 100644
+--- a/lib/old-name.txt
++++ b/lib/new-name.txt
+@@ -2,7 +2,7 @@ renamed content line 1
+ renamed content line 2
+ renamed content line 3
+ renamed content line 4
+-renamed content line 5
++renamed content line five
+ renamed content line 6
+ renamed content line 7
+ renamed content line 8
+diff --git a/lib/new.txt b/lib/new.txt
+new file mode 100644
+index 0000000..39963cd
+--- /dev/null
++++ b/lib/new.txt
+@@ -0,0 +1,2 @@
++brand new
++file
+diff --git a/lib/nonl.txt b/lib/nonl.txt
+index 20cbb4d..0ba6e66 100644
+--- a/lib/nonl.txt
++++ b/lib/nonl.txt
+@@ -1 +1 @@
+-no newline
+\ No newline at end of file
++no newline changed
+\ No newline at end of file
+diff --git a/lib/pure-old.txt b/lib/pure-new.txt
+similarity index 100%
+rename from lib/pure-old.txt
+rename to lib/pure-new.txt

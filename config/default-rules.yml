@@ -56,7 +56,7 @@ file_kinds:   # first match wins, in this order
     - '**/*.md'
     - '**/*.mdx'
     - '**/*.rst'
-    - '**/*.txt'
+    - '**/!(requirements*).txt'
     - 'docs/**'
     - '**/LICENSE*'
     - '**/CHANGELOG*'
@@ -130,7 +130,7 @@ categories:
       - '\.sql$'
     content:
       - '\b(select|insert\s+into|update|delete\s+from)\b.{0,80}(\$\{|%s|\+\s*\w|\{\w+\}|\|\|)'
-      - 'f[''"].{0,40}\b(select|insert|update|delete)\b'
+      - '\bf[''"].{0,40}\b(select|insert|update|delete)\b'
       - '\.(execute|executemany|raw|query|exec)\s*\(\s*(f?[''"`]|\w+\s*\+)'
       - '\b(drop|truncate|alter)\s+table\b'
 
@@ -146,7 +146,7 @@ categories:
       - '\bpickle\.(loads?|Unpickler)\b|\bmarshal\.loads?\b|\bcPickle\b'
       - '\byaml\.(load|unsafe_load)\s*\('
       - '\bunserialize\s*\(|\bObjectInputStream\b|\breadObject\s*\('
-      - '\beval\s*\(|\bexec\s*\(|\bnew\s+Function\s*\('
+      - '(?<![.\w])(eval|exec)\s*\(|\bnew\s+Function\s*\('
       - '\bBinaryFormatter\b|\bXMLDecoder\b'
 
   unsafe:
@@ -173,7 +173,7 @@ categories:
     path:
       - '(^|/)(permissions?|rbac|acl|policy|policies|roles?|guards?)(/|[._-]|$)'
     content:
-      - '\b(is_?admin|is_?superuser|has_?(role|permission|access)|can_?\w+|require_?(role|permission|admin))\b'
+      - '\b(is_?admin|is_?superuser|has_?(role|permission|access)|can_\w+|can(Access|Edit|Delete|View|Create|Update|Read|Write|Manage)\w*|require_?(role|permission|admin))\b'
       - '\b(chmod|chown|sudo|setuid|setgid)\b'
       - 'Access-Control-Allow-Origin|\bcors\b'
       - '\b(rbac|acl|iam)\b'
