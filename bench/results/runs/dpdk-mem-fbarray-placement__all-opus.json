@@ -1,0 +1,362 @@
+{
+  "case_id": "dpdk-mem-fbarray-placement",
+  "arm": "all-opus",
+  "arm_version": 1,
+  "batch": "2026-11-16T16-30-54",
+  "config_hash": "4fe1abf9f1f3",
+  "complete": true,
+  "calls": 1,
+  "wall_ms": 81903,
+  "review": {
+    "version": 1,
+    "findings": [],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "lib/eal/common/eal_common_dynmem.c#1",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "175 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "lib/eal/common/eal_common_dynmem.c#2",
+        "score": 10,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "7 changed lines"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "175 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "lib/eal/common/eal_common_dynmem.c#3",
+        "score": 65,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "boundary",
+            "weight": 25,
+            "detail": "condition changed"
+          },
+          {
+            "signal": "memory",
+            "weight": 25,
+            "detail": "`if (eal_memseg_list_alloc(msl, 0)) {`"
+          },
+          {
+            "signal": "size",
+            "weight": 10,
+            "detail": "33 changed lines"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "175 source lines, no test file"
+          }
+        ]
+      },
+      {
+        "hunk_id": "lib/eal/common/eal_common_dynmem.c#4",
+        "score": 35,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "memory",
+            "weight": 25,
+            "detail": "`eal_mem_free(mem_va_addr, mem_va_len);`"
+          },
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "9 changed lines"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "175 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "lib/eal/common/eal_common_memory.c#1",
+        "score": 10,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "22 changed lines"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "175 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "lib/eal/common/eal_memcfg.h#1",
+        "score": 10,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "6 changed lines"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "175 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "lib/eal/common/eal_private.h#1",
+        "score": 10,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "13 changed lines"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "175 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "lib/eal/freebsd/eal_memory.c#1",
+        "score": 10,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "deletion_only",
+            "weight": 5,
+            "detail": "only deletions"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "175 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "lib/eal/freebsd/eal_memory.c#2",
+        "score": 10,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "7 changed lines"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "175 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "lib/eal/freebsd/eal_memory.c#3",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "175 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "lib/eal/linux/eal_memory.c#1",
+        "score": 40,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "memory",
+            "weight": 25,
+            "detail": "`eal_mem_free(mem_va_addr, mem_va_len);`"
+          },
+          {
+            "signal": "size",
+            "weight": 10,
+            "detail": "53 changed lines"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "175 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "lib/eal/linux/eal_memory.c#2",
+        "score": 10,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "15 changed lines"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "175 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 1,
+      "model_substitutions": [],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 2,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 12,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 48833,
+          "cache_read_tokens": 994,
+          "output_tokens": 7485,
+          "cache_write_1h_tokens": 48833,
+          "cost_usd": 0.5405708,
+          "direct_api_cost_usd": 0.340616
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.5405708,
+      "total_direct_api_cost_usd": 0.340616,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 1.0809428,
+        "direct_api_cost_usd": 0.681232
+      },
+      "savings_pct": 50,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 81903,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}

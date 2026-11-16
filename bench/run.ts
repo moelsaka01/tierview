@@ -30,7 +30,9 @@ import { BENCH } from "./lib/sh";
 /** Mohamed's limit: at most 20 claude calls per batch. */
 export const BATCH_CAP = 20;
 /** Errors that mean "stop the batch now": plan usage or rate limits. */
-export const LIMIT_ERROR = /usage limit|rate.?limit|limit reached|too many requests|\b429\b|overloaded|quota|credit balance/i;
+export const LIMIT_ERROR = /usage limit|rate.?limit|limit reached|too many requests|\b429\b|overloaded|quota|credit balance|hit your [\w -]*limit|limit\W+resets|session limit|weekly limit/i;
+/** A pipeline warning for a call that failed with an error (refusals and parse failures are outcomes, not errors). */
+export const CALL_ERROR = /call failed for .*?: error: /;
 
 export interface RunFile {
   case_id: string;
@@ -249,11 +251,9 @@ export async function runBatch(o: BatchOptions, d: Deps): Promise<BatchReport> {
     usage({ at: now().toISOString(), batch, case_id: c.id, arm: `judge:${r.arm}`, kind: "judge", calls: res.calls, tokens: tokensOf(res.usageByModel), api_equivalent_usd: usd, direct_api_usd: usd, wall_ms: Math.round(clock() - t0), substitutions: [], complete: res.ok });
     if (!res.ok || !res.value) {
       log(`  judge failed for ${c.id} ${r.arm}: ${res.error}`);
-      if (res.error && LIMIT_ERROR.test(res.error)) {
-        report.stopped = `usage limit during judge: ${res.error.slice(0, 200)}`;
-        return false;
-      }
-      return true; // stays pending; retried next batch
+      // Findings stay pending for the next batch. Any judge error stops this batch (a usage limit is the usual cause).
+      report.stopped = `${res.error && LIMIT_ERROR.test(res.error) ? "usage limit" : "judge error"} during judge: ${(res.error ?? "").slice(0, 200)}`;
+      return false;
     }
     const js = modelJudgements(c, r.arm, items, res.value, res.model);
     logJudgements(js.filter((j): j is Judgement => j !== null), r.batch);
@@ -316,14 +316,17 @@ export async function runBatch(o: BatchOptions, d: Deps): Promise<BatchReport> {
       const wall = Math.round(clock() - t0);
       report.calls += review.receipt.calls;
       const limitHit = review.receipt.warnings.find((w) => /call failed/.test(w) && LIMIT_ERROR.test(w));
-      const complete = !budgetExhausted && !limitHit;
+      // Any errored call (not a refusal or parse failure) leaves hunks unreviewed: the run is not a valid result,
+      // whether or not the error text is recognised as a limit (test batch 3 lesson).
+      const callError = review.receipt.warnings.find((w) => CALL_ERROR.test(w));
+      const complete = !budgetExhausted && !limitHit && !callError;
       let pending: string[] = [];
       if (complete && c.kind === "buggy") {
         const { judged, ambiguous } = ruleJudge(c, arm, [...review.findings, ...review.refuted], diff);
         logJudgements(judged, batch);
         pending = ambiguous.map((a) => a.finding.id);
       }
-      const run: RunFile = { case_id: c.id, arm, arm_version: ARM_VERSION[arm], batch, config_hash: hash, complete, stopped: limitHit ? "usage limit" : budgetExhausted ? "batch call cap" : undefined, calls: review.receipt.calls, wall_ms: wall, review, judge_pending: pending };
+      const run: RunFile = { case_id: c.id, arm, arm_version: ARM_VERSION[arm], batch, config_hash: hash, complete, stopped: limitHit ? "usage limit" : callError ? "call error" : budgetExhausted ? "batch call cap" : undefined, calls: review.receipt.calls, wall_ms: wall, review, judge_pending: pending };
       writeRun(run);
       const usd = review.receipt.total_cost_usd;
       usage({
@@ -343,6 +346,10 @@ export async function runBatch(o: BatchOptions, d: Deps): Promise<BatchReport> {
       report.runs.push({ case_id: c.id, arm, calls: review.receipt.calls, complete, usd });
       if (limitHit) {
         report.stopped = `usage limit: ${limitHit.slice(0, 200)}`;
+        continue;
+      }
+      if (callError) {
+        report.stopped = `call error, batch stopped (the run will be re-run): ${callError.slice(0, 200)}`;
         continue;
       }
       if (!complete) {

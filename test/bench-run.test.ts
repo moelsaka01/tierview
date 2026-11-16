@@ -7,7 +7,7 @@ import { armPreset, parseArms } from "../bench/arms";
 import { type Judgement, JudgeResponse, auditSample, classify, judgeUserMessage, modelJudgements, ruleJudge } from "../bench/judge";
 import { atLeast, bootstrapCI, computeMetrics, judgementsFor, labelOf, loadRuns, mcnemarExact, percentile, runCosts } from "../bench/metrics";
 import { faultyHunks, loadCases } from "../bench/routing";
-import { BATCH_CAP, type Deps, type RunFile, readRun, runBatch, selectCases } from "../bench/run";
+import { BATCH_CAP, type Deps, LIMIT_ERROR, type RunFile, readRun, runBatch, selectCases } from "../bench/run";
 import { loadEstimates } from "../src/estimate";
 import { loadPrices } from "../src/prices";
 import { parseDiff } from "../src/tier0/diff";
@@ -267,5 +267,42 @@ describe("one call when nothing goes to Opus", () => {
     const reqs = d.backends.flatMap((b) => b.requests);
     expect(reqs.map((q) => q.tier)).toEqual([1]);
     expect(readRun(dir, "cilium-clean-fqdn-bootstrap", "tierview")!.calls).toBe(1);
+  });
+});
+
+describe("call errors and usage limits (test batch 3 lesson)", () => {
+  const erroring = (detail: string) => () =>
+    new (class extends FakeBackend {
+      override async review(req: Parameters<FakeBackend["review"]>[0]) {
+        const r = await super.review(req);
+        return { ...r, ok: false as const, reason: "error" as const, detail };
+      }
+    })(() => ({}), "claude-code", 1);
+
+  it("recognises Claude Code's 5-hour limit message", () => {
+    expect(LIMIT_ERROR.test("error: success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)")).toBe(true);
+    expect(LIMIT_ERROR.test("You've hit your weekly limit")).toBe(true);
+    expect(LIMIT_ERROR.test("parse error near token")).toBe(false);
+  });
+
+  for (const [what, detail, stop] of [
+    ["the 5-hour limit", "success: You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)", /usage limit/],
+    ["an unrecognised error", "something new went wrong", /call error/],
+  ] as const) {
+    it(`a run whose call fails with ${what} is incomplete and stops the batch`, async () => {
+      const dir = mkdtempSync(join(tmpdir(), "tv-bench-"));
+      const r = await runBatch({ cases: "pilot", arms: ["all-sonnet"], maxCalls: 20 }, deps(dir, erroring(detail)));
+      expect(r.runs).toHaveLength(1);
+      expect(r.stopped).toMatch(stop);
+      expect(readRun(dir, r.runs[0]!.case_id, "all-sonnet")!.complete).toBe(false);
+    });
+  }
+
+  it("a failed judge call stops the batch and leaves the findings pending", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "tv-bench-"));
+    const r = await runBatch({ cases: "dpdk-ntb-window-bound,django-legend-attrs-mutation", arms: ["all-opus"], maxCalls: 20 }, deps(dir, fakeFor(6), [], "success: You've hit your 5-hour limit"));
+    expect(r.stopped).toMatch(/usage limit during judge/);
+    expect(r.runs).toHaveLength(1);
+    expect(readRun(dir, r.runs[0]!.case_id, "all-opus")!.judge_pending.length).toBeGreaterThan(0);
   });
 });

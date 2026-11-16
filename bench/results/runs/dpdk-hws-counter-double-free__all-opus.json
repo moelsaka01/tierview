@@ -1,0 +1,142 @@
+{
+  "case_id": "dpdk-hws-counter-double-free",
+  "arm": "all-opus",
+  "arm_version": 1,
+  "batch": "2026-11-16T16-30-54",
+  "config_hash": "4fe1abf9f1f3",
+  "complete": true,
+  "calls": 1,
+  "wall_ms": 28852,
+  "review": {
+    "version": 1,
+    "findings": [
+      {
+        "file": "drivers/net/mlx5/mlx5_hws_cnt.c",
+        "start_line": 768,
+        "end_line": 770,
+        "side": "new",
+        "severity": "high",
+        "category": "bug",
+        "title": "Double free of mp_name when cpool was already initialized",
+        "explanation": "mlx5_hws_cnt_pool_init copies pcfg into cpool->cfg, so cpool->cfg.name == mp_name. mlx5_hws_cnt_pool_destroy() frees cpool->cfg.name (line 798). On every error path where cpool != NULL (dcs_alloc failure, raw_data_alloc failure, action_create failure on host or guest port), the new mlx5_free(mp_name) frees the same buffer a second time, which can corrupt the heap.",
+        "suggestion": "Free mp_name only when the pool has not taken ownership of it: `if (cpool == NULL) mlx5_free(mp_name);` placed before or instead of the unconditional free (or free it before calling destroy and clear cpool->cfg.name).",
+        "evidence": "\tmlx5_free(mp_name);",
+        "confidence": 0.8,
+        "id": "a5ce42e9e227",
+        "hunk_id": "drivers/net/mlx5/mlx5_hws_cnt.c#2",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      }
+    ],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "drivers/net/mlx5/mlx5_hws_cnt.c#1",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "drivers/net/mlx5/mlx5_hws_cnt.c#2",
+        "score": 25,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "memory",
+            "weight": 25,
+            "detail": "`mlx5_free(mp_name);`"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 1,
+      "model_substitutions": [],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 2,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 2,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 10123,
+          "cache_read_tokens": 994,
+          "output_tokens": 2155,
+          "cache_write_1h_tokens": 10123,
+          "cost_usd": 0.1242908,
+          "direct_api_cost_usd": 0.079176
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.1242908,
+      "total_direct_api_cost_usd": 0.079176,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.2483828,
+        "direct_api_cost_usd": 0.158352
+      },
+      "savings_pct": 50,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 28850,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}

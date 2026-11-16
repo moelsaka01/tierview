@@ -7,7 +7,7 @@ One entry per phase: which model did the work, at what effort, from what prompt,
 | 1 | Plan and scaffold | Fable 5.2 (high) | done 2026-11-16 |
 | 2 | Tier 0, config, dry-run | Sonnet 5.5 (medium) | done 2026-11-16 |
 | 3 | LLM tiers, escalation, receipt, backends | Opus 5.5 (high) | done 2026-11-16 |
-| 4 | Benchmark | Opus 5.5 (high) | in progress: dev split done; `bench-config-v2` frozen; test split 26 of 60 runs |
+| 4 | Benchmark | Opus 5.5 (high) | in progress: dev split done; `bench-config-v2` frozen; test split 30 of 60 runs valid |
 | 5 | PR mode, SARIF, GitHub Action | Sonnet 5.5 | not started |
 | 6 | README and release | Sonnet 5.5 | not started |
 
@@ -468,6 +468,25 @@ Judge calls: 5 (one per run with ambiguous findings), $0.093 together. Interim o
 | dpdk-hws-counter-double-free (buggy) | **caught** (2, $0.124) | **caught** (1, $0.052) | next batch |
 
 **Next.** Test batch 3, started by Mohamed. 34 runs left, about 70 planned calls.
+
+**Test batch 3 (2026-11-16, Mohamed: "Run test batch 3"; hash verified). Partly invalid: the plan's 5-hour usage limit hit mid-batch and the runner did not notice.** The batch reported 20 `claude` calls (19 reviews, 1 judge), $1.60 API-equivalent. About 6 calls did real work; after that every `claude -p` call returned at once with "You've hit your 5-hour limit · resets 10:50pm (Asia/Dubai)" and no tokens. The runner's usage-limit pattern did not match that wording, and a run whose calls failed was still saved as complete: **10 runs were saved as complete but were not** (9 with zero tokens: procinfo all-sonnet and all-opus, both Firecracker clean cases in all three arms, the Next.js clean case for tierview; plus procinfo tierview, whose Opus call failed after Sonnet ran). On the clean cases this would have counted as "no false positives". Mohamed reported the limit when it had reset.
+
+Valid results of this batch:
+
+| case | tierview | all-sonnet | all-opus |
+|---|---|---|---|
+| dpdk-hws-counter-double-free (buggy) | (batch 2: caught) | (batch 2: caught) | **caught** (1 call, $0.124) |
+| dpdk-mem-fbarray-placement (buggy, wide) | 1 finding, not a match (2, $0.579) | no findings (1, $0.217) | no findings (1, $0.541) |
+
+Fixes (no `claude` calls; tests added; 243 pass):
+1. `LIMIT_ERROR` also matches "hit your … limit", "limit · resets", "session limit", "weekly limit".
+2. A run with any errored call (`CALL_ERROR`: "call failed … : error: …"; refusals and parse failures are outcomes, not errors) is incomplete, and the batch stops there, whether or not the error text is recognised.
+3. A failed judge call now always stops the batch (the findings stay pending).
+4. A scan of every saved run (runs/ and runs-archive/) found failed calls only in this batch. The 10 runs are marked incomplete (`stopped: "call error (usage limit), found after test batch 3; re-run"`), so the runner archives and re-runs them. Their usage lines stay in `usage.jsonl` as recorded (calls made, zero tokens).
+
+The runner is not part of the config hash (it decides which runs count, not how a run is measured), so `bench-config-v2` / `4fe1abf9f1f3` stands.
+
+Test split so far: 30 of 60 runs valid (26 from batches 1 and 2, 4 from batch 3). 30 runs left, about 42 to 60 calls: 3 batches.
 
 ---
 
