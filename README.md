@@ -8,6 +8,12 @@ AI code review that sends each hunk of a diff to the cheapest Claude model that 
 
 This README will be written in Phase 6, after the benchmark has run, so that every number in it is measured.
 
+## GitHub Action
+
+`examples/tierview.yml` is a ready workflow: add your own `ANTHROPIC_API_KEY` as a repository secret and the Action reviews each pull request on the API backend, posts one summary comment (findings and the cost receipt) and stops at `max-cost` (default $2.00 per run).
+
+**Not tested live yet:** the Action and its PR comment have only been tested with mocked GitHub responses. They have not run on a real runner or posted to a real PR. Treat the first runs as a trial.
+
 ## Development
 
 ```bash
