@@ -1,5 +1,5 @@
-// Command definitions. Spec: PLAN.md §3, §5a, §7, §10. `pr` arrives in P5-02.
-import { readFileSync } from "node:fs";
+// Command definitions. Spec: PLAN.md §3, §5a, §7, §10.
+import { readFileSync, writeFileSync } from "node:fs";
 import { Command } from "commander";
 import { ConfigError, type Config, loadConfig } from "./config";
 import { estimatePlan, loadEstimates } from "./estimate";
@@ -7,7 +7,11 @@ import { FABLE_NOT_ENABLED, FABLE_WARNING, applyFablePolicy, displayName, isFabl
 import { type FileSource, fileChurn, fileSource, getDiff, isShallow } from "./git";
 import { BackendSetupError, type ReviewBackend } from "./llm/backend";
 import { ClaudeCodeBackend, defaultCachePath, readModelCache, resolveClaudeBinary, verifyClaudeBinary } from "./llm/claude-code";
+import { renderComment, upsertComment } from "./github/comment";
+import { type FetchLike, GithubError, fetchPr, prefetchFiles } from "./github/pr";
 import { ApiBackend } from "./llm/client";
+import type { PrInfo } from "./llm/prompts";
+import { reviewSarif } from "./output/sarif";
 import { dryRunJson, reviewJson } from "./output/json";
 import { type DryRunView, renderDryRun, renderReview } from "./output/terminal";
 import { runPipeline } from "./pipeline";
@@ -16,7 +20,7 @@ import { parseDiffFiles } from "./tier0/diff";
 import { routeDiff } from "./tier0/route";
 import { tiersMerged } from "./tiers/collapse";
 import { atOrAbove } from "./tiers/escalate";
-import { type Backend, EXIT, SEVERITY_ORDER, type Severity } from "./types";
+import { type Backend, EXIT, type Review, SEVERITY_ORDER, type Severity } from "./types";
 
 export interface ReviewOptions {
   base?: string;
@@ -28,6 +32,7 @@ export interface ReviewOptions {
   maxCalls?: number;
   diffFile?: string;
   json?: boolean;
+  sarif?: string;
   failOn?: string;
   backend?: string;
   config?: string;
@@ -44,6 +49,10 @@ export interface Io {
   backend?: ReviewBackend;
   /** Test hook: supply file contents for context. */
   files?: FileSource;
+  /** PR title and description, shared with every model call. */
+  pr?: PrInfo;
+  /** Called with the finished review before the exit code is decided (SARIF, PR comment). */
+  onReview?: (review: Review) => Promise<void>;
 }
 
 function pickBackend(opt: string | undefined, cfg: Config): Backend {
@@ -126,13 +135,15 @@ export async function runReview(opts: ReviewOptions, io: Io): Promise<number> {
     if (backendName === "claude-code" && allowFable && usesFable(cfg)) io.err(FABLE_WARNING);
     if (supplied !== undefined && !io.files) warnings.push("diff supplied without a checkout: Tier 2 and 3 saw no surrounding file context.");
     const fileSrc = io.files ?? (supplied === undefined ? fileSource(diffOpts) : () => null);
-    const { review, budgetExhausted } = await runPipeline({ routed, cfg, backend, files: fileSrc, prices, est, maxCost, maxCalls: opts.maxCalls ?? null, substitutions, warnings });
+    const { review, budgetExhausted } = await runPipeline({ routed, cfg, backend, files: fileSrc, prices, est, maxCost, maxCalls: opts.maxCalls ?? null, substitutions, warnings, pr: io.pr });
     io.out(opts.json ? reviewJson(review) : renderReview(review));
+    if (opts.sarif) writeFileSync(opts.sarif, reviewSarif(review));
+    await io.onReview?.(review);
     if (opts.failOn && review.findings.some((f) => atOrAbove(f.severity, opts.failOn as Severity))) return EXIT.FINDINGS;
     if (budgetExhausted) return EXIT.BUDGET;
     return EXIT.OK;
   } catch (e) {
-    if (e instanceof ConfigError || e instanceof PricesError || e instanceof BackendSetupError) {
+    if (e instanceof ConfigError || e instanceof PricesError || e instanceof BackendSetupError || e instanceof GithubError) {
       io.err(`tierview: ${e.message}\n`);
       return EXIT.USAGE;
     }
@@ -177,9 +188,35 @@ export async function runModels(opts: { probe?: boolean; config?: string; allowF
   }
 }
 
-function notImplemented(what: string, phase: number): never {
-  process.stderr.write(`tierview: ${what} is not implemented yet (Phase ${phase}, see PLAN.md).\n`);
-  process.exit(EXIT.USAGE);
+export interface PrOptions extends ReviewOptions {
+  comment?: boolean;
+}
+
+/** `pr <url>`: review a GitHub pull request without a checkout (diff and file context from the API). */
+export async function runPr(url: string, opts: PrOptions, io: Io, f?: FetchLike): Promise<number> {
+  try {
+    const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
+    if (opts.comment && !token) {
+      io.err("tierview: --comment needs GITHUB_TOKEN (a token with pull-requests: write).\n");
+      return EXIT.USAGE;
+    }
+    if (opts.comment && opts.dryRun) {
+      io.err("tierview: --comment has nothing to post on a dry run.\n");
+      return EXIT.USAGE;
+    }
+    const pr = await fetchPr(url, token, f);
+    const paths = parseDiffFiles(pr.diff).filter((x) => x.hunks.length > 0).map((x) => x.path);
+    const files = opts.dryRun ? undefined : await prefetchFiles(pr.ref, pr.headSha, paths, token, f);
+    const onReview = async (review: Review) => {
+      if (!opts.comment) return;
+      const r = await upsertComment(pr.ref, renderComment(review), token!, f);
+      io.err(`tierview: ${r.updated ? "updated" : "posted"} the PR comment ${r.url}\n`);
+    };
+    return await runReview(opts, { ...io, diff: pr.diff, files, pr: { title: pr.title, body: pr.body }, onReview });
+  } catch (e) {
+    io.err(`tierview: ${(e as Error).message}\n`);
+    return EXIT.USAGE;
+  }
 }
 
 const stdio: Io = { out: (s) => process.stdout.write(s), err: (s) => process.stderr.write(s) };
@@ -232,7 +269,9 @@ export function buildProgram(): Command {
       .description("review a GitHub pull request")
       .argument("<url>", "pull request URL")
       .option("--comment", "post the review as a PR comment"),
-  ).action(() => notImplemented("pr", 5));
+  ).action(async (url: string, opts: PrOptions) => {
+    process.exitCode = await runPr(url, opts, stdio);
+  });
 
   return program;
 }

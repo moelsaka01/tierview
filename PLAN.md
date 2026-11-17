@@ -341,9 +341,9 @@ Planning estimate, to be replaced by the pilot's numbers: tierview 2–4 calls p
 
 ## 10. Outputs and integrations (Phase 5)
 
-- `tierview pr <url>`: fetch the PR diff with Octokit (`GITHUB_TOKEN`, `Accept: application/vnd.github.diff`), title and body for shared context. Without a checkout, Tier 3 file context comes from the contents API at the PR head sha, and churn signals are off.
+- `tierview pr <url>`: fetch the PR diff with plain `fetch` (no Octokit: four GET calls; `GITHUB_TOKEN`, `Accept: application/vnd.github.diff`), title and body for shared context. Without a checkout, Tier 3 file context comes from the contents API at the PR head sha, and churn signals are off.
 - `--sarif <file>`, `--json`, `--comment` (one summary comment containing the ranked findings and the receipt; updates its previous comment instead of adding a new one).
-- GitHub Action: `action.yml` (`runs.using: node24`, verify the current runtime name when you get there), entry `src/action.ts` bundled to `dist/` with tsup. Inputs: `anthropic-api-key`, `max-cost`, `fail-on`, `config`. The Action always uses `--backend api` (no Claude Code login on a runner). Recommend `fetch-depth: 0` so churn signals work.
+- GitHub Action: `action.yml` (`runs.using: node24`, verify the current runtime name when you get there), entry `src/action.ts` bundled to `dist/` with tsup. Inputs: `anthropic-api-key`, `max-cost`, `fail-on`, `config`. The Action always uses `--backend api` (no Claude Code login on a runner). The Action reads the PR through the API (the same code as `tierview pr`), so it needs no checkout and churn signals are off; a checkout is only used to pick up `.tierview.yml`. `max-cost` defaults to `2.00` (USD); hitting it makes the review partial and is a warning, not a failed check; a fork PR (no secrets) is skipped with a notice. `dist/action.js` is one self-contained bundle committed to the repo (CI checks it is up to date); `dist/bin.js` is the npm CLI, built by `prepack`, and `files` ships only that plus `config/`. CI runs typecheck, tests, build and a packed-tarball smoke test on Ubuntu, Windows and macOS, Node 22 and 24.
 
 ## 11. Phased task list
 
@@ -390,13 +390,13 @@ Every task ends with `npm run check` (typecheck + tests) passing. Tick the box i
 - [x] P4-11 `bench/chart.ts` → `chart.svg`; `bench/results/RESULTS.md`; update `BUILD_LOG.md`; commit.
 
 ### Phase 5 — Sonnet 5.5 — PR mode, SARIF, Action. Read §10, §8.
-- [ ] P5-01 `src/github/pr.ts` + test (mocked HTTP): parse PR URL, fetch diff, title, body, head sha.
-- [ ] P5-02 `tierview pr <url>` in `src/cli.ts`; file context through the contents API.
-- [ ] P5-03 `src/output/sarif.ts` + test validating against the SARIF 2.1.0 schema.
-- [ ] P5-04 `src/github/comment.ts` + test: create-or-update summary comment.
-- [ ] P5-05 `src/action.ts`, `action.yml`, tsup bundle to `dist/`.
-- [ ] P5-06 `.github/workflows/ci.yml` (typecheck, test) and `examples/tierview.yml` (usage workflow).
-- [ ] P5-07 End-to-end dry-run against one public PR; update `BUILD_LOG.md`; commit.
+- [x] P5-01 `src/github/pr.ts` + test (mocked HTTP): parse PR URL, fetch diff, title, body, head sha.
+- [x] P5-02 `tierview pr <url>` in `src/cli.ts`; file context through the contents API.
+- [x] P5-03 `src/output/sarif.ts` + test validating against the SARIF 2.1.0 schema.
+- [x] P5-04 `src/github/comment.ts` + test: create-or-update summary comment.
+- [x] P5-05 `src/action.ts`, `action.yml`, tsup bundle to `dist/`.
+- [x] P5-06 `.github/workflows/ci.yml` (typecheck, test) and `examples/tierview.yml` (usage workflow).
+- [x] P5-07 End-to-end dry-run against one public PR; update `BUILD_LOG.md`; commit.
 
 ### Phase 6 — Sonnet 5.5 — README and release. Read §1, §12, `bench/results/RESULTS.md`.
 - [ ] P6-01 `README.md` in the style of the honest-* repos (read one of their READMEs once): what it does, a real receipt, the benchmark table and chart, limits stated plainly.

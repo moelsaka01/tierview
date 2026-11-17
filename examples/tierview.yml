@@ -1,0 +1,28 @@
+# Copy to .github/workflows/tierview.yml in your repository.
+#
+# Setup: add your own Anthropic API key as a repository secret named ANTHROPIC_API_KEY
+# (Settings -> Secrets and variables -> Actions). tierview calls the API with that key, so the
+# cost is billed to you; max-cost is a hard cap per run.
+#
+# Pull requests from forks do not get your secrets, so tierview skips them (it does not fail).
+name: tierview
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write # to post and update the summary comment
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      # A checkout is only needed to pick up your .tierview.yml.
+      - uses: actions/checkout@v4
+      - uses: moelsaka01/tierview@main # pin a release tag once one exists
+        with:
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          max-cost: "2.00" # USD; the default. A run stops here and says the review is partial.
+          # fail-on: high  # fail the check on findings at or above this severity

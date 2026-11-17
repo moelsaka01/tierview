@@ -13,7 +13,7 @@
     "tierview": "dist/bin.js"
   },
   "files": [
-    "dist",
+    "dist/bin.js",
     "config",
     "README.md",
     "LICENSE"
@@ -22,13 +22,15 @@
     "node": ">=22"
   },
   "scripts": {
-    "build": "tsup src/bin.ts --format esm --target node22 --clean",
+    "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && tsup",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "check": "npm run typecheck && npm run test",
     "bench:build": "tsup bench/mine.ts bench/validate.ts bench/routing.ts bench/run.ts bench/metrics.ts bench/tune.ts bench/tune-grid.ts bench/chart.ts bench/audit.ts --format esm --target node22 --out-dir .bench-build --silent",
     "bench:mine": "npm run bench:build && node .bench-build/mine.js",
-    "bench:validate": "npm run bench:build && node .bench-build/validate.js"
+    "bench:validate": "npm run bench:build && node .bench-build/validate.js",
+    "prepack": "npm run build",
+    "prepublishOnly": "npm run check"
   },
   "keywords": [
     "code-review",
@@ -49,8 +51,13 @@
   "devDependencies": {
     "@types/node": "^26.6.6",
     "@types/picomatch": "^4.0.3",
+    "ajv": "^8.20.0",
     "tsup": "^9.0.0",
     "typescript": "^7.0.2",
     "vitest": "^5.1.0"
+  },
+  "homepage": "https://github.com/moelsaka01/tierview#readme",
+  "bugs": {
+    "url": "https://github.com/moelsaka01/tierview/issues"
   }
 }

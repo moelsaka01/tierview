@@ -555,6 +555,32 @@ What the test split says, with the intervals in mind:
 
 **Phase 4 summary.** Model: Opus 5.5 (`claude-opus-5-5`), high effort. Delivered P4-01 to P4-11 except the audit marks. Main deviations from the original plan, each logged above: no Fable calls and no `all-fable-low` arm; three arms; benchmark on the `claude-code` backend in batches of at most 20 calls; pipeline v2 (merged Opus tier, whole-diff escalation, one all-Fable method, two cost views); routing tuned on dev (`bench-config-v1`); judge v2 for wide fixes; Tier 1 file context (`bench-config-v2`, decided from dev results before any test run); the batch 3 usage-limit fix. Usage: 190 `claude` calls (171 reviews, 19 judge), about $20.36 API-equivalent, $0 billed; no Fable calls.
 
+## Phase 5 — PR mode, SARIF, Action, packaging, CI (2026-11-17)
+
+**Model.** Sonnet 5.5 (`claude-sonnet-5-5`). **Effort.** medium.
+**Prompt.** "Read PLAN.md and BUILD_LOG.md. First run node .bench-build/audit.js --score on my marked judge-audit.csv and add the agreement rate to RESULTS.md. Then do Phase 5 only: the GitHub Action (api backend, user's own ANTHROPIC_API_KEY as a secret, PR comment with findings and the cost receipt, --max-cost default), npm packaging so npx tierview works, and CI on Windows, macOS and Ubuntu. Don't publish to npm or push anything; ask me first. No claude calls. Update BUILD_LOG (Sonnet 5.5, medium) and commit."
+
+**Judge audit.** The marked file arrived as `bench/results/CSV UTF-8.csv` (an Excel re-save); I renamed it over `judge-audit.csv` (the unmarked original is in git). `audit.js --score`: 20 marked, **14 agree, 0 disagree, 6 unsure; 100% of the 14 decided, 70% of all 20**. Added to RESULTS.md with its caveats (small sample, marked by the author, 6 unsure unresolved). Note: the scorer prints "of 44" rows because the CSV re-save split some multi-line cells; the 20 marks are right.
+
+**Delivered (P5-01 to P5-07, plus packaging).**
+- `src/github/pr.ts`: PR URL parsing, diff/title/body/head sha, file context through the contents API (prefetched, 60 files max, since `FileSource` is synchronous).
+- `tierview pr <url>` (`--comment`, `--sarif`, `--json`, `--dry-run`, `--max-cost`, `--fail-on`); `--sarif` also on `review`. PR title and body go to every call as shared context.
+- `src/output/sarif.ts`: SARIF 2.1.0 per PLAN §8; tested against the official schema (stored in `test/fixtures`, validated with `ajv`, a new dev dependency).
+- `src/github/comment.ts`: one summary comment (findings, receipt table, total, calculated all-Fable comparison, warnings), found by a hidden marker and updated in place.
+- `src/action.ts` + `action.yml`: api backend only; key from the `anthropic-api-key` input (masked, never echoed); `max-cost` default **$2.00**; `fail-on`, `config`, `github-token` inputs; `findings` and `cost-usd` outputs. Fork PRs (no secret) are skipped with a notice, not failed. A budget stop is a warning, not a failed check.
+- Bundling: `tsup.config.ts` builds `dist/bin.js` (npm CLI) and `dist/action.js` (one self-contained file, committed; `.gitignore` now ignores the rest of `dist/`).
+- npm packaging: `files` ships only `dist/bin.js`, `config/`, README, LICENSE (40 kB); `prepack` builds, `prepublishOnly` runs the checks. Verified locally: `npm pack`, install the tarball in an empty folder, `npx --no-install tierview --version` and `review --dry-run` work. The name `tierview` was unclaimed on npm when checked (2026-11-17). **Not published.**
+- CI `.github/workflows/ci.yml`: Ubuntu, Windows, macOS x Node 22, 24: `npm ci`, typecheck + tests, build, packed-tarball smoke test; on Ubuntu/24 it also fails if `dist/action.js` is stale. `examples/tierview.yml` is the usage workflow. **CI has not run yet** (nothing is pushed), so the three-OS matrix is untested until the first push.
+- Tests: `test/github.test.ts` (13 tests, all HTTP mocked); 258 pass. P5-07: `tierview pr https://github.com/sindresorhus/p-map/pull/91 --dry-run` ran end to end against the live GitHub API (3 hunks, zero model calls).
+
+**Deviations from the plan, and why (PLAN §10 fixed in this commit).**
+- Plain `fetch` instead of Octokit: a handful of GET/POST calls, no extra dependency.
+- The Action reviews through the PR API, not a checkout, so churn/hotspot signals are off there and `fetch-depth: 0` is not needed (PLAN said to recommend it). Using the checkout for churn is possible later.
+- Default `--max-cost` of $2.00 exists only in the Action; the CLI default stays "no cap" (config `budget.max_cost_usd`). $2 is a judgement call, not measured: the benchmark averaged $0.14 per case direct API, so it leaves room for large PRs; the user should confirm.
+
+**Issues.** The Action has never run on a real runner, and `node24` as `runs.using` is from memory (the plan said to verify): check on first push. Not tested live: posting a comment on a real PR (mocked only). The harness blocked several bash heredocs; files were written with the Write tool instead.
+**API spend this phase.** $0. No `claude` calls, no API calls; only GitHub's read API (one public PR) and the npm registry (read) were contacted.
+
 ---
 
 *Template for each later phase:*

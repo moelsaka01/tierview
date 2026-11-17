@@ -1,4 +1,4 @@
-# Stub. Implemented in Phase 5 (PLAN.md §10, task P5-05).
+# GitHub Action. Always uses the api backend. Spec: PLAN.md §10.
 name: tierview
 description: AI code review that escalates through Claude model tiers and prints a cost receipt.
 branding: { icon: layers, color: purple }
@@ -7,15 +7,25 @@ inputs:
     description: Your Anthropic API key.
     required: true
   max-cost:
-    description: Hard budget cap per run, in USD.
+    description: Hard budget cap per run, in USD. The run stops at the cap and says the review is partial.
     required: false
+    default: "2.00"
+  github-token:
+    description: Token used to read the pull request and post the summary comment (needs pull-requests write).
+    required: false
+    default: ${{ github.token }}
   fail-on:
     description: Fail the check if a finding is at or above this severity.
     required: false
   config:
     description: Path to .tierview.yml.
     required: false
-    default: .tierview.yml
+    default: ""
+outputs:
+  findings:
+    description: Number of findings.
+  cost-usd:
+    description: Cost of this run at API list prices.
 runs:
   using: node24
   main: dist/action.js
