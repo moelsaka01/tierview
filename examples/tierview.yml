@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # A checkout is only needed to pick up your .tierview.yml.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: moelsaka01/tierview@main # pin a release tag once one exists
         with:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}

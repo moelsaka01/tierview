@@ -238,7 +238,7 @@ export function buildProgram(): Command {
   const program = new Command()
     .name("tierview")
     .description("AI code review that escalates through Claude model tiers and prints a cost receipt.")
-    .version("0.0.1");
+    .version("0.1.0");
 
   addSharedOptions(
     program
