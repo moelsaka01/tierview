@@ -579,6 +579,7 @@ What the test split says, with the intervals in mind:
 - Default `--max-cost` of $2.00 exists only in the Action; the CLI default stays "no cap" (config `budget.max_cost_usd`). $2 is a judgement call, not measured: the benchmark averaged $0.14 per case direct API, so it leaves room for large PRs; the user should confirm.
 
 **Issues.** The Action has never run on a real runner, and `node24` as `runs.using` is from memory (the plan said to verify): check on first push. Not tested live: posting a comment on a real PR (mocked only). The harness blocked several bash heredocs; files were written with the Write tool instead.
+**After the push (2026-11-17).** Repo created public at moelsaka01/tierview (not published to npm). First CI run (run 44026729522) passed on all 6 jobs: Ubuntu, Windows, macOS x Node 22 and 24, including the `dist/action.js` staleness check, so the cross-OS bundle did not drift. No fixes were needed. The runner log confirms Actions run on Node 24 (it warns that checkout@v4 and setup-node@v4 are Node 20 actions forced onto 24); that supports the `node24` runtime name but the Action itself has still not run. $2.00 max-cost default confirmed by Mohamed. README notes the PR comment is untested live.
 **API spend this phase.** $0. No `claude` calls, no API calls; only GitHub's read API (one public PR) and the npm registry (read) were contacted.
 
 ---
