@@ -582,6 +582,15 @@ What the test split says, with the intervals in mind:
 **After the push (2026-11-17).** Repo created public at moelsaka01/tierview (not published to npm). First CI run (run 44026729522) passed on all 6 jobs: Ubuntu, Windows, macOS x Node 22 and 24, including the `dist/action.js` staleness check, so the cross-OS bundle did not drift. No fixes were needed. The runner log confirms Actions run on Node 24 (it warns that checkout@v4 and setup-node@v4 are Node 20 actions forced onto 24); that supports the `node24` runtime name but the Action itself has still not run. $2.00 max-cost default confirmed by Mohamed. README notes the PR comment is untested live.
 **API spend this phase.** $0. No `claude` calls, no API calls; only GitHub's read API (one public PR) and the npm registry (read) were contacted.
 
+## Phase 6 — README, release, launch prep (2026-11-17)
+
+**Model.** Sonnet 5.5. **Effort.** Medium.
+**Prompt.** "Read PLAN.md, BUILD_LOG.md and bench/results/RESULTS.md. Do Phase 6 fully, with no claude review calls", then seven items: README rewrite in the honest-ml style, demo GIF with VHS, housekeeping (Node 24 actions, repo description and topics), npm publish, GitHub release v0.1.0, pin on profile, LAUNCH.md with posts shown for approval before posting.
+**Delivered.** README rewritten (headline, GIF, chart, a real receipt from a saved benchmark run, free-path install first, tier diagram, Fable opt-in, `--dry-run`, Action with the "not tested live" note, benchmark limits, comparison, FAQ). `assets/demo.gif` recorded with VHS from `demo/demo.tape` on a sample repo built by `demo/make-sample-repo.mjs` (VHS and ttyd installed with winget). `docs/CONFIG.md`, `docs/HOSTED.md`, `CHANGELOG.md`. Version 0.1.0 (package.json and CLI). checkout and setup-node bumped to v6 (both `node24`, checked in their action.yml). Repo description and 8 topics set with `gh`. Published to npm (`tierview@0.1.0`, `npx tierview --version` prints 0.1.0 from a clean folder). GitHub release v0.1.0. tierview pinned on the profile, replacing velora at Mohamed's choice (6 pins is the maximum). `LAUNCH.md` with Show HN, r/ClaudeAI, r/programming, X and LinkedIn drafts.
+**Deviations from the plan, and why.** P6-02 to P6-04 were not in the prompt's list but "Phase 6 fully" covers them, so they are done. The example workflow now pins `@v0.1.0`. Subreddit rules could not be verified: reddit.com is blocked in the built-in browser and search did not return the rule text; LAUNCH.md says so and recommends skipping r/programming.
+**Issues.** The first npm publish failed with 403 because the account had no 2FA; after Mohamed enabled it, a publish needs a browser approval or one-time code that I do not handle, so Mohamed ran `npm publish` in his own terminal. The registry also shows a `0.0.0-stage` version that npm created. The pinned GIF and chart in the README use raw.githubusercontent URLs so they also render on npm. No `claude` calls, no API calls, $0 spent.
+**API spend this phase.** $0.
+
 ---
 
 *Template for each later phase:*

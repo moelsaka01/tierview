@@ -386,7 +386,7 @@ Every task ends with `npm run check` (typecheck + tests) passing. Tick the box i
 - [x] P4-07 `bench/metrics.ts` + test: every metric in §9, bootstrap CI, McNemar.
 - [x] P4-08 Pilot on 5 cases in batches of ≤ 20 calls, no Fable. Report measured calls, tokens and API-equivalent cost, and the projection in batches. **Stop and ask Mohamed.**
 - [x] P4-09 Tune risk weights and thresholds on the dev split from saved outputs and Tier 0 routing recall (includes the "payment" false positive on `estimate.ts`, Phase 2 issue); commit the frozen config.
-- [ ] P4-10 Full run on the test split in batches across days, each started by Mohamed; judge audit. *(Full run done: all 90 runs, 11 batches, 190 calls. Audit sample ready in `bench/results/judge-audit.csv`; waiting for Mohamed's marks, then `audit.js --score` and the agreement rate in RESULTS.md.)*
+- [x] P4-10 Full run on the test split in batches across days, each started by Mohamed; judge audit. *(Full run done: all 90 runs, 11 batches, 190 calls. Audit sample ready in `bench/results/judge-audit.csv`; waiting for Mohamed's marks, then `audit.js --score` and the agreement rate in RESULTS.md.)*
 - [x] P4-11 `bench/chart.ts` → `chart.svg`; `bench/results/RESULTS.md`; update `BUILD_LOG.md`; commit.
 
 ### Phase 5 — Sonnet 5.5 — PR mode, SARIF, Action. Read §10, §8.
@@ -399,11 +399,11 @@ Every task ends with `npm run check` (typecheck + tests) passing. Tick the box i
 - [x] P5-07 End-to-end dry-run against one public PR; update `BUILD_LOG.md`; commit.
 
 ### Phase 6 — Sonnet 5.5 — README and release. Read §1, §12, `bench/results/RESULTS.md`.
-- [ ] P6-01 `README.md` in the style of the honest-* repos (read one of their READMEs once): what it does, a real receipt, the benchmark table and chart, limits stated plainly.
-- [ ] P6-02 `docs/CONFIG.md`: every `.tierview.yml` key and every signal.
-- [ ] P6-03 `package.json` publish metadata, `npm pack` contents check, `CHANGELOG.md`, tag `v0.1.0`.
-- [ ] P6-04 `docs/HOSTED.md`: one page on the later hosted GitHub App (what stays open, what is paid).
-- [ ] P6-05 Final pass on `BUILD_LOG.md`; commit.
+- [x] P6-01 `README.md` in the style of the honest-* repos (read one of their READMEs once): what it does, a real receipt, the benchmark table and chart, limits stated plainly.
+- [x] P6-02 `docs/CONFIG.md`: every `.tierview.yml` key and every signal.
+- [x] P6-03 `package.json` publish metadata, `npm pack` contents check, `CHANGELOG.md`, tag `v0.1.0`.
+- [x] P6-04 `docs/HOSTED.md`: one page on the later hosted GitHub App (what stays open, what is paid).
+- [x] P6-05 Final pass on `BUILD_LOG.md`; commit.
 
 ## 12. Risks and open decisions
 
