@@ -1,6 +1,6 @@
 {
   "name": "tierview",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "AI code review that escalates through Claude model tiers and prints a cost receipt.",
   "license": "MIT",
   "author": "Mohamed Elsaka",
