@@ -166,7 +166,7 @@ export function rejudge(resultsDir: string, which: string, at: string): RejudgeR
 export function selectCases(all: { c: BenchCase; diff: string }[], which: string): { c: BenchCase; diff: string }[] {
   if (which === "all") return all;
   if (which === "pilot") return all.filter((x) => x.c.pilot);
-  if (which === "dev" || which === "test") return all.filter((x) => x.c.split === which);
+  if (which === "dev" || which === "test" || which === "test2") return all.filter((x) => x.c.split === which);
   const ids = which.split(",");
   const out = all.filter((x) => ids.includes(x.c.id));
   if (out.length !== ids.length) throw new Error(`unknown case id in --cases ${which}`);

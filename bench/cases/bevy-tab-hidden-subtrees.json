@@ -1,0 +1,38 @@
+{
+  "id": "bevy-tab-hidden-subtrees",
+  "kind": "buggy",
+  "split": "test2",
+  "pilot": false,
+  "repo": "bevyengine/bevy",
+  "language": "Rust",
+  "commit": "4ff656569e71e070c075c0fdc8f5a4c2025fb844",
+  "commit_date": "2026-07-08T17:52:59Z",
+  "subject": "Tab navigation skips non-visible entities (#24769)",
+  "url": "https://github.com/bevyengine/bevy/commit/4ff656569e71e070c075c0fdc8f5a4c2025fb844",
+  "stats": {
+    "files": 2,
+    "added": 15,
+    "deleted": 3
+  },
+  "fix": {
+    "sha": "bda4aadfc30088758bfd29cef9cfe668d0815637",
+    "date": "2026-07-14T00:30:09.000Z",
+    "subject": "fix(tab_navigation): skip hidden subtrees during focusable gathering (#24968)",
+    "url": "https://github.com/bevyengine/bevy/commit/bda4aadfc30088758bfd29cef9cfe668d0815637",
+    "link": "pr-ref",
+    "files": [
+      "crates/bevy_input_focus/src/tab_navigation.rs"
+    ],
+    "bug": "Tab navigation skips hidden entities but still descends into their children, so menus auto-close immediately on open."
+  },
+  "faulty": [
+    {
+      "file": "crates/bevy_input_focus/src/tab_navigation.rs",
+      "lines": [
+        339,
+        341,
+        342
+      ]
+    }
+  ]
+}

@@ -1,17 +1,446 @@
 {
   "note": "Where bench/mine.ts looks for maintainer-attested (bug-introducing, fix) pairs. PLAN.md §9. `since` limits the FIX commit date (prefer fixes after the models' training data).",
-  "since": "2026-07-01",
+  "since": "2026-03-01",
   "sources": [
-    { "repo": "qemu/qemu", "language": "C", "queries": ["\"Fixes:\""], "pages": 2 },
-    { "repo": "DPDK/dpdk", "language": "C", "queries": ["\"Fixes:\""], "pages": 2 },
-    { "repo": "cilium/cilium", "language": "Go", "queries": ["\"Fixes:\""], "pages": 1 },
-    { "repo": "django/django", "language": "Python", "queries": ["\"Regression in\""], "pages": 1 },
-    { "repo": "firecracker-microvm/firecracker", "language": "Rust", "queries": ["\"Fixes:\"", "regression", "introduced"], "pages": 1 },
-    { "repo": "cloud-hypervisor/cloud-hypervisor", "language": "Rust", "queries": ["\"Fixes:\"", "regression", "introduced"], "pages": 1 },
-    { "repo": "vercel/next.js", "language": "TypeScript", "queries": ["regression", "introduced"], "pages": 1, "pr_refs": true },
-    { "repo": "angular/angular", "language": "TypeScript", "queries": ["regression", "introduced"], "pages": 1, "pr_refs": true },
-    { "repo": "mui/material-ui", "language": "TypeScript", "queries": ["regression", "introduced"], "pages": 1, "pr_refs": true },
-    { "repo": "cilium/tetragon", "language": "Go", "queries": ["\"Fixes:\"", "regression"], "pages": 1 },
-    { "repo": "tailscale/tailscale", "language": "Go", "queries": ["regression", "introduced"], "pages": 1 }
+    {
+      "repo": "qemu/qemu",
+      "language": "C",
+      "queries": [
+        "\"Fixes:\""
+      ],
+      "pages": 2
+    },
+    {
+      "repo": "DPDK/dpdk",
+      "language": "C",
+      "queries": [
+        "\"Fixes:\""
+      ],
+      "pages": 2
+    },
+    {
+      "repo": "cilium/cilium",
+      "language": "Go",
+      "queries": [
+        "\"Fixes:\""
+      ],
+      "pages": 1
+    },
+    {
+      "repo": "django/django",
+      "language": "Python",
+      "queries": [
+        "\"Regression in\""
+      ],
+      "pages": 1
+    },
+    {
+      "repo": "firecracker-microvm/firecracker",
+      "language": "Rust",
+      "queries": [
+        "\"Fixes:\"",
+        "regression",
+        "introduced"
+      ],
+      "pages": 1
+    },
+    {
+      "repo": "cloud-hypervisor/cloud-hypervisor",
+      "language": "Rust",
+      "queries": [
+        "\"Fixes:\"",
+        "regression",
+        "introduced"
+      ],
+      "pages": 1
+    },
+    {
+      "repo": "vercel/next.js",
+      "language": "TypeScript",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 1,
+      "pr_refs": true
+    },
+    {
+      "repo": "angular/angular",
+      "language": "TypeScript",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 1,
+      "pr_refs": true
+    },
+    {
+      "repo": "mui/material-ui",
+      "language": "TypeScript",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 1,
+      "pr_refs": true
+    },
+    {
+      "repo": "cilium/tetragon",
+      "language": "Go",
+      "queries": [
+        "\"Fixes:\"",
+        "regression"
+      ],
+      "pages": 1
+    },
+    {
+      "repo": "tailscale/tailscale",
+      "language": "Go",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 1
+    },
+    {
+      "repo": "pytest-dev/pytest",
+      "language": "Python",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    },
+    {
+      "repo": "pydantic/pydantic",
+      "language": "Python",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    },
+    {
+      "repo": "pandas-dev/pandas",
+      "language": "Python",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    },
+    {
+      "repo": "fastapi/fastapi",
+      "language": "Python",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    },
+    {
+      "repo": "astral-sh/uv",
+      "language": "Rust",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    },
+    {
+      "repo": "astral-sh/ruff",
+      "language": "Rust",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    },
+    {
+      "repo": "tokio-rs/tokio",
+      "language": "Rust",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    },
+    {
+      "repo": "prometheus/prometheus",
+      "language": "Go",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    },
+    {
+      "repo": "caddyserver/caddy",
+      "language": "Go",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    },
+    {
+      "repo": "etcd-io/etcd",
+      "language": "Go",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    },
+    {
+      "repo": "vitejs/vite",
+      "language": "TypeScript",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    },
+    {
+      "repo": "spring-projects/spring-framework",
+      "language": "Java",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    },
+    {
+      "repo": "python/mypy",
+      "language": "Python",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    },
+    {
+      "repo": "sqlalchemy/sqlalchemy",
+      "language": "Python",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    },
+    {
+      "repo": "aio-libs/aiohttp",
+      "language": "Python",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    },
+    {
+      "repo": "encode/httpx",
+      "language": "Python",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    },
+    {
+      "repo": "pallets/flask",
+      "language": "Python",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    },
+    {
+      "repo": "psf/requests",
+      "language": "Python",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    },
+    {
+      "repo": "vuejs/core",
+      "language": "TypeScript",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    },
+    {
+      "repo": "sveltejs/svelte",
+      "language": "TypeScript",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    },
+    {
+      "repo": "microsoft/TypeScript",
+      "language": "TypeScript",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    },
+    {
+      "repo": "denoland/deno",
+      "language": "Rust",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    },
+    {
+      "repo": "traefik/traefik",
+      "language": "Go",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    },
+    {
+      "repo": "gohugoio/hugo",
+      "language": "Go",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    },
+    {
+      "repo": "docker/cli",
+      "language": "Go",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    },
+    {
+      "repo": "hashicorp/terraform",
+      "language": "Go",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    },
+    {
+      "repo": "minio/minio",
+      "language": "Go",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    },
+    {
+      "repo": "rust-lang/cargo",
+      "language": "Rust",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    },
+    {
+      "repo": "bevyengine/bevy",
+      "language": "Rust",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    },
+    {
+      "repo": "helix-editor/helix",
+      "language": "Rust",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    },
+    {
+      "repo": "tauri-apps/tauri",
+      "language": "Rust",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    },
+    {
+      "repo": "apache/kafka",
+      "language": "Java",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    },
+    {
+      "repo": "spring-projects/spring-boot",
+      "language": "Java",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    },
+    {
+      "repo": "quarkusio/quarkus",
+      "language": "Java",
+      "queries": [
+        "regression",
+        "introduced"
+      ],
+      "pages": 2,
+      "pr_refs": true
+    }
   ]
 }

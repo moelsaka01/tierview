@@ -1,0 +1,65 @@
+{
+  "id": "dpdk-mlx5-ecpri-strict",
+  "kind": "buggy",
+  "split": "test2",
+  "pilot": false,
+  "repo": "DPDK/dpdk",
+  "language": "C",
+  "commit": "f2f75ffe14a521ee3000be2b5286ff3047f3958c",
+  "commit_date": "2025-09-01T10:36:35+02:00",
+  "subject": "net/mlx5/hws: fix ESP header match in strict mode",
+  "url": "https://github.com/DPDK/dpdk/commit/f2f75ffe14a521ee3000be2b5286ff3047f3958c",
+  "stats": {
+    "files": 1,
+    "added": 35,
+    "deleted": 3
+  },
+  "fix": {
+    "sha": "7810fe8de38c8fdda92c8eaf151b27e817d7f2fd",
+    "date": "2026-11-11T14:17:03.000+01:00",
+    "subject": "net/mlx5/hws: fix eCPRI flow matching in strict mode",
+    "url": "https://github.com/DPDK/dpdk/commit/7810fe8de38c8fdda92c8eaf151b27e817d7f2fd",
+    "link": "fixes-trailer",
+    "files": [
+      "drivers/net/mlx5/hws/mlx5dr_definer.c"
+    ],
+    "bug": "The shared flex-parser helper adds ESP protocol and UDP port matches in strict mode, so typed eCPRI rules acquire an unrelated IP protocol 50 condition and miss their packets."
+  },
+  "faulty": [
+    {
+      "file": "drivers/net/mlx5/hws/mlx5dr_definer.c",
+      "lines": [
+        2488,
+        2489,
+        2502,
+        2503,
+        2504,
+        2505,
+        2506,
+        2507,
+        2508,
+        2509,
+        2510,
+        2511,
+        2512,
+        2513,
+        2514,
+        2515,
+        2516,
+        2517,
+        2518,
+        2519,
+        2520,
+        2521,
+        2522,
+        2523,
+        2524,
+        2525,
+        2526,
+        2527,
+        2579,
+        2701
+      ]
+    }
+  ]
+}

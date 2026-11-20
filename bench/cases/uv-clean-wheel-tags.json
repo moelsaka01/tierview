@@ -1,0 +1,19 @@
+{
+  "id": "uv-clean-wheel-tags",
+  "kind": "clean",
+  "split": "test2",
+  "pilot": false,
+  "repo": "astral-sh/uv",
+  "language": "Rust",
+  "commit": "99f1f4fee4b886627ab082d399d759636a124d1a",
+  "commit_date": "2025-08-24T14:00:08-04:00",
+  "subject": "Move wheel tag methods to `WheelTag` (#15487)",
+  "url": "https://github.com/astral-sh/uv/commit/99f1f4fee4b886627ab082d399d759636a124d1a",
+  "stats": {
+    "files": 2,
+    "added": 38,
+    "deleted": 16
+  },
+  "fix": null,
+  "faulty": []
+}

@@ -1,0 +1,41 @@
+{
+  "id": "django-nonatomic-async",
+  "kind": "buggy",
+  "split": "test2",
+  "pilot": false,
+  "repo": "django/django",
+  "language": "Python",
+  "commit": "bdbda29c3e126754c3ae04ceb5c5d35d49aae01c",
+  "commit_date": "2026-07-13T11:17:57+02:00",
+  "subject": "Fixed #29303 -- Avoided mutating original view in non_atomic_requests().",
+  "url": "https://github.com/django/django/commit/bdbda29c3e126754c3ae04ceb5c5d35d49aae01c",
+  "stats": {
+    "files": 2,
+    "added": 23,
+    "deleted": 4
+  },
+  "fix": {
+    "sha": "93d7e82b6a67aa56a2d9dababfefb8bda543786e",
+    "date": "2026-10-09T09:15:23.000+02:00",
+    "subject": "Fixed #37382, Refs #29303 -- Made @non_atomic_requests recognize async views.",
+    "url": "https://github.com/django/django/commit/93d7e82b6a67aa56a2d9dababfefb8bda543786e",
+    "link": "regression-in",
+    "files": [
+      "django/db/transaction.py",
+      "tests/handlers/tests.py",
+      "tests/handlers/urls.py",
+      "tests/handlers/views.py"
+    ],
+    "bug": "@non_atomic_requests does not recognize async views."
+  },
+  "faulty": [
+    {
+      "file": "django/db/transaction.py",
+      "lines": [
+        345,
+        346,
+        347
+      ]
+    }
+  ]
+}

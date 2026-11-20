@@ -1,0 +1,19 @@
+{
+  "id": "pandas-clean-mask-missing",
+  "kind": "clean",
+  "split": "test2",
+  "pilot": false,
+  "repo": "pandas-dev/pandas",
+  "language": "Python",
+  "commit": "116d3e9acd0ee52754d9d0b59dabb8e194c9b323",
+  "commit_date": "2025-08-05T10:19:35-07:00",
+  "subject": "REF: simplify mask_missing (#62049)",
+  "url": "https://github.com/pandas-dev/pandas/commit/116d3e9acd0ee52754d9d0b59dabb8e194c9b323",
+  "stats": {
+    "files": 2,
+    "added": 30,
+    "deleted": 50
+  },
+  "fix": null,
+  "faulty": []
+}

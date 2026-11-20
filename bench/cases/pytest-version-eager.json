@@ -1,0 +1,47 @@
+{
+  "id": "pytest-version-eager",
+  "kind": "buggy",
+  "split": "test2",
+  "pilot": false,
+  "repo": "pytest-dev/pytest",
+  "language": "Python",
+  "commit": "661682c25a9ff844a66ebd9b95d9925b8c4b65c8",
+  "commit_date": "2025-10-11T18:20:18-03:00",
+  "subject": "Handle --version eagerly to avoid loading the entire infrastructure (#13575)",
+  "url": "https://github.com/pytest-dev/pytest/commit/661682c25a9ff844a66ebd9b95d9925b8c4b65c8",
+  "stats": {
+    "files": 6,
+    "added": 52,
+    "deleted": 45
+  },
+  "fix": {
+    "sha": "d72943a57266ef368fb3498a3fd136cbf1c7aee6",
+    "date": "2026-04-21T08:54:17.000-03:00",
+    "subject": "Fix `-V` to show version information (#14382)",
+    "url": "https://github.com/pytest-dev/pytest/commit/d72943a57266ef368fb3498a3fd136cbf1c7aee6",
+    "link": "pr-ref",
+    "files": [
+      "changelog/14381.bugfix.rst",
+      "src/_pytest/config/__init__.py",
+      "testing/test_helpconfig.py"
+    ],
+    "bug": "Handling --version eagerly broke -V, which no longer shows version information."
+  },
+  "faulty": [
+    {
+      "file": "src/_pytest/config/__init__.py",
+      "lines": [
+        152,
+        154
+      ]
+    },
+    {
+      "file": "testing/test_helpconfig.py",
+      "lines": [
+        19,
+        20,
+        22
+      ]
+    }
+  ]
+}

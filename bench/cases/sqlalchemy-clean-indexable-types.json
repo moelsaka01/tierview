@@ -1,0 +1,19 @@
+{
+  "id": "sqlalchemy-clean-indexable-types",
+  "kind": "clean",
+  "split": "test2",
+  "pilot": false,
+  "repo": "sqlalchemy/sqlalchemy",
+  "language": "Python",
+  "commit": "b2aa0e2575d3e779a9fc757b04896e9b61045aa8",
+  "commit_date": "2025-10-04T21:10:38+02:00",
+  "subject": "Add type annotations to indexable extension code",
+  "url": "https://github.com/sqlalchemy/sqlalchemy/commit/b2aa0e2575d3e779a9fc757b04896e9b61045aa8",
+  "stats": {
+    "files": 3,
+    "added": 106,
+    "deleted": 22
+  },
+  "fix": null,
+  "faulty": []
+}

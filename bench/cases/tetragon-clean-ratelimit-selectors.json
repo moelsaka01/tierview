@@ -1,0 +1,19 @@
+{
+  "id": "tetragon-clean-ratelimit-selectors",
+  "kind": "clean",
+  "split": "test2",
+  "pilot": false,
+  "repo": "cilium/tetragon",
+  "language": "Go",
+  "commit": "054ef6f58e8fc2ee92afd9a9f5ae48bd71670e20",
+  "commit_date": "2025-08-29T08:55:15+02:00",
+  "subject": "tetragon: Move selectorsHaveRateLimit to selectors.HasRateLimit",
+  "url": "https://github.com/cilium/tetragon/commit/054ef6f58e8fc2ee92afd9a9f5ae48bd71670e20",
+  "stats": {
+    "files": 2,
+    "added": 12,
+    "deleted": 16
+  },
+  "fix": null,
+  "faulty": []
+}

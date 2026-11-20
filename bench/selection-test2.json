@@ -1,0 +1,127 @@
+[
+ {
+  "id": "django-nonatomic-async",
+  "kind": "buggy",
+  "split": "test2",
+  "repo": "django/django",
+  "sha": "bdbda29c3e",
+  "fix_sha": "93d7e82b6a",
+  "bug": "@non_atomic_requests does not recognize async views."
+ },
+ {
+  "id": "django-yaml-sort-keys-crash",
+  "kind": "buggy",
+  "split": "test2",
+  "repo": "django/django",
+  "sha": "7142667340",
+  "fix_sha": "a269574f1b",
+  "bug": "The YAML serializer crashes when the sort_keys option is passed."
+ },
+ {
+  "id": "django-admin-list-display-relation",
+  "kind": "buggy",
+  "split": "test2",
+  "repo": "django/django",
+  "sha": "4b2b4bf0ac",
+  "fix_sha": "92470ad374",
+  "bug": "ModelAdmin.list_display crashes for second-degree relations after the boolean-icon change."
+ },
+ {
+  "id": "bevy-tab-hidden-subtrees",
+  "kind": "buggy",
+  "split": "test2",
+  "repo": "bevyengine/bevy",
+  "sha": "4ff656569e",
+  "fix_sha": "bda4aadfc3",
+  "bug": "Tab navigation skips hidden entities but still descends into their children, so menus auto-close immediately on open."
+ },
+ {
+  "id": "bevy-option-scene-deps",
+  "kind": "buggy",
+  "split": "test2",
+  "repo": "bevyengine/bevy",
+  "sha": "5d5e3f9551",
+  "fix_sha": "d0c5d20e09",
+  "bug": "Scene for Option<P> does not register the dependencies of the wrapped scene."
+ },
+ {
+  "id": "tetragon-notailcall-execve-jit",
+  "kind": "buggy",
+  "split": "test2",
+  "repo": "cilium/tetragon",
+  "sha": "6b4fc5ad57",
+  "fix_sha": "a730508a5e",
+  "bug": "The no-tail-call execve program grows until its jumps no longer fit under bpf_jit_harden=2 and fails to load on some kernel variants."
+ },
+ {
+  "id": "pytest-version-eager",
+  "kind": "buggy",
+  "split": "test2",
+  "repo": "pytest-dev/pytest",
+  "sha": "661682c25a",
+  "fix_sha": "d72943a572",
+  "bug": "Handling --version eagerly broke -V, which no longer shows version information."
+ },
+ {
+  "id": "dpdk-ntb-peer-status-atomic",
+  "kind": "buggy",
+  "split": "test2",
+  "repo": "DPDK/dpdk",
+  "sha": "62012a7681",
+  "fix_sha": "6df69aaf98",
+  "bug": "The peer device status, written by the interrupt thread, is read with plain accesses that need not see the update (data race)."
+ },
+ {
+  "id": "dpdk-mlx5-ecpri-strict",
+  "kind": "buggy",
+  "split": "test2",
+  "repo": "DPDK/dpdk",
+  "sha": "f2f75ffe14",
+  "fix_sha": "7810fe8de3",
+  "bug": "The shared flex-parser helper adds ESP protocol and UDP port matches in strict mode, so typed eCPRI rules acquire an unrelated IP protocol 50 condition and miss their packets."
+ },
+ {
+  "id": "dpdk-mlx5-egress-group-shift",
+  "kind": "buggy",
+  "split": "test2",
+  "repo": "DPDK/dpdk",
+  "sha": "c41f621786",
+  "fix_sha": "e08370a225",
+  "bug": "After removing repr_matching_en, the user group shift is enabled only for extended metadata mode, so external egress group 0 rules land on the root table."
+ },
+ {
+  "id": "uv-clean-wheel-tags",
+  "kind": "clean",
+  "split": "test2",
+  "repo": "astral-sh/uv",
+  "sha": "99f1f4fee4"
+ },
+ {
+  "id": "uv-clean-format-unmanaged",
+  "kind": "clean",
+  "split": "test2",
+  "repo": "astral-sh/uv",
+  "sha": "c59ead398d"
+ },
+ {
+  "id": "pandas-clean-mask-missing",
+  "kind": "clean",
+  "split": "test2",
+  "repo": "pandas-dev/pandas",
+  "sha": "116d3e9acd"
+ },
+ {
+  "id": "sqlalchemy-clean-indexable-types",
+  "kind": "clean",
+  "split": "test2",
+  "repo": "sqlalchemy/sqlalchemy",
+  "sha": "b2aa0e2575"
+ },
+ {
+  "id": "tetragon-clean-ratelimit-selectors",
+  "kind": "clean",
+  "split": "test2",
+  "repo": "cilium/tetragon",
+  "sha": "054ef6f58e"
+ }
+]

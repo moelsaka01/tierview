@@ -1,0 +1,54 @@
+diff --git a/crates/bevy_input_focus/Cargo.toml b/crates/bevy_input_focus/Cargo.toml
+index 01ee4e433..26a14a05b 100644
+--- a/crates/bevy_input_focus/Cargo.toml
++++ b/crates/bevy_input_focus/Cargo.toml
+@@ -71,6 +71,7 @@ libm = ["bevy_math/libm", "bevy_window/libm"]
+ [dependencies]
+ # bevy
+ bevy_app = { path = "../bevy_app", version = "0.20.0-dev", default-features = false }
++bevy_camera = { path = "../bevy_camera", version = "0.20.0-dev", default-features = false }
+ bevy_ecs = { path = "../bevy_ecs", version = "0.20.0-dev", default-features = false }
+ bevy_input = { path = "../bevy_input", version = "0.20.0-dev", default-features = false }
+ bevy_math = { path = "../bevy_math", version = "0.20.0-dev", default-features = false }
+diff --git a/crates/bevy_input_focus/src/tab_navigation.rs b/crates/bevy_input_focus/src/tab_navigation.rs
+index bcc619736..371373fc3 100644
+--- a/crates/bevy_input_focus/src/tab_navigation.rs
++++ b/crates/bevy_input_focus/src/tab_navigation.rs
+@@ -26,6 +26,7 @@
+ 
+ use alloc::vec::Vec;
+ use bevy_app::{App, Plugin, Startup};
++use bevy_camera::visibility::InheritedVisibility;
+ use bevy_ecs::{
+     component::Component,
+     entity::Entity,
+@@ -163,7 +164,12 @@ pub struct TabNavigation<'w, 's> {
+     tabindex_query: Query<
+         'w,
+         's,
+-        (Entity, Option<&'static TabIndex>, Option<&'static Children>),
++        (
++            Entity,
++            Option<&'static TabIndex>,
++            Option<&'static Children>,
++            Option<&'static InheritedVisibility>,
++        ),
+         Without<TabGroup>,
+     >,
+     // Query for parents.
+@@ -327,8 +333,13 @@ impl TabNavigation<'_, '_> {
+         parent: Entity,
+         tab_group_idx: usize,
+     ) {
+-        if let Ok((entity, tabindex, children)) = self.tabindex_query.get(parent) {
+-            if let Some(tabindex) = tabindex
++        if let Ok((entity, tabindex, children, inherited_visibility)) =
++            self.tabindex_query.get(parent)
++        {
++            // Skip entities that are not visible in the hierarchy. An entity without an
++            // `InheritedVisibility` component (e.g. a non-UI entity) is treated as visible.
++            if inherited_visibility.is_none_or(|v| v.get())
++                && let Some(tabindex) = tabindex
+                 && tabindex.0 >= 0
+             {
+                 out.push((entity, *tabindex, tab_group_idx));

@@ -1,0 +1,36 @@
+{
+  "id": "dpdk-mlx5-egress-group-shift",
+  "kind": "buggy",
+  "split": "test2",
+  "pilot": false,
+  "repo": "DPDK/dpdk",
+  "language": "C",
+  "commit": "c41f621786ff2892ac3504368c966230a41acda3",
+  "commit_date": "2025-11-18T12:33:59+01:00",
+  "subject": "net/mlx5: remove representor matching devarg",
+  "url": "https://github.com/DPDK/dpdk/commit/c41f621786ff2892ac3504368c966230a41acda3",
+  "stats": {
+    "files": 11,
+    "added": 24,
+    "deleted": 300
+  },
+  "fix": {
+    "sha": "e08370a2254f3cdf43dddb18b9ad2054836880fd",
+    "date": "2026-11-11T14:17:01.000+01:00",
+    "subject": "net/mlx5: fix external egress flow group translation",
+    "url": "https://github.com/DPDK/dpdk/commit/e08370a2254f3cdf43dddb18b9ad2054836880fd",
+    "link": "fixes-trailer",
+    "files": [
+      "drivers/net/mlx5/mlx5_flow_hw.c"
+    ],
+    "bug": "After removing repr_matching_en, the user group shift is enabled only for extended metadata mode, so external egress group 0 rules land on the root table."
+  },
+  "faulty": [
+    {
+      "file": "drivers/net/mlx5/mlx5_flow_hw.c",
+      "lines": [
+        5324
+      ]
+    }
+  ]
+}

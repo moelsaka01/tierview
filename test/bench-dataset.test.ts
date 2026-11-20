@@ -65,7 +65,9 @@ describe("validation helpers", () => {
 });
 
 describe("dataset", () => {
-  const cases = loadCases();
+  const all = loadCases();
+  // test2 (added 2026-11-20) is a separate held-out set with its own test below.
+  const cases = all.filter((x) => x.c.split !== "test2");
 
   it("has 30 cases: 20 buggy, 10 clean, dev 10 (5 pilot), test 20, at most 6 per repo, 4+ languages", () => {
     const n = (f: (c: (typeof cases)[number]["c"]) => boolean) => cases.filter((x) => f(x.c)).length;
@@ -80,8 +82,16 @@ describe("dataset", () => {
     expect(new Set(cases.map((x) => x.c.language)).size).toBeGreaterThanOrEqual(4);
   });
 
+  it("test2 has 10 buggy and 5 clean cases, none reusing an earlier bug commit", () => {
+    const t2 = all.filter((x) => x.c.split === "test2");
+    expect(t2).toHaveLength(15);
+    expect(t2.filter((x) => x.c.kind === "buggy")).toHaveLength(10);
+    const first = new Set(cases.map((x) => x.c.commit));
+    for (const { c } of t2) expect(first.has(c.commit), c.id).toBe(false);
+  });
+
   it("every buggy case has a faulty line inside a hunk of its diff; clean cases have none", () => {
-    for (const { c, diff } of cases) {
+    for (const { c, diff } of all) {
       const hunks = parseDiff(diff);
       expect(hunks.length, c.id).toBeGreaterThan(0);
       if (c.kind === "buggy") expect(faultyHunks(hunks, c.faulty).length, c.id).toBeGreaterThan(0);

@@ -1,0 +1,212 @@
+diff --git a/crates/uv/src/commands/project/format.rs b/crates/uv/src/commands/project/format.rs
+index baa4e7fb0..5a2caf19c 100644
+--- a/crates/uv/src/commands/project/format.rs
++++ b/crates/uv/src/commands/project/format.rs
+@@ -11,7 +11,7 @@ use uv_client::{BaseClientBuilder, retries_from_env};
+ use uv_pep440::Version;
+ use uv_preview::{Preview, PreviewFeatures};
+ use uv_warnings::warn_user;
+-use uv_workspace::{DiscoveryOptions, VirtualProject, WorkspaceCache};
++use uv_workspace::{DiscoveryOptions, VirtualProject, WorkspaceCache, WorkspaceError};
+ 
+ use crate::child::run_to_completion;
+ use crate::commands::ExitStatus;
+@@ -39,9 +39,21 @@ pub(crate) async fn format(
+     }
+ 
+     let workspace_cache = WorkspaceCache::default();
+-    let project =
+-        VirtualProject::discover(project_dir, &DiscoveryOptions::default(), &workspace_cache)
+-            .await?;
++    let target_dir =
++        match VirtualProject::discover(project_dir, &DiscoveryOptions::default(), &workspace_cache)
++            .await
++        {
++            // If we found a project, we use the project root
++            Ok(proj) => proj.root().to_owned(),
++            // If there is a problem finding a project, we just use the provided directory,
++            // e.g., for unmanaged projects
++            Err(
++                WorkspaceError::MissingPyprojectToml
++                | WorkspaceError::MissingProject(_)
++                | WorkspaceError::NonWorkspace(_),
++            ) => project_dir.to_owned(),
++            Err(err) => return Err(err.into()),
++        };
+ 
+     // Parse version if provided
+     let version = version.as_deref().map(Version::from_str).transpose()?;
+@@ -67,8 +79,7 @@ pub(crate) async fn format(
+     .with_context(|| format!("Failed to install ruff {version}"))?;
+ 
+     let mut command = Command::new(&ruff_path);
+-    // Run ruff in the project root
+-    command.current_dir(project.root());
++    command.current_dir(target_dir);
+     command.arg("format");
+ 
+     if check {
+diff --git a/crates/uv/tests/it/format.rs b/crates/uv/tests/it/format.rs
+index b100bd792..fe8251e75 100644
+--- a/crates/uv/tests/it/format.rs
++++ b/crates/uv/tests/it/format.rs
+@@ -43,6 +43,108 @@ fn format_project() -> Result<()> {
+     Ok(())
+ }
+ 
++#[test]
++fn format_missing_pyproject_toml() -> Result<()> {
++    let context = TestContext::new_with_versions(&[]);
++
++    // Create an unformatted Python file
++    let main_py = context.temp_dir.child("main.py");
++    main_py.write_str(indoc! {r"
++        x    = 1
++    "})?;
++
++    uv_snapshot!(context.filters(), context.format(), @r"
++    success: true
++    exit_code: 0
++    ----- stdout -----
++    1 file reformatted
++
++    ----- stderr -----
++    warning: `uv format` is experimental and may change without warning. Pass `--preview-features format` to disable this warning.
++    ");
++
++    // Check that the file was formatted
++    let formatted_content = fs_err::read_to_string(&main_py)?;
++    assert_snapshot!(formatted_content, @r"
++        x = 1
++    ");
++
++    Ok(())
++}
++
++#[test]
++fn format_missing_project_in_pyproject_toml() -> Result<()> {
++    let context = TestContext::new_with_versions(&[]);
++
++    // Create an empty pyproject.toml with no [project] section
++    context.temp_dir.child("pyproject.toml");
++
++    // Create an unformatted Python file
++    let main_py = context.temp_dir.child("main.py");
++    main_py.write_str(indoc! {r"
++        x    = 1
++    "})?;
++
++    uv_snapshot!(context.filters(), context.format(), @r"
++    success: true
++    exit_code: 0
++    ----- stdout -----
++    1 file reformatted
++
++    ----- stderr -----
++    warning: `uv format` is experimental and may change without warning. Pass `--preview-features format` to disable this warning.
++    ");
++
++    // Check that the file was formatted
++    let formatted_content = fs_err::read_to_string(&main_py)?;
++    assert_snapshot!(formatted_content, @r"
++        x = 1
++    ");
++
++    Ok(())
++}
++
++#[test]
++fn format_unmanaged_project() -> Result<()> {
++    let context = TestContext::new_with_versions(&[]);
++
++    let pyproject_toml = context.temp_dir.child("pyproject.toml");
++    pyproject_toml.write_str(indoc! {r#"
++        [project]
++        name = "project"
++        version = "0.1.0"
++        requires-python = ">=3.12"
++        dependencies = []
++
++        [tool.uv]
++        managed = false
++    "#})?;
++
++    // Create an unformatted Python file
++    let main_py = context.temp_dir.child("main.py");
++    main_py.write_str(indoc! {r"
++        x    = 1
++    "})?;
++
++    uv_snapshot!(context.filters(), context.format(), @r"
++    success: true
++    exit_code: 0
++    ----- stdout -----
++    1 file reformatted
++
++    ----- stderr -----
++    warning: `uv format` is experimental and may change without warning. Pass `--preview-features format` to disable this warning.
++    ");
++
++    // Check that the file was formatted
++    let formatted_content = fs_err::read_to_string(&main_py)?;
++    assert_snapshot!(formatted_content, @r"
++        x = 1
++    ");
++
++    Ok(())
++}
++
+ #[test]
+ fn format_from_project_root() -> Result<()> {
+     let context = TestContext::new_with_versions(&[]);
+@@ -135,6 +237,50 @@ fn format_relative_project() -> Result<()> {
+     Ok(())
+ }
+ 
++#[test]
++fn format_fails_malformed_pyproject() -> Result<()> {
++    let context = TestContext::new_with_versions(&[]);
++
++    let pyproject_toml = context.temp_dir.child("pyproject.toml");
++    pyproject_toml.write_str("malformed pyproject.toml")?;
++
++    // Create an unformatted Python file
++    let main_py = context.temp_dir.child("main.py");
++    main_py.write_str(indoc! {r"
++        x    = 1
++    "})?;
++
++    uv_snapshot!(context.filters(), context.format(), @r"
++    success: false
++    exit_code: 2
++    ----- stdout -----
++
++    ----- stderr -----
++    warning: Failed to parse `pyproject.toml` during settings discovery:
++      TOML parse error at line 1, column 11
++        |
++      1 | malformed pyproject.toml
++        |           ^
++      key with no value, expected `=`
++
++    warning: `uv format` is experimental and may change without warning. Pass `--preview-features format` to disable this warning.
++    error: Failed to parse: `pyproject.toml`
++      Caused by: TOML parse error at line 1, column 11
++      |
++    1 | malformed pyproject.toml
++      |           ^
++    key with no value, expected `=`
++    ");
++
++    // Check that the file is not formatted
++    let formatted_content = fs_err::read_to_string(&main_py)?;
++    assert_snapshot!(formatted_content, @r"
++        x    = 1
++    ");
++
++    Ok(())
++}
++
+ #[test]
+ fn format_check() -> Result<()> {
+     let context = TestContext::new_with_versions(&[]);

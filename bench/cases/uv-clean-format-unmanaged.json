@@ -1,0 +1,19 @@
+{
+  "id": "uv-clean-format-unmanaged",
+  "kind": "clean",
+  "split": "test2",
+  "pilot": false,
+  "repo": "astral-sh/uv",
+  "language": "Rust",
+  "commit": "c59ead398d37944bf55337c24c6550c72692ed2c",
+  "commit_date": "2025-09-05T13:14:41-05:00",
+  "subject": "Allow `uv format` in unmanaged projects (#15553)",
+  "url": "https://github.com/astral-sh/uv/commit/c59ead398d37944bf55337c24c6550c72692ed2c",
+  "stats": {
+    "files": 2,
+    "added": 163,
+    "deleted": 6
+  },
+  "fix": null,
+  "faulty": []
+}

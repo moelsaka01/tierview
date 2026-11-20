@@ -1,0 +1,613 @@
+diff --git a/doc/guides/nics/mlx5.rst b/doc/guides/nics/mlx5.rst
+index 84dfbdb61c..2cf95578de 100644
+--- a/doc/guides/nics/mlx5.rst
++++ b/doc/guides/nics/mlx5.rst
+@@ -758,24 +758,6 @@ for an additional list of options shared with other mlx5 drivers.
+ 
+     <Primary_PCI_BDF>,representor=pf[0,2]vf[0-2]
+ 
+-- ``repr_matching_en`` parameter [int]
+-
+-  - 0. If representor matching is disabled, then there will be no implicit
+-    item added. As a result, ingress flow rules will match traffic
+-    coming to any port, not only the port on which flow rule is created.
+-    Because of that, default flow rules for ingress traffic cannot be created
+-    and port starts in isolated mode by default. Port cannot be switched back
+-    to non-isolated mode.
+-
+-  - 1. If representor matching is enabled (default setting),
+-    then each ingress pattern template has an implicit REPRESENTED_PORT
+-    item added. Flow rules based on this pattern template will match
+-    the vport associated with port on which rule is created.
+-
+-  .. note::
+-
+-     This parameter is deprecated and will be removed in future releases.
+-
+ - ``max_dump_files_num`` parameter [int]
+ 
+   The maximum number of files per PMD entity that may be created for debug information.
+@@ -2359,7 +2341,6 @@ Runtime configuration
+ 
+ The behaviour of port representors is configured
+ with some :ref:`parameters <mlx5_representor_params>`.
+-The option ``repr_matching_en`` has an impact on flow steering.
+ 
+ Limitations
+ ^^^^^^^^^^^
+@@ -2369,9 +2350,6 @@ Limitations
+ #. A driver limitation for ``RTE_FLOW_ACTION_TYPE_PORT_REPRESENTOR`` action
+    restricts the ``port_id`` configuration to only accept the value ``0xffff``,
+    indicating the E-Switch manager.
+-   If the ``repr_matching_en`` parameter is enabled, the traffic will be directed
+-   to the representor of the source virtual port (SF/VF), while if it is disabled,
+-   the traffic will be routed based on the steering rules in the ingress domain.
+ 
+ Examples
+ ^^^^^^^^
+@@ -3246,7 +3224,7 @@ Limitations
+ 
+ #. Only single item is supported per pattern template.
+ 
+-#. In switch mode, when ``repr_matching_en`` is enabled (default setting),
++#. In switch mode,
+    matching ``RTE_FLOW_ITEM_TYPE_COMPARE`` is not supported for ``ingress`` rules.
+    This is because an implicit ``RTE_FLOW_ITEM_TYPE_REPRESENTED_PORT``
+    needs to be added to the matcher,
+diff --git a/doc/guides/rel_notes/deprecation.rst b/doc/guides/rel_notes/deprecation.rst
+index 1e60ac4e82..8653d6ca03 100644
+--- a/doc/guides/rel_notes/deprecation.rst
++++ b/doc/guides/rel_notes/deprecation.rst
+@@ -147,14 +147,3 @@ Deprecation Notices
+   This change will not result in any feature loss,
+   as the fallback scalar paths which have feature parity with SSE
+   will be used in the cases where the SSE paths would have been used.
+-
+-* net/mlx5: ``repr_matching_en`` device argument is deprecated
+-  and will be removed in DPDK 25.11 release.
+-  With disabled representor matching, behavior of Rx datapath in mlx5 PMD
+-  is incompatible with current DPDK representor model.
+-  Packets from any E-Switch port can arrive on any representor,
+-  depending only on created flow rules.
+-  Such working model should be exposed directly in DPDK ethdev API,
+-  without relying on flow API.
+-  Currently there is no alternative API
+-  providing the same functionality as with ``repr_matching_en`` set to 0.
+diff --git a/doc/guides/rel_notes/release_25_11.rst b/doc/guides/rel_notes/release_25_11.rst
+index 76cab94fb9..83e86ada64 100644
+--- a/doc/guides/rel_notes/release_25_11.rst
++++ b/doc/guides/rel_notes/release_25_11.rst
+@@ -244,6 +244,14 @@ Removed Items
+   the functions ``rte_tel_data_add_array_u64`` and ``rte_tel_data_add_dict_u64`` are removed.
+   They are replaced by ``rte_tel_data_add_array_uint`` and ``rte_tel_data_add_dict_uint`` respectively.
+ 
++* net/mlx5: ``repr_matching_en`` device argument has been removed.
++  Applications which disabled this option were able to receive traffic
++  from any physical port/VF/SF on any representor port.
++  Specifically, in most cases, this was used to process all traffic on representor port
++  which is a transfer proxy port.
++  Similar behavior in mlx5 PMD can be achieved without this device argument,
++  by using ``RTE_FLOW_ACTION_TYPE_RSS`` in transfer flow rules.
++
+ 
+ API Changes
+ -----------
+diff --git a/drivers/net/mlx5/linux/mlx5_os.c b/drivers/net/mlx5/linux/mlx5_os.c
+index 8026a68702..e642e2664e 100644
+--- a/drivers/net/mlx5/linux/mlx5_os.c
++++ b/drivers/net/mlx5/linux/mlx5_os.c
+@@ -1787,22 +1787,6 @@ err_secondary:
+ 			err = EINVAL;
+ 			goto error;
+ 		}
+-		/*
+-		 * If representor matching is disabled, PMD cannot create default flow rules
+-		 * to receive traffic for all ports, since implicit source port match is not added.
+-		 * Isolated mode is forced.
+-		 */
+-		if (priv->sh->config.dv_esw_en && !priv->sh->config.repr_matching) {
+-			err = mlx5_flow_isolate(eth_dev, 1, NULL);
+-			if (err < 0) {
+-				err = -err;
+-				goto error;
+-			}
+-			DRV_LOG(WARNING, "port %u ingress traffic is restricted to defined "
+-					 "flow rules (isolated mode) since representor "
+-					 "matching is disabled",
+-				eth_dev->data->port_id);
+-		}
+ 		eth_dev->data->dev_flags |= RTE_ETH_DEV_FLOW_OPS_THREAD_SAFE;
+ 		return eth_dev;
+ #else
+diff --git a/drivers/net/mlx5/mlx5.c b/drivers/net/mlx5/mlx5.c
+index 0c0a6343bb..d39319efd1 100644
+--- a/drivers/net/mlx5/mlx5.c
++++ b/drivers/net/mlx5/mlx5.c
+@@ -182,9 +182,6 @@
+ /* HW steering counter's query interval. */
+ #define MLX5_HWS_CNT_CYCLE_TIME "svc_cycle_time"
+ 
+-/* Device parameter to control representor matching in ingress/egress flows with HWS. */
+-#define MLX5_REPR_MATCHING_EN "repr_matching_en"
+-
+ /*
+  * Alignment of the Tx queue starting address,
+  * If not set, using separate umem and MR for each TxQ.
+@@ -1432,8 +1429,6 @@ mlx5_dev_args_check_handler(const char *key, const char *val, void *opaque)
+ 		config->cnt_svc.service_core = tmp;
+ 	} else if (strcmp(MLX5_HWS_CNT_CYCLE_TIME, key) == 0) {
+ 		config->cnt_svc.cycle_time = tmp;
+-	} else if (strcmp(MLX5_REPR_MATCHING_EN, key) == 0) {
+-		config->repr_matching = !!tmp;
+ 	} else if (strcmp(MLX5_TXQ_MEM_ALGN, key) == 0) {
+ 		config->txq_mem_algn = (uint32_t)tmp;
+ 	}
+@@ -1513,7 +1508,6 @@ mlx5_shared_dev_ctx_args_config(struct mlx5_dev_ctx_shared *sh,
+ 		MLX5_FDB_DEFAULT_RULE_EN,
+ 		MLX5_HWS_CNT_SERVICE_CORE,
+ 		MLX5_HWS_CNT_CYCLE_TIME,
+-		MLX5_REPR_MATCHING_EN,
+ 		MLX5_TXQ_MEM_ALGN,
+ 		NULL,
+ 	};
+@@ -1544,7 +1538,6 @@ mlx5_shared_dev_ctx_args_config(struct mlx5_dev_ctx_shared *sh,
+ 	config->fdb_def_rule = 1;
+ 	config->cnt_svc.cycle_time = MLX5_CNT_SVC_CYCLE_TIME_DEFAULT;
+ 	config->cnt_svc.service_core = rte_get_main_lcore();
+-	config->repr_matching = 1;
+ 	config->txq_mem_algn = log2above(alignment);
+ 	if (mkvlist != NULL) {
+ 		/* Process parameters. */
+@@ -1599,11 +1592,6 @@ mlx5_shared_dev_ctx_args_config(struct mlx5_dev_ctx_shared *sh,
+ 			config->dv_xmeta_en);
+ 		config->dv_xmeta_en = MLX5_XMETA_MODE_LEGACY;
+ 	}
+-	if (config->dv_flow_en != 2 && !config->repr_matching) {
+-		DRV_LOG(DEBUG, "Disabling representor matching is valid only "
+-			       "when HW Steering is enabled.");
+-		config->repr_matching = 1;
+-	}
+ 	if (config->tx_pp && !sh->dev_cap.txpp_en) {
+ 		DRV_LOG(ERR, "Packet pacing is not supported.");
+ 		rte_errno = ENODEV;
+@@ -1658,7 +1646,6 @@ mlx5_shared_dev_ctx_args_config(struct mlx5_dev_ctx_shared *sh,
+ 	DRV_LOG(DEBUG, "\"allow_duplicate_pattern\" is %u.",
+ 		config->allow_duplicate_pattern);
+ 	DRV_LOG(DEBUG, "\"fdb_def_rule_en\" is %u.", config->fdb_def_rule);
+-	DRV_LOG(DEBUG, "\"repr_matching_en\" is %u.", config->repr_matching);
+ 	DRV_LOG(DEBUG, "\"txq_mem_algn\" is %u.", config->txq_mem_algn);
+ 	return 0;
+ }
+diff --git a/drivers/net/mlx5/mlx5.h b/drivers/net/mlx5/mlx5.h
+index 7e4bfacd11..966e802f5f 100644
+--- a/drivers/net/mlx5/mlx5.h
++++ b/drivers/net/mlx5/mlx5.h
+@@ -397,7 +397,6 @@ struct mlx5_sh_config {
+ 	uint32_t lro_allowed:1; /* Whether LRO is allowed. */
+ 	/* Allow/Prevent the duplicate rules pattern. */
+ 	uint32_t fdb_def_rule:1; /* Create FDB default jump rule */
+-	uint32_t repr_matching:1; /* Enable implicit vport matching in HWS FDB. */
+ 	uint32_t txq_mem_algn; /* logarithm value of the TxQ address alignment. */
+ 	struct {
+ 		uint16_t service_core;
+diff --git a/drivers/net/mlx5/mlx5_flow.c b/drivers/net/mlx5/mlx5_flow.c
+index ed67a90a22..2c48f1b01b 100644
+--- a/drivers/net/mlx5/mlx5_flow.c
++++ b/drivers/net/mlx5/mlx5_flow.c
+@@ -8818,10 +8818,7 @@ mlx5_flow_isolate(struct rte_eth_dev *dev,
+ 				   "port must be stopped first");
+ 		return -rte_errno;
+ 	}
+-	if (!enable && !priv->sh->config.repr_matching)
+-		return rte_flow_error_set(error, ENOTSUP, RTE_FLOW_ERROR_TYPE_UNSPECIFIED, NULL,
+-					  "isolated mode cannot be disabled when "
+-					  "representor matching is disabled");
++
+ 	priv->isolated = !!enable;
+ 	if (enable)
+ 		dev->dev_ops = &mlx5_dev_ops_isolate;
+diff --git a/drivers/net/mlx5/mlx5_flow.h b/drivers/net/mlx5/mlx5_flow.h
+index 83a4adc971..db408d7b38 100644
+--- a/drivers/net/mlx5/mlx5_flow.h
++++ b/drivers/net/mlx5/mlx5_flow.h
+@@ -3033,9 +3033,6 @@ struct mlx5_flow_hw_ctrl_fdb {
+ 	struct rte_flow_pattern_template *port_items_tmpl;
+ 	struct rte_flow_actions_template *jump_one_actions_tmpl;
+ 	struct rte_flow_template_table *hw_esw_zero_tbl;
+-	struct rte_flow_pattern_template *tx_meta_items_tmpl;
+-	struct rte_flow_actions_template *tx_meta_actions_tmpl;
+-	struct rte_flow_template_table *hw_tx_meta_cpy_tbl;
+ 	struct rte_flow_pattern_template *lacp_rx_items_tmpl;
+ 	struct rte_flow_actions_template *lacp_rx_actions_tmpl;
+ 	struct rte_flow_template_table *hw_lacp_rx_tbl;
+@@ -3614,11 +3611,7 @@ int mlx5_flow_hw_esw_create_sq_miss_flow(struct rte_eth_dev *dev,
+ int mlx5_flow_hw_esw_destroy_sq_miss_flow(struct rte_eth_dev *dev,
+ 					  uint32_t sqn, bool external);
+ int mlx5_flow_hw_esw_create_default_jump_flow(struct rte_eth_dev *dev);
+-int mlx5_flow_hw_create_fdb_tx_default_mreg_copy_flow(struct rte_eth_dev *dev,
+-						  uint32_t sqn, bool external);
+ int mlx5_flow_hw_create_nic_tx_default_mreg_copy_flow(struct rte_eth_dev *dev, uint32_t sqn);
+-int mlx5_flow_hw_destroy_tx_default_mreg_copy_flow(struct rte_eth_dev *dev,
+-						   uint32_t sqn, bool external);
+ int mlx5_flow_hw_create_tx_repr_matching_flow(struct rte_eth_dev *dev,
+ 					      uint32_t sqn, bool external);
+ int mlx5_flow_hw_destroy_tx_repr_matching_flow(struct rte_eth_dev *dev,
+diff --git a/drivers/net/mlx5/mlx5_flow_hw.c b/drivers/net/mlx5/mlx5_flow_hw.c
+index e0f79932a5..0c9b950099 100644
+--- a/drivers/net/mlx5/mlx5_flow_hw.c
++++ b/drivers/net/mlx5/mlx5_flow_hw.c
+@@ -5321,7 +5321,7 @@ __translate_group(struct rte_eth_dev *dev,
+ 						  "group index not supported");
+ 		*table_group = group + 1;
+ 	} else if (config->dv_esw_en &&
+-		   (config->repr_matching || config->dv_xmeta_en == MLX5_XMETA_MODE_META32_HWS) &&
++		   config->dv_xmeta_en == MLX5_XMETA_MODE_META32_HWS &&
+ 		   external &&
+ 		   flow_attr->egress) {
+ 		/*
+@@ -8577,7 +8577,7 @@ __flow_hw_pattern_validate(struct rte_eth_dev *dev,
+ 			break;
+ 		}
+ 		case RTE_FLOW_ITEM_TYPE_REPRESENTED_PORT:
+-			if (attr->ingress && priv->sh->config.repr_matching)
++			if (attr->ingress)
+ 				return rte_flow_error_set(error, EINVAL,
+ 						  RTE_FLOW_ERROR_TYPE_ITEM, NULL,
+ 						  "represented port item cannot be used"
+@@ -9052,14 +9052,12 @@ flow_hw_pattern_template_create(struct rte_eth_dev *dev,
+ 		return NULL;
+ 	orig_item_nb = rc;
+ 	if (priv->sh->config.dv_esw_en &&
+-	    priv->sh->config.repr_matching &&
+ 	    attr->ingress && !attr->egress && !attr->transfer) {
+ 		copied_items = flow_hw_prepend_item(items, orig_item_nb, &port, error);
+ 		if (!copied_items)
+ 			return NULL;
+ 		tmpl_items = copied_items;
+ 	} else if (priv->sh->config.dv_esw_en &&
+-		   priv->sh->config.repr_matching &&
+ 		   !attr->ingress && attr->egress && !attr->transfer) {
+ 		if (item_flags & MLX5_FLOW_ITEM_SQ) {
+ 			DRV_LOG(DEBUG, "Port %u omitting implicit REG_C_0 match for egress "
+@@ -10007,7 +10005,6 @@ flow_hw_setup_tx_repr_tagging(struct rte_eth_dev *dev, struct rte_flow_error *er
+ 	};
+ 
+ 	MLX5_ASSERT(priv->sh->config.dv_esw_en);
+-	MLX5_ASSERT(priv->sh->config.repr_matching);
+ 	priv->hw_tx_repr_tagging_pt =
+ 		flow_hw_create_tx_repr_sq_pattern_tmpl(dev, error);
+ 	if (!priv->hw_tx_repr_tagging_pt)
+@@ -10186,46 +10183,6 @@ flow_hw_create_ctrl_port_pattern_template(struct rte_eth_dev *dev,
+ 	return flow_hw_pattern_template_create(dev, &attr, items, error);
+ }
+ 
+-/*
+- * Creating a flow pattern template with all ETH packets matching.
+- * This template is used to set up a table for default Tx copy (Tx metadata
+- * to REG_C_1) flow rule usage.
+- *
+- * @param dev
+- *   Pointer to Ethernet device.
+- * @param error
+- *   Pointer to error structure.
+- *
+- * @return
+- *   Pointer to flow pattern template on success, NULL otherwise.
+- */
+-static struct rte_flow_pattern_template *
+-flow_hw_create_tx_default_mreg_copy_pattern_template(struct rte_eth_dev *dev,
+-						     struct rte_flow_error *error)
+-{
+-	struct rte_flow_pattern_template_attr tx_pa_attr = {
+-		.relaxed_matching = 0,
+-		.egress = 1,
+-	};
+-	struct rte_flow_item_eth promisc = {
+-		.hdr.dst_addr.addr_bytes = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+-		.hdr.src_addr.addr_bytes = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+-		.hdr.ether_type = 0,
+-	};
+-	struct rte_flow_item eth_all[] = {
+-		[0] = {
+-			.type = RTE_FLOW_ITEM_TYPE_ETH,
+-			.spec = &promisc,
+-			.mask = &promisc,
+-		},
+-		[1] = {
+-			.type = RTE_FLOW_ITEM_TYPE_END,
+-		},
+-	};
+-
+-	return flow_hw_pattern_template_create(dev, &tx_pa_attr, eth_all, error);
+-}
+-
+ /*
+  * Creating a flow pattern template with all LACP packets matching, only for NIC
+  * ingress domain.
+@@ -10746,15 +10703,6 @@ flow_hw_cleanup_ctrl_fdb_tables(struct rte_eth_dev *dev)
+ 	if (hw_ctrl_fdb->lacp_rx_items_tmpl)
+ 		claim_zero(flow_hw_pattern_template_destroy(dev, hw_ctrl_fdb->lacp_rx_items_tmpl,
+ 			   NULL));
+-	/* Clean up templates used for default Tx metadata copy. */
+-	if (hw_ctrl_fdb->hw_tx_meta_cpy_tbl)
+-		claim_zero(flow_hw_table_destroy(dev, hw_ctrl_fdb->hw_tx_meta_cpy_tbl, NULL));
+-	if (hw_ctrl_fdb->tx_meta_actions_tmpl)
+-		claim_zero(flow_hw_actions_template_destroy(dev, hw_ctrl_fdb->tx_meta_actions_tmpl,
+-			   NULL));
+-	if (hw_ctrl_fdb->tx_meta_items_tmpl)
+-		claim_zero(flow_hw_pattern_template_destroy(dev, hw_ctrl_fdb->tx_meta_items_tmpl,
+-			   NULL));
+ 	/* Clean up templates used for default FDB jump rule. */
+ 	if (hw_ctrl_fdb->hw_esw_zero_tbl)
+ 		claim_zero(flow_hw_table_destroy(dev, hw_ctrl_fdb->hw_esw_zero_tbl, NULL));
+@@ -10841,8 +10789,6 @@ flow_hw_create_fdb_ctrl_tables(struct rte_eth_dev *dev, struct rte_flow_error *e
+ {
+ 	struct mlx5_priv *priv = dev->data->dev_private;
+ 	struct mlx5_flow_hw_ctrl_fdb *hw_ctrl_fdb;
+-	uint32_t xmeta = priv->sh->config.dv_xmeta_en;
+-	uint32_t repr_matching = priv->sh->config.repr_matching;
+ 	uint32_t fdb_def_rule = priv->sh->config.fdb_def_rule;
+ 
+ 	MLX5_ASSERT(priv->hw_ctrl_fdb == NULL);
+@@ -10928,32 +10874,6 @@ flow_hw_create_fdb_ctrl_tables(struct rte_eth_dev *dev, struct rte_flow_error *e
+ 			goto err;
+ 		}
+ 	}
+-	/* Create templates and table for default Tx metadata copy flow rule. */
+-	if (!repr_matching && xmeta == MLX5_XMETA_MODE_META32_HWS) {
+-		hw_ctrl_fdb->tx_meta_items_tmpl =
+-			flow_hw_create_tx_default_mreg_copy_pattern_template(dev, error);
+-		if (!hw_ctrl_fdb->tx_meta_items_tmpl) {
+-			DRV_LOG(ERR, "port %u failed to Tx metadata copy pattern"
+-				" template for control flows", dev->data->port_id);
+-			goto err;
+-		}
+-		hw_ctrl_fdb->tx_meta_actions_tmpl =
+-			flow_hw_create_tx_default_mreg_copy_actions_template(dev, error);
+-		if (!hw_ctrl_fdb->tx_meta_actions_tmpl) {
+-			DRV_LOG(ERR, "port %u failed to Tx metadata copy actions"
+-				" template for control flows", dev->data->port_id);
+-			goto err;
+-		}
+-		hw_ctrl_fdb->hw_tx_meta_cpy_tbl =
+-			flow_hw_create_tx_default_mreg_copy_table
+-				(dev, hw_ctrl_fdb->tx_meta_items_tmpl,
+-				 hw_ctrl_fdb->tx_meta_actions_tmpl, error);
+-		if (!hw_ctrl_fdb->hw_tx_meta_cpy_tbl) {
+-			DRV_LOG(ERR, "port %u failed to create table for default"
+-				" Tx metadata copy flow rule", dev->data->port_id);
+-			goto err;
+-		}
+-	}
+ 	/* Create LACP default miss table. */
+ 	if (!priv->sh->config.lacp_by_user && priv->pf_bond >= 0 && priv->master) {
+ 		hw_ctrl_fdb->lacp_rx_items_tmpl =
+@@ -12187,7 +12107,7 @@ __flow_hw_configure(struct rte_eth_dev *dev,
+ 		if (!priv->hw_tag[i])
+ 			goto err;
+ 	}
+-	if (priv->sh->config.dv_esw_en && priv->sh->config.repr_matching) {
++	if (priv->sh->config.dv_esw_en) {
+ 		ret = flow_hw_setup_tx_repr_tagging(dev, error);
+ 		if (ret)
+ 			goto err;
+@@ -16096,62 +16016,6 @@ mlx5_flow_hw_esw_create_default_jump_flow(struct rte_eth_dev *dev)
+ 					items, 0, actions, 0, &flow_info, false);
+ }
+ 
+-int
+-mlx5_flow_hw_create_fdb_tx_default_mreg_copy_flow(struct rte_eth_dev *dev,
+-						  uint32_t sqn, bool external)
+-{
+-	struct mlx5_priv *priv = dev->data->dev_private;
+-	struct mlx5_rte_flow_item_sq sq_spec = {
+-		.queue = sqn,
+-	};
+-	struct rte_flow_item items[] = {
+-		{
+-			.type = (enum rte_flow_item_type)MLX5_RTE_FLOW_ITEM_TYPE_SQ,
+-			.spec = &sq_spec,
+-		},
+-		{
+-			.type = RTE_FLOW_ITEM_TYPE_END,
+-		},
+-	};
+-	struct rte_flow_action_modify_field mreg_action = {
+-		.operation = RTE_FLOW_MODIFY_SET,
+-		.dst = {
+-			.field = (enum rte_flow_field_id)MLX5_RTE_FLOW_FIELD_META_REG,
+-			.tag_index = REG_C_1,
+-		},
+-		.src = {
+-			.field = (enum rte_flow_field_id)MLX5_RTE_FLOW_FIELD_META_REG,
+-			.tag_index = REG_A,
+-		},
+-		.width = 32,
+-	};
+-	struct rte_flow_action copy_reg_action[] = {
+-		[0] = {
+-			.type = RTE_FLOW_ACTION_TYPE_MODIFY_FIELD,
+-			.conf = &mreg_action,
+-		},
+-		[1] = {
+-			.type = RTE_FLOW_ACTION_TYPE_JUMP,
+-		},
+-		[2] = {
+-			.type = RTE_FLOW_ACTION_TYPE_END,
+-		},
+-	};
+-	struct mlx5_ctrl_flow_info flow_info = {
+-		.type = MLX5_CTRL_FLOW_TYPE_TX_META_COPY,
+-		.tx_repr_sq = sqn,
+-	};
+-
+-	MLX5_ASSERT(priv->master);
+-	if (!priv->dr_ctx ||
+-	    !priv->hw_ctrl_fdb ||
+-	    !priv->hw_ctrl_fdb->hw_tx_meta_cpy_tbl)
+-		return 0;
+-	return flow_hw_create_ctrl_flow(dev, dev,
+-					priv->hw_ctrl_fdb->hw_tx_meta_cpy_tbl,
+-					items, 0, copy_reg_action, 0, &flow_info, external);
+-}
+-
+ int
+ mlx5_flow_hw_create_nic_tx_default_mreg_copy_flow(struct rte_eth_dev *dev, uint32_t sqn)
+ {
+@@ -16202,56 +16066,6 @@ mlx5_flow_hw_create_nic_tx_default_mreg_copy_flow(struct rte_eth_dev *dev, uint3
+ 					items, 0, copy_reg_action, 0, &flow_info, false);
+ }
+ 
+-static bool
+-flow_hw_is_matching_tx_mreg_copy_flow(struct mlx5_ctrl_flow_entry *cf,
+-				      struct rte_eth_dev *dev,
+-				      uint32_t sqn)
+-{
+-	if (cf->owner_dev != dev)
+-		return false;
+-	if (cf->info.type == MLX5_CTRL_FLOW_TYPE_TX_META_COPY && cf->info.tx_repr_sq == sqn)
+-		return true;
+-	return false;
+-}
+-
+-int
+-mlx5_flow_hw_destroy_tx_default_mreg_copy_flow(struct rte_eth_dev *dev, uint32_t sqn, bool external)
+-{
+-	uint16_t port_id = dev->data->port_id;
+-	uint16_t proxy_port_id = dev->data->port_id;
+-	struct rte_eth_dev *proxy_dev;
+-	struct mlx5_priv *proxy_priv;
+-	struct mlx5_ctrl_flow_entry *cf;
+-	struct mlx5_ctrl_flow_entry *cf_next;
+-	int ret;
+-
+-	ret = rte_flow_pick_transfer_proxy(port_id, &proxy_port_id, NULL);
+-	if (ret) {
+-		DRV_LOG(ERR, "Unable to pick transfer proxy port for port %u. Transfer proxy "
+-			     "port must be present for default SQ miss flow rules to exist.",
+-			     port_id);
+-		return ret;
+-	}
+-	proxy_dev = &rte_eth_devices[proxy_port_id];
+-	proxy_priv = proxy_dev->data->dev_private;
+-	if (!proxy_priv->dr_ctx ||
+-	    !proxy_priv->hw_ctrl_fdb ||
+-	    !proxy_priv->hw_ctrl_fdb->hw_tx_meta_cpy_tbl)
+-		return 0;
+-	cf = external ? LIST_FIRST(&proxy_priv->hw_ext_ctrl_flows) :
+-			LIST_FIRST(&proxy_priv->hw_ctrl_flows);
+-	while (cf != NULL) {
+-		cf_next = LIST_NEXT(cf, next);
+-		if (flow_hw_is_matching_tx_mreg_copy_flow(cf, dev, sqn)) {
+-			claim_zero(flow_hw_destroy_ctrl_flow(proxy_dev, cf->flow));
+-			LIST_REMOVE(cf, next);
+-			mlx5_free(cf);
+-		}
+-		cf = cf_next;
+-	}
+-	return 0;
+-}
+-
+ int
+ mlx5_flow_hw_create_tx_repr_matching_flow(struct rte_eth_dev *dev, uint32_t sqn, bool external)
+ {
+@@ -16283,8 +16097,6 @@ mlx5_flow_hw_create_tx_repr_matching_flow(struct rte_eth_dev *dev, uint32_t sqn,
+ 		.tx_repr_sq = sqn,
+ 	};
+ 
+-	/* It is assumed that caller checked for representor matching. */
+-	MLX5_ASSERT(priv->sh->config.repr_matching);
+ 	if (!priv->dr_ctx) {
+ 		DRV_LOG(DEBUG, "Port %u must be configured for HWS, before creating "
+ 			       "default egress flow rules. Omitting creation.",
+diff --git a/drivers/net/mlx5/mlx5_trigger.c b/drivers/net/mlx5/mlx5_trigger.c
+index 996c1eb6ac..c0fb98e78a 100644
+--- a/drivers/net/mlx5/mlx5_trigger.c
++++ b/drivers/net/mlx5/mlx5_trigger.c
+@@ -1132,9 +1132,9 @@ mlx5_hw_representor_port_allowed_start(struct rte_eth_dev *dev)
+ 		rte_errno = EAGAIN;
+ 		return -rte_errno;
+ 	}
+-	if (priv->sh->config.repr_matching && !priv->dr_ctx) {
+-		DRV_LOG(ERR, "Failed to start port %u: with representor matching enabled, port "
+-			     "must be configured for HWS", dev->data->port_id);
++	if (priv->dr_ctx == NULL) {
++		DRV_LOG(ERR, "Failed to start port %u: port must be configured for HWS",
++			dev->data->port_id);
+ 		rte_errno = EINVAL;
+ 		return -rte_errno;
+ 	}
+@@ -1621,27 +1621,17 @@ mlx5_traffic_enable_hws(struct rte_eth_dev *dev)
+ 				goto error;
+ 			}
+ 		}
+-		if (config->dv_esw_en && config->repr_matching) {
++		if (config->dv_esw_en) {
+ 			if (mlx5_flow_hw_create_tx_repr_matching_flow(dev, queue, false)) {
+ 				mlx5_txq_release(dev, i);
+ 				goto error;
+ 			}
+ 		}
+-		/*
+-		 * With extended metadata enabled, the Tx metadata copy is handled by default
+-		 * Tx tagging flow rules, so default Tx flow rule is not needed. It is only
+-		 * required when representor matching is disabled.
+-		 */
+-		if (config->dv_esw_en && !config->repr_matching &&
+-		    config->dv_xmeta_en == MLX5_XMETA_MODE_META32_HWS &&
+-		    (priv->master || priv->representor)) {
+-			ret = mlx5_flow_hw_create_fdb_tx_default_mreg_copy_flow(dev, queue, false);
+-		} else if (mlx5_vport_tx_metadata_passing_enabled(priv->sh)) {
+-			ret = mlx5_flow_hw_create_nic_tx_default_mreg_copy_flow(dev, queue);
+-		}
+-		if (ret != 0) {
+-			mlx5_txq_release(dev, i);
+-			goto error;
++		if (mlx5_vport_tx_metadata_passing_enabled(priv->sh)) {
++			if (mlx5_flow_hw_create_nic_tx_default_mreg_copy_flow(dev, queue)) {
++				mlx5_txq_release(dev, i);
++				goto error;
++			}
+ 		}
+ 		mlx5_txq_release(dev, i);
+ 	}
+diff --git a/drivers/net/mlx5/mlx5_txq.c b/drivers/net/mlx5/mlx5_txq.c
+index e273486809..ad15b20e7b 100644
+--- a/drivers/net/mlx5/mlx5_txq.c
++++ b/drivers/net/mlx5/mlx5_txq.c
+@@ -1453,20 +1453,12 @@ rte_pmd_mlx5_external_sq_enable(uint16_t port_id, uint32_t sq_num)
+ 			sq_miss_created = true;
+ 		}
+ 
+-		if (priv->sh->config.repr_matching &&
+-		    mlx5_flow_hw_create_tx_repr_matching_flow(dev, sq_num, true)) {
++		if (mlx5_flow_hw_create_tx_repr_matching_flow(dev, sq_num, true)) {
+ 			if (sq_miss_created)
+ 				mlx5_flow_hw_esw_destroy_sq_miss_flow(dev, sq_num, true);
+ 			return -rte_errno;
+ 		}
+ 
+-		if (!priv->sh->config.repr_matching &&
+-		    priv->sh->config.dv_xmeta_en == MLX5_XMETA_MODE_META32_HWS &&
+-		    mlx5_flow_hw_create_fdb_tx_default_mreg_copy_flow(dev, sq_num, true)) {
+-			if (sq_miss_created)
+-				mlx5_flow_hw_esw_destroy_sq_miss_flow(dev, sq_num, true);
+-			return -rte_errno;
+-		}
+ 		return 0;
+ 	}
+ #endif
+@@ -1510,12 +1502,7 @@ rte_pmd_mlx5_external_sq_disable(uint16_t port_id, uint32_t sq_num)
+ 		if (priv->sh->config.fdb_def_rule &&
+ 		    mlx5_flow_hw_esw_destroy_sq_miss_flow(dev, sq_num, true))
+ 			return -rte_errno;
+-		if (priv->sh->config.repr_matching &&
+-		    mlx5_flow_hw_destroy_tx_repr_matching_flow(dev, sq_num, true))
+-			return -rte_errno;
+-		if (!priv->sh->config.repr_matching &&
+-		    priv->sh->config.dv_xmeta_en == MLX5_XMETA_MODE_META32_HWS &&
+-		    mlx5_flow_hw_destroy_tx_default_mreg_copy_flow(dev, sq_num, true))
++		if (mlx5_flow_hw_destroy_tx_repr_matching_flow(dev, sq_num, true))
+ 			return -rte_errno;
+ 		return 0;
+ 	}

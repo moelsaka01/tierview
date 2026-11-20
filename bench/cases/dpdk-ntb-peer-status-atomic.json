@@ -1,0 +1,42 @@
+{
+  "id": "dpdk-ntb-peer-status-atomic",
+  "kind": "buggy",
+  "split": "test2",
+  "pilot": false,
+  "repo": "DPDK/dpdk",
+  "language": "C",
+  "commit": "62012a76811ec1344231fee57a056bd1f5ab9dde",
+  "commit_date": "2019-07-05T12:50:19+02:00",
+  "subject": "raw/ntb: add handshake process",
+  "url": "https://github.com/DPDK/dpdk/commit/62012a76811ec1344231fee57a056bd1f5ab9dde",
+  "stats": {
+    "files": 2,
+    "added": 340,
+    "deleted": 1
+  },
+  "fix": {
+    "sha": "6df69aaf98d0f3032dc3356974f38a34a6a91a3e",
+    "date": "2026-11-12T15:57:18.000+01:00",
+    "subject": "raw/ntb: fix peer device status access",
+    "url": "https://github.com/DPDK/dpdk/commit/6df69aaf98d0f3032dc3356974f38a34a6a91a3e",
+    "link": "fixes-trailer",
+    "files": [
+      "drivers/raw/ntb/ntb.c",
+      "drivers/raw/ntb/ntb.h"
+    ],
+    "bug": "The peer device status, written by the interrupt thread, is read with plain accesses that need not see the update (data race)."
+  },
+  "faulty": [
+    {
+      "file": "drivers/raw/ntb/ntb.c",
+      "lines": [
+        129,
+        153,
+        193,
+        203,
+        357,
+        380
+      ]
+    }
+  ]
+}

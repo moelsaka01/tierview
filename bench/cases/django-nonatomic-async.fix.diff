@@ -1,0 +1,79 @@
+diff --git a/django/db/transaction.py b/django/db/transaction.py
+index 06189f7117..4b5c75d4e1 100644
+--- a/django/db/transaction.py
++++ b/django/db/transaction.py
+@@ -1,4 +1,5 @@
+ import warnings
++from asyncio import iscoroutinefunction
+ from contextlib import ContextDecorator, contextmanager
+ from functools import wraps
+ 
+@@ -342,9 +343,17 @@ def _non_atomic_requests(view, using):
+     except AttributeError:
+         databases = {using}
+ 
+-    @wraps(view)
+-    def wrapper(*args, **kwargs):
+-        return view(*args, **kwargs)
++    if iscoroutinefunction(view):
++
++        @wraps(view)
++        async def wrapper(*args, **kwargs):
++            return await view(*args, **kwargs)
++
++    else:
++
++        @wraps(view)
++        def wrapper(*args, **kwargs):
++            return view(*args, **kwargs)
+ 
+     wrapper._non_atomic_requests = databases
+     return wrapper
+diff --git a/tests/handlers/tests.py b/tests/handlers/tests.py
+index 240c398988..b1da08f6ee 100644
+--- a/tests/handlers/tests.py
++++ b/tests/handlers/tests.py
+@@ -144,6 +144,15 @@ class TransactionsPerRequestTests(TransactionTestCase):
+         # The non_atomic_requests decorator is used for an incorrect table.
+         self.assertContains(response, "True")
+ 
++    async def test_no_auto_transaction_async(self):
++        old_atomic_requests = connection.settings_dict["ATOMIC_REQUESTS"]
++        try:
++            connection.settings_dict["ATOMIC_REQUESTS"] = True
++            response = await self.async_client.get("/not_in_transaction_async/")
++        finally:
++            connection.settings_dict["ATOMIC_REQUESTS"] = old_atomic_requests
++        self.assertContains(response, "False")
++
+     def test_non_atomic_requests_does_not_mutate_original(self):
+         def my_view(request):
+             return HttpResponse("Ok")
+diff --git a/tests/handlers/urls.py b/tests/handlers/urls.py
+index a0efece602..8c7b65e018 100644
+--- a/tests/handlers/urls.py
++++ b/tests/handlers/urls.py
+@@ -11,6 +11,7 @@ urlpatterns = [
+     path("async_streaming/", views.async_streaming),
+     path("in_transaction/", views.in_transaction),
+     path("not_in_transaction/", views.not_in_transaction),
++    path("not_in_transaction_async/", views.not_in_transaction_async),
+     path("not_in_transaction_using_none/", views.not_in_transaction_using_none),
+     path("not_in_transaction_using_text/", views.not_in_transaction_using_text),
+     path("bad_request/", views.bad_request),
+diff --git a/tests/handlers/views.py b/tests/handlers/views.py
+index 95d663323d..fe72c600ae 100644
+--- a/tests/handlers/views.py
++++ b/tests/handlers/views.py
+@@ -33,6 +33,11 @@ def not_in_transaction(request):
+     return HttpResponse(str(connection.in_atomic_block))
+ 
+ 
++@transaction.non_atomic_requests
++async def not_in_transaction_async(request):
++    return HttpResponse(str(connection.in_atomic_block))
++
++
+ @transaction.non_atomic_requests(using=None)
+ def not_in_transaction_using_none(request):
+     return HttpResponse(str(connection.in_atomic_block))

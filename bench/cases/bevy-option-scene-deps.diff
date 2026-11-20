@@ -1,0 +1,56 @@
+diff --git a/crates/bevy_scene/src/lib.rs b/crates/bevy_scene/src/lib.rs
+index 4c0b081ef..9da4bc5be 100644
+--- a/crates/bevy_scene/src/lib.rs
++++ b/crates/bevy_scene/src/lib.rs
+@@ -2202,4 +2202,25 @@ mod tests {
+             .unwrap();
+         assert_eq!(entity.get::<Foo>().unwrap().value, vec![10usize]);
+     }
++
++    #[test]
++    fn scene_with_optional_components() {
++        let mut app = test_app();
++        let world = app.world_mut();
++
++        #[derive(Component, Default, Clone)]
++        struct Foo;
++
++        let optional_component = Some(bsn! {
++            Foo
++        });
++
++        let entity = world
++            .spawn_scene(bsn! {
++                #MaybeFoo
++                {optional_component}
++            })
++            .unwrap();
++        assert!(entity.get::<Foo>().is_some());
++    }
+ }
+diff --git a/crates/bevy_scene/src/scene.rs b/crates/bevy_scene/src/scene.rs
+index c3585bd39..0fc2d489d 100644
+--- a/crates/bevy_scene/src/scene.rs
++++ b/crates/bevy_scene/src/scene.rs
+@@ -211,6 +211,21 @@ macro_rules! scene_impl {
+ 
+ all_tuples!(scene_impl, 0, 12, P);
+ 
++impl<P> Scene for Option<P>
++where
++    P: Scene,
++{
++    #[inline]
++    fn resolve(
++        self,
++        context: &mut ResolveContext,
++        scene: &mut ResolvedScene,
++    ) -> Result<(), ResolveSceneError> {
++        self.map(|optional_scene| optional_scene.resolve(context, scene))
++            .unwrap_or(Ok(()))
++    }
++}
++
+ /// A [`Scene`] that patches a [`Template`] of type `T` with a given function `F`.
+ ///
+ /// Functionally, a [`TemplatePatch`] scene will initialize a [`Default`] value of the patched

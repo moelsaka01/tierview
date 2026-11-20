@@ -1,0 +1,38 @@
+{
+  "id": "bevy-option-scene-deps",
+  "kind": "buggy",
+  "split": "test2",
+  "pilot": false,
+  "repo": "bevyengine/bevy",
+  "language": "Rust",
+  "commit": "5d5e3f9551ca57a228cf49912df1663f05a037c2",
+  "commit_date": "2026-06-06T02:29:08Z",
+  "subject": "Implement `Scene` for `Option<P>` where `P: Scene` (#24536)",
+  "url": "https://github.com/bevyengine/bevy/commit/5d5e3f9551ca57a228cf49912df1663f05a037c2",
+  "stats": {
+    "files": 2,
+    "added": 36,
+    "deleted": 0
+  },
+  "fix": {
+    "sha": "d0c5d20e0952aff29160730173da7bda79852c6b",
+    "date": "2026-06-09T18:49:16.000Z",
+    "subject": "bsn: Expand support for optional scenes and scene lists (#24565)",
+    "url": "https://github.com/bevyengine/bevy/commit/d0c5d20e0952aff29160730173da7bda79852c6b",
+    "link": "pr-ref",
+    "files": [
+      "crates/bevy_scene/src/scene.rs"
+    ],
+    "bug": "Scene for Option<P> does not register the dependencies of the wrapped scene."
+  },
+  "faulty": [
+    {
+      "file": "crates/bevy_scene/src/scene.rs",
+      "lines": [
+        214,
+        216,
+        224
+      ]
+    }
+  ]
+}

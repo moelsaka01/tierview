@@ -271,7 +271,7 @@ export function findClean(repo: string, language: string, since: string, until: 
 export interface Selection {
   id: string;
   kind: "buggy" | "clean";
-  split: "dev" | "test";
+  split: "dev" | "test" | "test2";
   pilot?: boolean;
   repo: string;
   sha: string;
@@ -283,7 +283,7 @@ export interface Selection {
 export interface BenchCase {
   id: string;
   kind: "buggy" | "clean";
-  split: "dev" | "test";
+  split: "dev" | "test" | "test2";
   pilot: boolean;
   repo: string;
   language: string;
