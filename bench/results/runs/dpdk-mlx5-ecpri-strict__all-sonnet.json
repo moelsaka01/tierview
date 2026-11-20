@@ -1,0 +1,239 @@
+{
+  "case_id": "dpdk-mlx5-ecpri-strict",
+  "arm": "all-sonnet",
+  "arm_version": 1,
+  "batch": "2026-11-20T12-11-52",
+  "config_hash": "087925df358a",
+  "complete": true,
+  "calls": 1,
+  "wall_ms": 14409,
+  "review": {
+    "version": 1,
+    "findings": [
+      {
+        "file": "drivers/net/mlx5/hws/mlx5dr_definer.c",
+        "start_line": 2502,
+        "end_line": 2526,
+        "side": "new",
+        "severity": "high",
+        "category": "bug",
+        "title": "ESP-specific matching added to generic flex parser helper",
+        "explanation": "mlx5dr_definer_get_flex_parser_fc is a generic helper, called by IPv6 routing ext (SRH) and eCPRI conversion. The new non-relaxed block unconditionally adds an IP protocol == ESP match (or UDP dport 4500 when over UDP) to every caller. For eCPRI (no IP protocol set before) this adds an ESP protocol match, so eCPRI flows will never match. For SRH over UDP-less paths it is skipped only because the protocol fc is already set. It also always uses the outer (inner=false) fields regardless of cd->tunnel.",
+        "suggestion": "Move the ESP protocol/UDP-port setup into the ESP item conversion function (or gate it by item type), and leave the helper generic.",
+        "evidence": "\t/* To match on ESP we must match on ip_protocol and optionally on l4_dport */\n\tif (!cd->relaxed) {",
+        "confidence": 0.75,
+        "id": "08c92be96928",
+        "hunk_id": "drivers/net/mlx5/hws/mlx5dr_definer.c#4",
+        "model": "claude-sonnet-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      },
+      {
+        "file": "drivers/net/mlx5/hws/mlx5dr_definer.c",
+        "start_line": 2701,
+        "end_line": 2701,
+        "side": "new",
+        "severity": "medium",
+        "category": "bug",
+        "title": "eCPRI path now triggers ESP protocol match via shared helper",
+        "explanation": "eCPRI calls the helper, which now adds an ip_protocol=ESP match in non-relaxed mode, wrongly constraining eCPRI rules (see the finding in the helper).",
+        "suggestion": "Keep the ESP logic out of the generic helper.",
+        "evidence": "fc = mlx5dr_definer_get_flex_parser_fc(cd, byte_off[i], item_idx);",
+        "confidence": 0.6,
+        "id": "a0c288a3c25e",
+        "hunk_id": "drivers/net/mlx5/hws/mlx5dr_definer.c#6",
+        "model": "claude-sonnet-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      }
+    ],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "drivers/net/mlx5/hws/mlx5dr_definer.c#1",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "drivers/net/mlx5/hws/mlx5dr_definer.c#2",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "drivers/net/mlx5/hws/mlx5dr_definer.c#3",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "drivers/net/mlx5/hws/mlx5dr_definer.c#4",
+        "score": 10,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "27 changed lines"
+          },
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "drivers/net/mlx5/hws/mlx5dr_definer.c#5",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "drivers/net/mlx5/hws/mlx5dr_definer.c#6",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 1,
+      "model_substitutions": [],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 2,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 6,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 29762,
+          "cache_read_tokens": 994,
+          "output_tokens": 1891,
+          "cache_write_1h_tokens": 29762,
+          "cost_usd": 0.1380614,
+          "direct_api_cost_usd": 0.076226
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.1380614,
+      "total_direct_api_cost_usd": 0.076226,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.5520468000000001,
+        "direct_api_cost_usd": 0.304904
+      },
+      "savings_pct": 75,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 14409,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}

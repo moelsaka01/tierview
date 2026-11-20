@@ -249,7 +249,7 @@ function main(): void {
   const split = i >= 0 ? process.argv[i + 1]! : "test";
   const cfg = loadConfig({ cwd: BENCH });
   const resultsDir = join(BENCH, "results");
-  const cases = loadCases().filter((x) => split === "all" || x.c.split === split);
+  const cases = loadCases().filter((x) => split === "all" || (split === "heldout" ? x.c.split === "test" || x.c.split === "test2" : x.c.split === split));
   const ids = new Set(cases.map((x) => x.c.id));
   const runs = new Map([...loadRuns(resultsDir)].filter(([k]) => ids.has(k.split("|")[0]!)));
   const jf = join(resultsDir, "judgements.jsonl");

@@ -1,6 +1,6 @@
 # Launch posts
 
-Drafts for the v0.1.0 launch. Nothing here is posted until the author says yes to each post's final text. All posting is done manually by the author. Repo: https://github.com/moelsaka01/tierview
+Drafts for the v0.1.0 launch (numbers rewritten on 2026-11-20 after the second held-out set reversed the first result). Nothing here is posted until the author says yes to each post's final text. All posting is done manually by the author. Repo: https://github.com/moelsaka01/tierview
 
 ## Schedule (UAE time)
 
@@ -18,13 +18,13 @@ Drafts for the v0.1.0 launch. Nothing here is posted until the author says yes t
 - **awesome-claude-code**: see its section below (14-day or 100-star eligibility, human submission through the web form).
 - X and LinkedIn: no posting rules to check beyond their terms; these are the author's own accounts.
 
-All posts: say that it is n = 13, p = 0.5, C-heavy test set; lead with the free path and the receipt; no "Fable-level" claim (Fable was never measured).
+All posts: give both results (first set 9 vs 7, second set 3 vs 9, pooled 12 vs 16 of 23, p = 0.29), say that single runs and an author-marked judge limit them; lead with the free path and the receipt; no "Fable-level" claim (Fable was never measured).
 
 ---
 
 ## Show HN (postponed: new accounts cannot post Show HN)
 
-Kept for later; not part of the Friday posts.
+Kept for later; not part of the Friday posts. Re-check the numbers against `bench/results/RESULTS.md` on the day.
 
 **Title:** `Show HN: Tierview – Claude code review that routes each hunk to a cheaper model`
 
@@ -32,13 +32,13 @@ Kept for later; not part of the Friday posts.
 
 **First comment (post it right after submitting):**
 
-> I built tierview because I wanted code review on diffs without sending everything to the most expensive model. It scores each hunk of a diff with deterministic rules (auth, SQL, memory, boundary changes...), sends boring hunks to Sonnet at low effort and risky ones to Opus, escalates when a model is unsure or contradicts itself, and prints a cost receipt: tokens and cost per tier, plus what the same work would cost on the most expensive model.
+> I built tierview because I wanted code review on diffs without sending everything to the most expensive model. It scores each hunk of a diff with deterministic rules (auth, SQL, memory, boundary changes, timeouts...), sends boring hunks to Sonnet at low effort and risky ones to Opus, escalates when a model is unsure or contradicts itself, and prints a cost receipt: tokens and cost per tier, plus what the same work would cost on the most expensive model.
 >
 > It runs on your existing Claude subscription through the official Claude Code CLI (`claude -p`), so there is no API key on the default path: `npx tierview review --dry-run` shows the routing and an estimate with zero model calls, and `npx tierview review` runs it. There is also an API-key backend and a GitHub Action.
 >
-> I benchmarked it on real bugs: 30 commits from 9 open-source repos (QEMU, DPDK, Django, Cilium...), where a later commit named the bug. On the 13-bug held-out test split it caught 9 vs 7 for all-Opus, with 0 false alarms on 7 clean commits (all-Opus raised 3), at 16% lower cost per case via Claude Code (7% on direct API pricing). That is n = 13 and the difference is not statistically significant (exact McNemar p = 0.5). All-Sonnet caught 4. The test set is C-heavy, each case ran once, and I marked the judge audit myself. Catches were decided by location rules first and an Opus judge for ambiguous cases. Everything is in bench/results/RESULTS.md, including a usage-limit incident I hit mid-run and how I fixed it.
+> The benchmark result is mixed, and I would rather lead with that. I ran it on real bugs, where a later commit named the cause. On the first 13 held-out bugs (mostly C) it caught 9 vs 7 for all-Opus. I then added 10 more held-out bugs (mostly Python, Rust, Go) under the same frozen config, and it caught 3 vs 9. Pooled, 23 bugs: tierview 12, all-Opus 16, all-Sonnet 10; no false alarms on 12 clean commits for tierview (all-Opus raised one on 3 of them); 18% cheaper per case than all-Opus, but more expensive per bug caught. The pooled gap is not significant (exact McNemar p = 0.29). My reading, untested: the risk rules were tuned on C-heavy data and mostly sent the new logic bugs to the cheap reviewer. Single runs, I marked the judge audit myself, and the second set is smaller than I planned. Everything is in bench/results/RESULTS.md.
 >
-> Things that are not done: the GitHub Action's PR comment has only been tested against mocked responses, not live; the API backend is unit-tested only; I never ran Fable, so its cost line is a calculation. Tiered routing itself is not new (d1ff and others do it); I did not find a published benchmark or a receipt like this. I would like to hear where the routing rules are wrong on your code.
+> Not done: the GitHub Action's PR comment has only been tested against mocked responses; the API backend is unit-tested only; I never ran Fable, so its cost line is a calculation. Tiered routing is not new (d1ff and others do it); I did not find a published benchmark or a receipt like this. I would like to hear where the routing rules are wrong on your code.
 
 ---
 
@@ -46,7 +46,7 @@ Kept for later; not part of the Friday posts.
 
 Check the sidebar rules and flair before posting.
 
-**Title:** `I built a code reviewer that runs on your Claude subscription (no API key) and prints a cost receipt`
+**Title:** `I built a code reviewer that runs on your Claude subscription (no API key) and prints a cost receipt. My benchmark result flipped when I added more bugs.`
 
 > tierview reviews a git diff by sending each hunk to the cheapest Claude model that can handle it: Sonnet 5.5 at low effort for boring hunks, Opus 5.5 for risky ones, with escalation when a model is unsure. It runs through Claude Code (`claude -p`), so it uses the plan you already have. No API key.
 >
@@ -55,11 +55,11 @@ Check the sidebar rules and flair before posting.
 > npx tierview review             # the real review
 > ```
 >
-> After each run it prints a receipt: tokens and API-equivalent cost per tier, and what the same tokens would cost on Fable. (On a plan that is API-equivalent, not what you were billed.) Fable is opt-in, because on some plans `claude -p` bills it as extra usage without asking.
+> After each run it prints a receipt: tokens and API-equivalent cost per tier, and what the same tokens would cost on Fable (a calculation, not a run). Fable is opt-in, because on some plans `claude -p` bills it as extra usage without asking.
 >
-> Benchmark, honestly: 13 real bugs held out, 9 caught vs 7 for all-Opus, 0 false alarms on 7 clean commits, 16% lower cost per case via Claude Code (7% on direct API pricing). n = 13, p = 0.5, so that is not significant. The set is C-heavy and each case ran once. I marked the judge audit myself; catches were decided by location rules first and an Opus judge for ambiguous cases. The benchmark itself used 190 calls on a Pro plan and hit the 5-hour limit once, so mind your limits (`--max-calls` helps).
+> The honest benchmark story: on my first 13 held-out real bugs it caught 9 vs 7 for all-Opus. I then added 10 more (mostly Python, Rust, Go) and it caught 3 vs 9. Pooled (23 bugs): tierview 12, all-Opus 16, all-Sonnet 10; zero false alarms for tierview on 12 clean commits (all-Opus: 3); 18% cheaper per case than all-Opus but not per bug caught. The pooled gap is not significant (p = 0.29), single runs, judge audit marked by me. My guess is that my risk rules, tuned on C, send logic bugs in other languages to the cheap reviewer, but I have not tested that.
 >
-> Repo, data and all caveats: https://github.com/moelsaka01/tierview. Built with Claude Code across several sessions; the build log is in the repo. Feedback on where it misses is welcome.
+> The benchmark used about 255 calls on a Pro plan and hit the 5-hour limit once, so mind your limits (`--max-calls` helps). Repo, data and every caveat: https://github.com/moelsaka01/tierview. Built with Claude Code across several sessions; the build log is in the repo. Where would you expect it to miss?
 
 ---
 
@@ -68,23 +68,22 @@ Check the sidebar rules and flair before posting.
 1. I built tierview: code review that sends each hunk of a diff to the cheapest Claude model that can handle it, escalates when unsure, and prints a cost receipt. It runs on your Claude subscription. No API key. github.com/moelsaka01/tierview
 2. Try it free: `npx tierview review --dry-run` shows where every hunk goes and what it would cost, with zero model calls. [demo GIF]
 3. The receipt: tokens and cost per tier, plus what the same tokens would cost on the priciest model. On a plan it's API-equivalent, not your bill. [receipt screenshot]
-4. Benchmark on 13 real held-out bugs: tierview caught 9, all-Opus 7, all-Sonnet 4. 0 false alarms on 7 clean commits (all-Opus: 3). 16% cheaper per case than all-Opus via Claude Code (7% on direct API pricing).
-5. The caveat that matters: n = 13, exact McNemar p = 0.5. Not significant. C-heavy, one run per case, judge audit marked by me. Catches were decided by location rules first and an Opus judge for ambiguous cases. A pilot, not proof. [chart]
-6. Not done yet: the GitHub Action's PR comment is untested live; I never ran Fable, so that cost is calculated. Data, limits and a usage-limit bug I hit are all in RESULTS.md. MIT. Tell me where it misses.
+4. The benchmark, honestly: on my first 13 held-out real bugs it caught 9 vs 7 for all-Opus. I added 10 more, mostly Python/Rust/Go, same frozen config: 3 vs 9.
+5. Pooled, 23 bugs: tierview 12, all-Opus 16, all-Sonnet 10. No false alarms on 12 clean commits (all-Opus: 3). 18% cheaper per case than all-Opus, but not per bug caught. Not significant (p = 0.29). [chart]
+6. My guess, untested: my risk rules were tuned on C and mostly sent the new logic bugs to the cheap reviewer. Single runs, judge audit marked by me, second set smaller than planned.
+7. Also not done: the Action's PR comment is untested live; I never ran Fable. Data and limits are in RESULTS.md. MIT. Tell me where it misses.
 
 ---
 
 ## LinkedIn
 
-I benchmarked Claude models on 13 real bugs. Here's what I found.
+I benchmarked my own tool on real bugs, and the result changed when I added more bugs. Here it is, as it stands.
 
-Sending each part of a diff to a model matched to its risk caught 9 of the 13 bugs. Sending everything to the strongest model caught 7, and the cheapest model alone caught 4. The tiered setup also raised no false alarms on 7 clean commits, where the strongest model raised 3, at 16% lower cost per case via Claude Code (7% on direct API pricing).
+tierview is an open-source code reviewer for Claude. It scores each part of a diff with deterministic rules, sends low-risk parts to a cheaper model and risky ones to a stronger one, and prints a cost receipt. It runs on an existing Claude subscription through Claude Code with no API key: `npx tierview review --dry-run` shows the routing and an estimate without making a model call.
 
-The caveats matter. With only 13 bugs the difference is not statistically significant (p = 0.5), the set leans toward C, and each case ran once. I marked the judge audit myself; catches were decided by location rules first and an Opus judge for ambiguous cases. Please read it as a pilot. The bugs came from QEMU, DPDK, Django, Cilium and others, where a later commit named the bug.
+On my first 13 held-out bugs (mostly C) it caught 9, against 7 for sending everything to the strongest model. I then added 10 more (mostly Python, Rust and Go) under the same frozen settings, and it caught 3, against 9. Pooled across all 23: tierview 12, strongest model 16, cheapest model 10. tierview raised no false alarms on 12 clean commits (the strongest model raised one on 3 of them) and was 18% cheaper per case, but not cheaper per bug caught. The pooled gap is not statistically significant (p = 0.29), each case ran once, and I marked the judge audit myself, so read it as a pilot. My guess is that the risk rules, tuned on C, rated the new bugs as boring, but I have not tested that.
 
-The tool behind it is tierview, an open-source code reviewer. It scores each hunk with deterministic rules, sends low-risk hunks to a cheaper model and risky ones to a stronger one, escalates when a model is unsure, and prints a cost receipt per tier. It runs on an existing Claude subscription through Claude Code with no API key: `npx tierview review --dry-run` shows the routing and an estimate without making a model call.
-
-The repo has the data, the limits, and a note on a usage-limit bug I found in my own benchmark runner before computing any metric.
+I would rather publish the mixed result than the flattering half of it. The repo has the data, the limits, and a note on a usage-limit bug I found in my own benchmark runner before computing any metric.
 
 Repo: https://github.com/moelsaka01/tierview
 
@@ -92,50 +91,51 @@ Repo: https://github.com/moelsaka01/tierview
 
 ## dev.to article (draft; not published)
 
-Front matter for dev.to's editor. `published: false` stays until the author publishes by hand. Tags are limited to four. Images: use the raw GitHub URLs of `bench/results/chart.svg` (convert to PNG first if dev.to does not render SVG) and `assets/demo.gif`.
+Front matter for dev.to's editor. `published: false` stays until the author publishes by hand. Tags are limited to four. Images: use the raw GitHub URLs of `bench/results/chart-heldout.svg` (convert to PNG first if dev.to does not render SVG) and `assets/demo.gif`.
 
 ```
 ---
-title: I benchmarked tiered vs all-Opus code review on 13 real bugs. The result is a coin flip I can describe.
+title: My benchmark said my tool beat all-Opus. Ten more bugs said otherwise.
 published: false
-description: 9 vs 7 bugs caught, 0 vs 3 false alarms, 16% cheaper, and why none of it is statistically significant.
+description: 9 vs 7 on the first 13 bugs, 3 vs 9 on the next 10, 12 vs 16 pooled, and why none of it is conclusive.
 tags: ai, opensource, testing, claude
 ---
 ```
 
-I built a code reviewer, [tierview](https://github.com/moelsaka01/tierview), that sends each hunk of a diff to the cheapest Claude model that can handle it, and prints a cost receipt. Then I measured it, and the measurement is the interesting part, mostly because of how small it is.
+I built a code reviewer, [tierview](https://github.com/moelsaka01/tierview), that sends each hunk of a diff to the cheapest Claude model that can handle it, and prints a cost receipt. Then I measured it twice. The second measurement disagreed with the first, and the disagreement is the interesting part.
 
-**The setup.** 30 real commits from 9 open-source repos (QEMU, DPDK, Django, Cilium, Tetragon, Firecracker, Next.js and others). 20 introduced a bug that a later commit fixed and named (`Fixes: <sha>`, "regression from #PR"), and `git blame` confirms the fix rewrote lines of the bug commit. 10 are presumed-clean commits from 2025 that no fix touched for 12 months. I split them: 10 for tuning (the dev split), 20 held out (the test split: 13 buggy, 7 clean). I froze the config before the test run and ran each case once per arm.
-
-Three arms, same prompts and output format:
-- **tierview:** deterministic risk rules route each hunk; Sonnet 5.5 at low effort for low-risk hunks, one Opus 5.5 high-effort call for risky and escalated hunks.
+**The setup.** Real commits from open-source repos where a later commit fixed a bug and named its cause (`Fixes: <sha>`, "regression from #PR"), and `git blame` confirms the fix rewrote lines of the bug commit. Clean cases are 2025 commits that no fix touched for 12 months. Each case runs once per arm, with the config frozen first. Three arms with the same prompts and output format:
+- **tierview:** deterministic risk rules route each hunk; Sonnet 5.5 at low effort for low-risk hunks, Opus 5.5 at high effort for risky and escalated ones.
 - **all-Sonnet:** every hunk to Sonnet 5.5 at low effort.
 - **all-Opus:** every hunk to Opus 5.5 at medium effort.
 
-A catch means a finding within 3 lines of a line the fix changed (plus a term check on wide fixes), with an Opus judge, blind to the arm, for the cases a rule could not decide.
+A catch means a finding within 3 lines of a line the fix changed (plus a term check on wide fixes), with an Opus judge, blind to the arm, for cases a rule could not decide.
 
-**The numbers (test split).**
+**First set: 13 bugs, mostly C (QEMU, DPDK, Django, Cilium, Firecracker, Next.js).** tierview 9, all-Opus 7, all-Sonnet 4. False alarms on 7 clean cases: tierview 0, all-Opus 3. tierview was 16% cheaper per case. McNemar p = 0.5.
 
-| arm | bugs caught (95% range) | false alarms on 7 clean cases | cost per case via Claude Code |
+**Second set: 10 bugs, mostly Python, Rust and Go (Django, Bevy, pytest, Tetragon, DPDK), added afterwards, same frozen config.** tierview 3, all-Opus 9, all-Sonnet 6. McNemar p = 0.03, though that is a post-hoc look at one subset.
+
+**Pooled, 23 bugs and 12 clean cases.**
+
+| arm | bugs caught (95% range) | clean cases with a false alarm | cost per case via Claude Code |
 |---|---|---:|---:|
-| tierview | 9 / 13 (46-92%) | 0 | $0.213 |
-| all-Opus | 7 / 13 (23-85%) | 3 | $0.254 |
-| all-Sonnet | 4 / 13 (8-54%) | 0 | $0.113 |
+| tierview | 12 / 23 (30-74%) | 0 / 12 | $0.229 |
+| all-Opus | 16 / 23 (48-87%) | 3 / 12 | $0.278 |
+| all-Sonnet | 10 / 23 (22-65%) | 1 / 12 | $0.127 |
 
-tierview caught the 7 bugs all-Opus caught plus 2 more; all-Opus caught none that tierview missed. That is 2 discordant cases out of 13. The exact McNemar p-value is **0.5**. The 95% ranges overlap for every pair of arms. This does not show tierview is better. It shows I did not see it be worse, on a sample too small to tell.
+tierview caught 2 bugs all-Opus missed; all-Opus caught 6 that tierview missed. Exact McNemar p = 0.29. tierview was 18% cheaper per case than all-Opus but cost more per bug caught ($0.514 vs $0.455), because it caught fewer.
+
+**What I think happened, and what I have not shown.** The routing rules were tuned on a C-heavy dev split. On the new cases they scored most hunks 0 to 5 and sent the faulty hunk to the cheap reviewer in 7 of 10 cases; in the four it missed among those, the cheap reviewer reported nothing at all. The baselines send every hunk through the deeper prompt, and all-Sonnet caught three bugs tierview missed. That points at the router and the cheap prompt, not the model. It is a reading of the logs. I did not re-run or re-tune anything, and in three other cases tierview did route the hunk to Opus and still missed it, which single runs cannot separate from variance.
 
 **What I trust and what I do not.**
+- Neither set is large. The 95% ranges overlap everywhere. Pooling the two is a convenience, not a pre-registered analysis, and I chose the second set after seeing the first.
+- The second set is smaller than I planned (10 buggy cases, not 20), its fixes reach back to March 2026 (two predate mid-2026, so training-data contamination is possible), and Django and DPDK are over my 20% per-repo cap.
+- The judge is partly a model. I hand-checked 20 judgements from the first set (14 agree, 0 disagree, 6 unsure); the second set's are not audited. I wrote the one-line bug descriptions the judge uses.
+- Cost is API-equivalent (tokens at list prices); I ran everything on a Pro plan and was billed nothing extra. The "all-Fable" line in the receipt is a calculation, not a run.
 
-- The dev split disagreed with the test split. On dev, all-Sonnet caught 5 of 7, as many as all-Opus, at the lowest cost. On test it caught 4 of 13, the fewest. If I had stopped at dev I would have written a very different post. Seven bugs did not predict the next thirteen.
-- The test set is C-heavy: 7 of the 13 bugs are C from QEMU and DPDK, and TypeScript has one. It says little about other languages.
-- Each case ran once. Model answers vary between runs; in the pilot the same input was caught in one run and missed in the next.
-- The clean commits are older and calmer than the buggy ones, so the false-alarm numbers may be optimistic. "0 false alarms vs 3" is on 7 clean cases.
-- The judge is partly a model, and I audited it myself: of 20 judgements, 14 agree, 0 disagree, 6 unsure. A small sample, marked by the author, with 6 cases unresolved.
-- Cost is API-equivalent: the tokens that ran, at list prices. I ran everything on a Claude Pro plan, so I was billed nothing extra. The "all-Fable" line in the receipt is a calculation from tokens, not a run; I never made a Fable call, so I claim nothing about Fable's quality.
+**A bug in my own harness.** One batch hit the plan's 5-hour usage limit mid-run. Claude Code answered with a message my runner did not recognise, so runs whose calls had failed were saved as complete: 10 runs would have counted as reviewed, and the clean ones as "no false alarms". I caught it before computing any metric. The runner now treats any failed call as an incomplete run and stops the batch.
 
-**A bug in my own harness.** Test batch 3 hit the plan's 5-hour usage limit mid-run. Claude Code answered with a message my runner did not recognise, so runs whose calls had failed were saved as complete: 10 runs would have counted as reviewed, and the clean ones as "no false alarms". I caught it when I checked the batch, before computing any metric. The runner now treats any failed call as an incomplete run and stops the batch; the 10 runs were redone. If I had not looked at the batch, the false-alarm column would have been flattering for the wrong reason.
-
-**What I would do next.** More bugs, more languages, several runs per case so I can measure variance, and a second person marking the judge audit. Until then, read this as a pilot.
+**What I would do next.** Test whether the router is the problem (re-route on a held-back split and compare), add signals for the bug classes it missed, run each case several times, and have a second person mark the judge audit. Until then, read the first result as luck or as a C-specific effect, and the second as a warning.
 
 **Try it.** It runs on your Claude subscription through Claude Code, so there is no API key: `npx tierview review --dry-run` shows the routing and an estimate without calling a model. All cases, raw runs and judgements are in the repo under `bench/results/`. I would like to hear where the routing rules are wrong on your code.
 
@@ -162,7 +162,7 @@ Repo: https://github.com/hesreallyhim/awesome-claude-code. Rules read from its `
 - **Author Link:** `https://github.com/moelsaka01`
 - **Description** (one line, 10-500 characters):
 
-  > CLI that reviews a git diff by scoring each hunk with deterministic risk rules and routing it to Sonnet or Opus through the official `claude -p` CLI, so it runs on an existing Claude plan with no API key. It escalates when a model is unsure and prints a cost receipt per tier. Includes a small published benchmark on 13 held-out real bugs (9 caught vs 7 for all-Opus; not statistically significant).
+  > CLI that reviews a git diff by scoring each hunk with deterministic risk rules and routing it to Sonnet or Opus through the official `claude -p` CLI, so it runs on an existing Claude plan with no API key. It escalates when a model is unsure and prints a cost receipt per tier. Includes a small published benchmark on 23 held-out real bugs (12 caught vs 16 for all-Opus; not statistically significant).
 
 - **Checklist:** the author ticks the required boxes only after doing what they say.
 

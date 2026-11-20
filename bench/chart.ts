@@ -30,7 +30,7 @@ export function chartSvg(r: Results): string {
   const y = (v: number) => r1(m.top + (1 - v) * ph);
   const out: string[] = [];
   out.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-labelledby="t d" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">`);
-  out.push(`<title id="t">Bugs caught vs cost per case, test split</title>`);
+  out.push(`<title id="t">Bugs caught vs cost per case, ${SPLIT_LABEL}</title>`);
   out.push(
     `<desc id="d">${esc(arms.map((a) => `${ARM_STYLE[a.arm]!.label}: ${a.caught} of ${a.buggy_runs} bugs (${Math.round(a.recall * 100)}%, 95% range ${Math.round(a.recall_ci95[0] * 100)}-${Math.round(a.recall_ci95[1] * 100)}%), $${a.mean_cost_via_claude_code_usd.toFixed(3)} per case`).join("; "))}.</desc>`,
   );
@@ -44,7 +44,7 @@ export function chartSvg(r: Results): string {
   text{font-size:12px} .h{font-size:15px;font-weight:600} .lab{font-size:12.5px;font-weight:600}
 </style>`);
   out.push(`<rect class="bg" x="0" y="0" width="${W}" height="${H}" rx="8"/>`);
-  out.push(`<text class="t1 h" x="${m.left}" y="26">Bugs caught vs cost per case (test split, ${arms[0]?.buggy_runs ?? 0} bugs)</text>`);
+  out.push(`<text class="t1 h" x="${m.left}" y="26">Bugs caught vs cost per case (${SPLIT_LABEL}, ${arms[0]?.buggy_runs ?? 0} bugs)</text>`);
   out.push(`<text class="t2" x="${m.left}" y="46">Bars: 95% bootstrap ranges · cost via Claude Code · tierview vs all-Opus: p = ${r.mcnemar_tierview_vs_all_opus?.p ?? "n/a"}</text>`);
   // grid and axes
   for (let v = 0; v <= 1.0001; v += 0.25) {
@@ -78,9 +78,14 @@ export function chartSvg(r: Results): string {
   return out.join("\n") + "\n";
 }
 
+let SPLIT_LABEL = "test split";
+
 function main(): void {
-  const r = JSON.parse(readFileSync(join(BENCH, "results", "results-test.json"), "utf8")) as Results;
-  writeFileSync(join(BENCH, "results", "chart.svg"), chartSvg(r));
+  const i = process.argv.indexOf("--split");
+  const split = i >= 0 ? process.argv[i + 1]! : "test";
+  SPLIT_LABEL = split === "heldout" ? "both held-out sets" : `${split} split`;
+  const r = JSON.parse(readFileSync(join(BENCH, "results", `results-${split}.json`), "utf8")) as Results;
+  writeFileSync(join(BENCH, "results", split === "test" ? "chart.svg" : `chart-${split}.svg`), chartSvg(r));
   process.stderr.write("wrote bench/results/chart.svg\n");
 }
 

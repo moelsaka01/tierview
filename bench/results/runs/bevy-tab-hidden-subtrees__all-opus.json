@@ -1,0 +1,224 @@
+{
+  "case_id": "bevy-tab-hidden-subtrees",
+  "arm": "all-opus",
+  "arm_version": 1,
+  "batch": "2026-11-20T12-03-07",
+  "config_hash": "087925df358a",
+  "complete": true,
+  "calls": 1,
+  "wall_ms": 26136,
+  "review": {
+    "version": 1,
+    "findings": [
+      {
+        "file": "crates/bevy_input_focus/Cargo.toml",
+        "start_line": 74,
+        "end_line": 74,
+        "side": "new",
+        "severity": "medium",
+        "category": "api-contract",
+        "title": "Unconditional bevy_camera dependency likely breaks no_std support",
+        "explanation": "bevy_input_focus has std/critical-section/libm features, so it is meant to build on no_std targets. bevy_camera depends on rendering and asset crates (bevy_asset, bevy_image, bevy_mesh, etc.), which are probably not no_std-compatible. If so, adding it as a required dependency breaks the crate's no_std build and its CI check. It also pulls a heavy camera/asset dependency tree into a small input-focus crate. bevy_camera is also missing from the std, critical-section and bevy_reflect feature lists.",
+        "suggestion": "Make bevy_camera optional behind a feature (e.g. `visibility = [\"dep:bevy_camera\"]`), use #[cfg] around the InheritedVisibility check, and forward the std/reflect features. Or move InheritedVisibility to a lighter crate.",
+        "evidence": "bevy_camera = { path = \"../bevy_camera\", version = \"0.20.0-dev\", default-features = false }",
+        "confidence": 0.55,
+        "id": "1534a231c8da",
+        "hunk_id": "crates/bevy_input_focus/Cargo.toml#1",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      },
+      {
+        "file": "crates/bevy_input_focus/src/tab_navigation.rs",
+        "start_line": 171,
+        "end_line": 171,
+        "side": "new",
+        "severity": "low",
+        "category": "api-contract",
+        "title": "Public navigate/initialize docs no longer describe focusability",
+        "explanation": "The doc comments on `navigate` and `initialize` still say focusable entities are determined only by the presence of `TabIndex`. With this query change, entities whose InheritedVisibility is false are now excluded too. Callers of the public TabNavigation API get different results than the docs describe.",
+        "suggestion": "Update the docs to say that hidden entities (InheritedVisibility false) are skipped.",
+        "evidence": "Option<&'static InheritedVisibility>,",
+        "confidence": 0.5,
+        "id": "2048b210c237",
+        "hunk_id": "crates/bevy_input_focus/src/tab_navigation.rs#2",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      },
+      {
+        "file": "crates/bevy_input_focus/src/tab_navigation.rs",
+        "start_line": 341,
+        "end_line": 343,
+        "side": "new",
+        "severity": "low",
+        "category": "bug",
+        "title": "Newly spawned entities skipped until visibility propagation runs",
+        "explanation": "InheritedVisibility defaults to HIDDEN and is only computed by the visibility propagation system in PostUpdate. A focusable entity spawned with Visibility (e.g. a UI Node) in the current frame therefore reads as invisible. Tab navigation or `initialize` called before propagation (e.g. focusing the first element of a just-opened dialog) skips it, or returns NoFocusableEntities.",
+        "suggestion": "Document this limitation, or treat entities whose InheritedVisibility was just added/changed this frame as visible. Alternatively check `Visibility` up the ancestor chain directly.",
+        "evidence": "if inherited_visibility.is_none_or(|v| v.get())",
+        "confidence": 0.45,
+        "id": "54b8d10bcc3b",
+        "hunk_id": "crates/bevy_input_focus/src/tab_navigation.rs#3",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      }
+    ],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "crates/bevy_input_focus/Cargo.toml#1",
+        "score": 15,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "dependencies",
+            "weight": 15,
+            "detail": "path crates/bevy_input_focus/Cargo.toml"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "crates/bevy_input_focus/src/tab_navigation.rs#1",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "crates/bevy_input_focus/src/tab_navigation.rs#2",
+        "score": 30,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "boundary",
+            "weight": 25,
+            "detail": "comparison operator changed"
+          },
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "7 changed lines"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "crates/bevy_input_focus/src/tab_navigation.rs#3",
+        "score": 30,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "boundary",
+            "weight": 25,
+            "detail": "condition changed"
+          },
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "9 changed lines"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 1,
+      "model_substitutions": [],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 2,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 4,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 14967,
+          "cache_read_tokens": 994,
+          "output_tokens": 2382,
+          "cache_write_1h_tokens": 14967,
+          "cost_usd": 0.16758279999999998,
+          "direct_api_cost_usd": 0.103092
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.16758279999999998,
+      "total_direct_api_cost_usd": 0.103092,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.3349668,
+        "direct_api_cost_usd": 0.206184
+      },
+      "savings_pct": 50,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 26135,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}

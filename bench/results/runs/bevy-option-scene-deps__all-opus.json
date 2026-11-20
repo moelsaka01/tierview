@@ -1,0 +1,152 @@
+{
+  "case_id": "bevy-option-scene-deps",
+  "arm": "all-opus",
+  "arm_version": 1,
+  "batch": "2026-11-20T12-03-07",
+  "config_hash": "087925df358a",
+  "complete": true,
+  "calls": 1,
+  "wall_ms": 14969,
+  "review": {
+    "version": 1,
+    "findings": [
+      {
+        "file": "crates/bevy_scene/src/scene.rs",
+        "start_line": 214,
+        "end_line": 227,
+        "side": "new",
+        "severity": "medium",
+        "category": "bug",
+        "title": "Option<P> Scene impl doesn't forward register_dependencies",
+        "explanation": "The tuple Scene impl forwards both resolve and register_dependencies to inner scenes. This impl only overrides resolve, so Option<P> uses the trait's default register_dependencies, which presumably does nothing (the impl compiles without the method, so a default exists). If the wrapped scene depends on an asset (e.g. it inherits from a .bsn asset), the dependency is never registered. queue_spawn_scene then won't wait for it, and resolve can fail with ResolveSceneError::MissingSceneDependency.",
+        "suggestion": "Add `fn register_dependencies(&self, dependencies: &mut SceneDependencies) { if let Some(scene) = self { scene.register_dependencies(dependencies); } }`.",
+        "evidence": "impl<P> Scene for Option<P>",
+        "confidence": 0.75,
+        "id": "c96383099990",
+        "hunk_id": "crates/bevy_scene/src/scene.rs#1",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      }
+    ],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "crates/bevy_scene/src/lib.rs#1",
+        "score": 25,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "error_handling_removed",
+            "weight": 20,
+            "detail": "`.unwrap();`"
+          },
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "21 changed lines"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "crates/bevy_scene/src/scene.rs#1",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "15 changed lines"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 1,
+      "model_substitutions": [],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 2,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 2,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 8074,
+          "cache_read_tokens": 994,
+          "output_tokens": 1145,
+          "cache_write_1h_tokens": 8074,
+          "cost_usd": 0.08769880000000001,
+          "direct_api_cost_usd": 0.05078
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.08769880000000001,
+      "total_direct_api_cost_usd": 0.05078,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.1751988,
+        "direct_api_cost_usd": 0.10156
+      },
+      "savings_pct": 49.9,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 14968,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}

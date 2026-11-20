@@ -1,0 +1,147 @@
+{
+  "case_id": "django-yaml-sort-keys-crash",
+  "arm": "all-opus",
+  "arm_version": 1,
+  "batch": "2026-11-20T12-03-07",
+  "config_hash": "087925df358a",
+  "complete": true,
+  "calls": 1,
+  "wall_ms": 18011,
+  "review": {
+    "version": 1,
+    "findings": [
+      {
+        "file": "django/core/serializers/pyyaml.py",
+        "start_line": 59,
+        "end_line": 65,
+        "side": "new",
+        "severity": "low",
+        "category": "api-contract",
+        "title": "Hardcoded sort_keys=False conflicts with user-supplied sort_keys option",
+        "explanation": "Serializer options are forwarded to yaml.dump via **self.options. Before this change a caller could pass sort_keys=True (e.g. serializers.serialize('yaml', qs, sort_keys=True)), and it went straight to PyYAML. Now sort_keys=False is also passed explicitly, so supplying sort_keys raises TypeError: dump() got multiple values for keyword argument 'sort_keys'. Separately, sort_keys only exists in PyYAML 5.1+, so older PyYAML versions would raise TypeError on every YAML serialization unless the minimum supported version is at least 5.1.",
+        "suggestion": "Use self.options.setdefault(\"sort_keys\", False) next to the allow_unicode default and drop the explicit keyword; make sure the minimum PyYAML requirement is >= 5.1.",
+        "evidence": "            sort_keys=False,",
+        "confidence": 0.75,
+        "id": "f99cf42a483b",
+        "hunk_id": "django/core/serializers/pyyaml.py#2",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      }
+    ],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "django/core/serializers/pyyaml.py#1",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "deletion_only",
+            "weight": 5,
+            "detail": "only deletions"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "django/core/serializers/pyyaml.py#2",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "8 changed lines"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 1,
+      "model_substitutions": [],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 2,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 2,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 5670,
+          "cache_read_tokens": 994,
+          "output_tokens": 1643,
+          "cache_write_1h_tokens": 5670,
+          "cost_usd": 0.0784268,
+          "direct_api_cost_usd": 0.051124
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.0784268,
+      "total_direct_api_cost_usd": 0.051124,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.15665479999999998,
+        "direct_api_cost_usd": 0.102248
+      },
+      "savings_pct": 49.9,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 18011,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}

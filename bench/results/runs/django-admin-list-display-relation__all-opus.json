@@ -1,0 +1,176 @@
+{
+  "case_id": "django-admin-list-display-relation",
+  "arm": "all-opus",
+  "arm_version": 1,
+  "batch": "2026-11-20T12-03-07",
+  "config_hash": "087925df358a",
+  "complete": true,
+  "calls": 1,
+  "wall_ms": 37466,
+  "review": {
+    "version": 1,
+    "findings": [
+      {
+        "file": "django/contrib/admin/utils.py",
+        "start_line": 316,
+        "end_line": 318,
+        "side": "new",
+        "severity": "high",
+        "category": "bug",
+        "title": "Returning related FK field makes changelist display wrong object or crash",
+        "explanation": "lookup_field now returns the final field of any `__` path, not only boolean ones. In admin_list.items_for_result, when f is not None and f.remote_field is a ManyToOneRel (FK/OneToOne as the final hop), the value is recomputed as `getattr(result, f.name)` on the *root* object, ignoring the traversed `value`. For list_display = ['parent__parent'] on GrandChild this shows GrandChild.parent (the Child) instead of Child.parent (the Parent). If the root model has no attribute named f.name (e.g. 'group__owner' where only Group has 'owner'), it raises AttributeError and the changelist page crashes. Before this change f was None, so the traversed value was shown correctly via display_for_value.",
+        "suggestion": "Only set f when the final field is not a relation, e.g. `field = get_fields_from_path(opts.model, name)[-1]; if not field.is_relation: f = field`. Alternatively, change items_for_result to use the already-resolved `value` for related fields. Add a test with a list_display path that ends in a FK.",
+        "evidence": "                        f = get_fields_from_path(opts.model, name)[-1]",
+        "confidence": 0.72,
+        "id": "95b6719324e3",
+        "hunk_id": "django/contrib/admin/utils.py#2",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      }
+    ],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "django/contrib/admin/utils.py#1",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "django/contrib/admin/utils.py#2",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/admin_changelist/models.py#1",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/admin_changelist/tests.py#1",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "29 changed lines"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 1,
+      "model_substitutions": [],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 2,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 4,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 15573,
+          "cache_read_tokens": 994,
+          "output_tokens": 3655,
+          "cache_write_1h_tokens": 15573,
+          "cost_usd": 0.19789079999999998,
+          "direct_api_cost_usd": 0.130976
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.19789079999999998,
+      "total_direct_api_cost_usd": 0.130976,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.3955828,
+        "direct_api_cost_usd": 0.261952
+      },
+      "savings_pct": 50,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 37465,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}

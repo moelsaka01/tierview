@@ -1,0 +1,363 @@
+{
+  "case_id": "dpdk-ntb-peer-status-atomic",
+  "arm": "all-sonnet",
+  "arm_version": 1,
+  "batch": "2026-11-20T12-11-52",
+  "config_hash": "087925df358a",
+  "complete": true,
+  "calls": 1,
+  "wall_ms": 13556,
+  "review": {
+    "version": 1,
+    "findings": [
+      {
+        "file": "drivers/raw/ntb/ntb.c",
+        "start_line": 140,
+        "end_line": 141,
+        "side": "new",
+        "severity": "medium",
+        "category": "bug",
+        "title": "Unchecked rte_zmalloc and peer_mw_cnt/mw_cnt mismatch; leak on repeat",
+        "explanation": "peer_mw_size is allocated with peer_mw_cnt entries (from peer spad) and may be NULL, but the loop indexes it up to local hw->mw_cnt. If the peer count is smaller or the allocation fails, this is an out-of-bounds write or NULL dereference. It is also never freed and is reallocated each time the peer comes up again, so it leaks.",
+        "suggestion": "Check the allocation result, bound the loop by min(mw_cnt, peer_mw_cnt) or allocate mw_cnt entries, and free peer_mw_size on peer down and on close.",
+        "evidence": "hw->peer_mw_size = rte_zmalloc(\"uint64_t\",\n\t\t\t\t   hw->peer_mw_cnt * sizeof(uint64_t), 0);",
+        "confidence": 0.6,
+        "id": "84c0e33ac011",
+        "hunk_id": "drivers/raw/ntb/ntb.c#1",
+        "model": "claude-sonnet-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      },
+      {
+        "file": "drivers/raw/ntb/ntb.c",
+        "start_line": 333,
+        "end_line": 334,
+        "side": "new",
+        "severity": "medium",
+        "category": "bug",
+        "title": "hw->mz allocation unchecked and never freed; leaks on restart or error",
+        "explanation": "rte_zmalloc is unchecked, and hw->mz is neither freed on error return, nor in stop or close. Each start leaks the array. The memzones are also never freed. ntb_set_mw returns early when a memzone already exists without setting hw->mz[mw_idx], so after a restart the array entry stays NULL.",
+        "suggestion": "Check for NULL, free hw->mz on failure and in stop/close, and free the memzones on stop.",
+        "evidence": "hw->mz = rte_zmalloc(\"struct rte_memzone *\",",
+        "confidence": 0.55,
+        "id": "24438ace2e39",
+        "hunk_id": "drivers/raw/ntb/ntb.c#2",
+        "model": "claude-sonnet-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      },
+      {
+        "file": "drivers/raw/ntb/ntb.c",
+        "start_line": 639,
+        "end_line": 644,
+        "side": "new",
+        "severity": "medium",
+        "category": "error-handling",
+        "title": "Interrupt callback left registered on init failure paths",
+        "explanation": "The callback is registered, and then there are many error returns. ntb_create releases the rawdev on failure, but the callback still points at the freed dev. A later interrupt would use freed memory. The return value of rte_intr_callback_register is also ignored.",
+        "suggestion": "Check the register result, and on failure unregister the callback and disable efd before returning.",
+        "evidence": "rte_intr_callback_register(intr_handle,\n\t\t\t\t   ntb_dev_intr_handler, dev);",
+        "confidence": 0.55,
+        "id": "3b4cc7121bcb",
+        "hunk_id": "drivers/raw/ntb/ntb.c#6",
+        "model": "claude-sonnet-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      },
+      {
+        "file": "drivers/raw/ntb/ntb.c",
+        "start_line": 63,
+        "end_line": 67,
+        "side": "new",
+        "severity": "low",
+        "category": "error-handling",
+        "title": "Memzone not freed when mw_set_trans fails",
+        "explanation": "If mw_set_trans fails, the reserved memzone stays reserved and is stored in hw->mz. A later retry finds it via rte_memzone_lookup and returns 0 without ever setting the translation.",
+        "suggestion": "Call rte_memzone_free(mz) and clear hw->mz[mw_idx] on failure.",
+        "evidence": "ret = (*hw->ntb_ops->mw_set_trans)(dev, mw_idx, mz->iova, mw_size);",
+        "confidence": 0.5,
+        "id": "f33a6a0d1d32",
+        "hunk_id": "drivers/raw/ntb/ntb.c#1",
+        "model": "claude-sonnet-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      },
+      {
+        "file": "drivers/raw/ntb/ntb.c",
+        "start_line": 363,
+        "end_line": 371,
+        "side": "new",
+        "severity": "low",
+        "category": "bug",
+        "title": "Early returns in stop leave dev->started set",
+        "explanation": "If peer_db_set is missing or fails, or db_set_mask is unsupported, the function returns before dev->started = 0. The device stays marked started even though link cleanup has already run.",
+        "suggestion": "Log the error but continue to the clean label, and always clear started.",
+        "evidence": "NTB_LOG(ERR, \"Failed to tell peer device is down.\");\n\t\treturn;",
+        "confidence": 0.5,
+        "id": "3458f5ff475d",
+        "hunk_id": "drivers/raw/ntb/ntb.c#3",
+        "model": "claude-sonnet-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      }
+    ],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "doc/guides/rawdevs/ntb.rst#1",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "drivers/raw/ntb/ntb.c#1",
+        "score": 25,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 15,
+            "detail": "177 changed lines"
+          },
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "336 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "drivers/raw/ntb/ntb.c#2",
+        "score": 15,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "15 changed lines"
+          },
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "336 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "drivers/raw/ntb/ntb.c#3",
+        "score": 20,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 10,
+            "detail": "46 changed lines"
+          },
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "336 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "drivers/raw/ntb/ntb.c#4",
+        "score": 40,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "memory",
+            "weight": 25,
+            "detail": "`rte_free(intr_handle->intr_vec);`"
+          },
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "14 changed lines"
+          },
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "336 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "drivers/raw/ntb/ntb.c#5",
+        "score": 10,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "336 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "drivers/raw/ntb/ntb.c#6",
+        "score": 20,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 10,
+            "detail": "80 changed lines"
+          },
+          {
+            "signal": "many_hunks_in_file",
+            "weight": 5,
+            "detail": "6 hunks in this file"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "336 source lines, no test file"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 1,
+      "model_substitutions": [],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 2,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 7,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 36179,
+          "cache_read_tokens": 994,
+          "output_tokens": 1979,
+          "cache_write_1h_tokens": 36179,
+          "cost_usd": 0.1646094,
+          "direct_api_cost_usd": 0.08994
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.1646094,
+      "total_direct_api_cost_usd": 0.08994,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.6582388,
+        "direct_api_cost_usd": 0.35976
+      },
+      "savings_pct": 75,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 13556,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}

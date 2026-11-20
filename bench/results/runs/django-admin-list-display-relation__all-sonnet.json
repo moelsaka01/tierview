@@ -1,0 +1,176 @@
+{
+  "case_id": "django-admin-list-display-relation",
+  "arm": "all-sonnet",
+  "arm_version": 1,
+  "batch": "2026-11-20T12-03-07",
+  "config_hash": "087925df358a",
+  "complete": true,
+  "calls": 1,
+  "wall_ms": 9096,
+  "review": {
+    "version": 1,
+    "findings": [
+      {
+        "file": "django/contrib/admin/utils.py",
+        "start_line": 317,
+        "end_line": 318,
+        "side": "new",
+        "severity": "medium",
+        "category": "error-handling",
+        "title": "get_fields_from_path can raise for non-field related attributes",
+        "explanation": "The getattr traversal succeeds for any attribute, including properties on the related model (e.g. parent__some_property). get_fields_from_path only resolves real model fields, so it raises FieldDoesNotExist or NotRelationField. lookup_field previously returned f=None in that case and the changelist rendered normally. Now it can crash the changelist.",
+        "suggestion": "Wrap the call in try/except (FieldDoesNotExist, NotRelationField) and leave f as None on failure.",
+        "evidence": "f = get_fields_from_path(opts.model, name)[-1]",
+        "confidence": 0.5,
+        "id": "8f80fba82432",
+        "hunk_id": "django/contrib/admin/utils.py#2",
+        "model": "claude-sonnet-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      }
+    ],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "django/contrib/admin/utils.py#1",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "django/contrib/admin/utils.py#2",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/admin_changelist/models.py#1",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/admin_changelist/tests.py#1",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "29 changed lines"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 1,
+      "model_substitutions": [],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 2,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 4,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 15580,
+          "cache_read_tokens": 994,
+          "output_tokens": 1151,
+          "cache_write_1h_tokens": 15580,
+          "cost_usd": 0.0739334,
+          "direct_api_cost_usd": 0.040462
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.0739334,
+      "total_direct_api_cost_usd": 0.040462,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.2955348,
+        "direct_api_cost_usd": 0.161848
+      },
+      "savings_pct": 75,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 9096,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}

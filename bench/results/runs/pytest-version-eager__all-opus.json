@@ -1,0 +1,410 @@
+{
+  "case_id": "pytest-version-eager",
+  "arm": "all-opus",
+  "arm_version": 1,
+  "batch": "2026-11-20T12-22-27",
+  "config_hash": "087925df358a",
+  "complete": true,
+  "calls": 1,
+  "wall_ms": 33841,
+  "review": {
+    "version": 1,
+    "findings": [
+      {
+        "file": "src/_pytest/helpconfig.py",
+        "start_line": 157,
+        "end_line": 159,
+        "side": "new",
+        "severity": "high",
+        "category": "bug",
+        "title": "`pytest -V` no longer shows version; runs the full test session",
+        "explanation": "A single '-V' (the documented alias of --version) is not caught by the early check in main(), which matches only the literal '--version'. Here config.option.version is 1, so the condition 'version > 1' is false. pytest_cmdline_main returns None and a normal test session runs instead of printing the version. The same happens to --version given through PYTEST_ADDOPTS or addopts; the changelog documents that case but not -V.",
+        "suggestion": "When config.option.version == 1, write f\"pytest {pytest.__version__}\\n\" and return ExitCode.OK. Use show_version_verbose only when version > 1. Add a test for '-V'.",
+        "evidence": "    if config.option.version > 1:",
+        "confidence": 0.85,
+        "id": "ddca4473d41c",
+        "hunk_id": "src/_pytest/helpconfig.py#1",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      },
+      {
+        "file": "src/_pytest/config/__init__.py",
+        "start_line": 153,
+        "end_line": 156,
+        "side": "new",
+        "severity": "medium",
+        "category": "bug",
+        "title": "Early version check ignores -V alias; '-V --version' prints short form",
+        "explanation": "The early exit counts only the literal string '--version'. The -V alias is ignored, so mixed forms go wrong: '-V --version' counts as two version flags in argparse, which before this change gave the verbose output, but the early check sees one '--version' and prints only the short version. A lone '-V' skips the early exit entirely and falls through to the plugin path, where it is mishandled (see helpconfig.py#1).",
+        "suggestion": "Count both forms: n = sum(a in ('--version', '-V') for a in new_args) (or also handle combined forms such as '-VV'), and take the early exit only when n == 1.",
+        "evidence": "if isinstance(new_args, Sequence) and new_args.count(\"--version\") == 1:",
+        "confidence": 0.75,
+        "id": "69b478ec16e6",
+        "hunk_id": "src/_pytest/config/__init__.py#1",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      },
+      {
+        "file": "src/_pytest/config/__init__.py",
+        "start_line": 1155,
+        "end_line": 1160,
+        "side": "new",
+        "severity": "low",
+        "category": "bug",
+        "title": "Usage-error path always shows verbose version, even for a single -V",
+        "explanation": "The comment assumes only '--version --version' can reach this point. A single '-V', or --version coming from addopts, also reaches it when parsing fails. Those cases now print the verbose plugin listing instead of the short version.",
+        "suggestion": "Keep the count check: call show_version_verbose only when self.option.version > 1; otherwise write the short 'pytest X' line.",
+        "evidence": "show_version_verbose(self)",
+        "confidence": 0.6,
+        "id": "72b556a25dbc",
+        "hunk_id": "src/_pytest/config/__init__.py#3",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      }
+    ],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "changelog/13574.improvement.rst#1",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "7 changed lines"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "src/_pytest/config/__init__.py#1",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "8 changed lines"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "src/_pytest/config/__init__.py#2",
+        "score": 30,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "boundary",
+            "weight": 25,
+            "detail": "condition changed"
+          },
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "6 changed lines"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "src/_pytest/config/__init__.py#3",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "8 changed lines"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "src/_pytest/helpconfig.py#1",
+        "score": 30,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "boundary",
+            "weight": 25,
+            "detail": "comparison operator changed"
+          },
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "30 changed lines"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "testing/test_capture.py#1",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "testing/test_config.py#1",
+        "score": 10,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "error_handling_removed",
+            "weight": 20,
+            "detail": "`assert ret == ExitCode.OK`"
+          },
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "12 changed lines"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "testing/test_config.py#2",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "error_handling_removed",
+            "weight": 20,
+            "detail": "`assert result.ret == ExitCode.USAGE_ERROR`"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "testing/test_helpconfig.py#1",
+        "score": 35,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "error_handling_removed",
+            "weight": 20,
+            "detail": "`assert result.ret == 0`"
+          },
+          {
+            "signal": "boundary",
+            "weight": 25,
+            "detail": "comparison operator changed"
+          },
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "16 changed lines"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "testing/test_helpconfig.py#2",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "error_handling_removed",
+            "weight": 20,
+            "detail": "`assert result.ret == 0`"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "testing/test_helpconfig.py#3",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "error_handling_removed",
+            "weight": 20,
+            "detail": "`assert result.ret == 0`"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "testing/test_helpconfig.py#4",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "error_handling_removed",
+            "weight": 20,
+            "detail": "`assert result.ret != 0`"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 1,
+      "model_substitutions": [],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 2,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 12,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 41447,
+          "cache_read_tokens": 994,
+          "output_tokens": 3342,
+          "cache_write_1h_tokens": 41447,
+          "cost_usd": 0.3986228,
+          "direct_api_cost_usd": 0.228212
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.3986228,
+      "total_direct_api_cost_usd": 0.228212,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.7970468,
+        "direct_api_cost_usd": 0.456424
+      },
+      "savings_pct": 50,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 33841,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}

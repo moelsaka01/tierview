@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Benchmark: a second held-out set (10 bugs, mostly Python, Rust and Go) reversed the first result. Across 23 held-out bugs tierview caught 12, all-Opus 16 and all-Sonnet 10 (p = 0.29 vs all-Opus, not significant). README and RESULTS.md now lead with both sets; the 0.1.0 and 0.1.1 packages carry the earlier 9-vs-7 headline.
+
 ## 0.1.1 (2026-11-20)
 
 - New risk signal `resilience_limits` (weight 25): changed timeouts, deadlines, TTLs, retry limits and backoff values now raise a hunk to Tier 2. These pass tests and fail under load. It is not part of the benchmarked config (`bench-config-v2`), so the published benchmark numbers were measured without it.

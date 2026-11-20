@@ -4,8 +4,8 @@
 
 **Tiered Claude code review with a cost receipt**
 
-Caught 9 of 13 real bugs vs 7 for all-Opus, with zero false alarms, at 16% lower cost.<br>
-<sub>(13 held-out bugs, not statistically significant; see <a href="bench/results/RESULTS.md">RESULTS.md</a>)</sub>
+On 23 held-out real bugs it caught 12, vs 16 for all-Opus, with no false alarms, at 18% lower cost.<br>
+<sub>(Not statistically significant, p = 0.29, and the two test sets disagree: it beat all-Opus 9 to 7 on the first 13 bugs and lost 3 to 9 on the next 10. Read the <a href="bench/results/RESULTS.md">results and limits</a> before trusting any of it.)</sub>
 
 ![tierview review --dry-run on a small sample repo](https://raw.githubusercontent.com/moelsaka01/tierview/main/assets/demo.gif)
 
@@ -13,7 +13,7 @@ Caught 9 of 13 real bugs vs 7 for all-Opus, with zero false alarms, at 16% lower
 
 </div>
 
-![Bugs caught vs cost per case on the 13-bug test split](https://raw.githubusercontent.com/moelsaka01/tierview/main/bench/results/chart.svg)
+![Bugs caught vs cost per case on both held-out sets (23 bugs)](https://raw.githubusercontent.com/moelsaka01/tierview/main/bench/results/chart-heldout.svg)
 
 ## What it does
 
@@ -127,26 +127,32 @@ tierview pr https://github.com/OWNER/REPO/pull/123 --dry-run   # a pull request 
 
 ## Benchmark
 
-On a held-out test split of **13 buggy and 7 clean commits** from 9 open-source repos (QEMU, DPDK, Django, Cilium, Tetragon, Firecracker, Next.js and others), each run once per arm on the `claude-code` backend. The bugs are real: each commit introduced a bug that a later commit fixed and named. Config frozen before the test run (tag `bench-config-v2`).
+Two held-out sets of real commits, each run once per arm on the `claude-code` backend. A bug is real when a later commit named it as the cause (`Fixes: <sha>`, "regression in <sha>") and `git blame` confirms the fix rewrote lines of the bug commit. The config was frozen before each set was run. The first set (13 buggy, 7 clean) is mostly C, from QEMU, DPDK, Django, Cilium, Tetragon, Firecracker and Next.js. The second set (10 buggy, 5 clean, added later) is mostly Python, Rust and Go, from Django, Bevy, pytest, Tetragon, DPDK, uv, pandas and SQLAlchemy.
 
-| arm | bugs caught (95% range) | clean cases with a false alarm | cost per case via Claude Code | cost per bug caught |
+| arm | bugs caught, both sets (95% range) | clean cases with a false alarm | cost per case via Claude Code | cost per bug caught |
 |---|---|---:|---:|---:|
-| **tierview** | **9 / 13 = 69%** (46–92%) | **0 / 7** | $0.213 | $0.364 |
-| all-Opus | 7 / 13 = 54% (23–85%) | 3 / 7 | $0.254 | $0.525 |
-| all-Sonnet | 4 / 13 = 31% (8–54%) | 0 / 7 | $0.113 | $0.408 |
+| tierview | 12 / 23 = 52% (30–74%) | 0 / 12 | $0.229 | $0.514 |
+| **all-Opus** | **16 / 23 = 70%** (48–87%) | 3 / 12 | $0.278 | $0.455 |
+| all-Sonnet | 10 / 23 = 43% (22–65%) | 1 / 12 | $0.127 | $0.331 |
+
+| | first set (13 bugs) | second set (10 bugs) |
+|---|---:|---:|
+| tierview | 9 (69%) | 3 (30%) |
+| all-Opus | 7 (54%) | 9 (90%) |
+| all-Sonnet | 4 (31%) | 6 (60%) |
 
 ### What this does and does not show
 
-- **The difference is not statistically significant.** tierview caught 2 bugs all-Opus missed; all-Opus caught none that tierview missed. Exact McNemar p = 0.5. The 95% ranges overlap for every pair of arms. This is a pilot, not proof.
-- **n = 13.** And C-heavy: 7 of the 13 test bugs are C (QEMU, DPDK); TypeScript has one. It says little about other languages.
-- **tierview cost about 1.9x all-Sonnet.** It is not the cheapest arm, only the cheapest of the two that caught most bugs.
+- **tierview did not beat all-Opus.** Pooled, it caught fewer bugs (12 vs 16) at lower cost and with fewer false alarms. The pooled gap is not significant (exact McNemar p = 0.29). On the second set alone all-Opus was ahead 9 to 3 (p = 0.03, a post-hoc look at one subset).
+- **The two sets disagree, and I do not know which is the better estimate.** On the first set tierview was ahead (9 vs 7, p = 0.5). The second set was added afterwards, in other languages, with a wider fix-date window and fewer cases than planned (10 buggy instead of 20).
+- **Where it lost, the router is the likelier cause.** The risk rules were tuned on a C-heavy dev split. On the second set they scored most hunks 0 to 5 and sent the faulty hunk to Sonnet at low effort in 7 of 10 cases, where tierview found nothing in the four it missed. This is a reading of the logs, not a tested explanation, and nothing was re-run or re-tuned.
+- **tierview is cheaper per case than all-Opus (18%) but not per bug caught,** because it caught fewer. all-Sonnet was cheapest per bug caught.
 - **One run per case and arm.** Models vary between runs; single runs cannot measure that.
-- **The clean set is older and calmer** (2025 commits with no fix touching them for a year), so false-alarm rates may be optimistic.
-- **The judge is mine to audit, not independent.** A rule plus an Opus fallback decides whether a finding matches the known bug. I hand-checked 20 judgements: 14 agree, 0 disagree, 6 unsure. The marker was the author.
-- **The dev split disagreed on all-Sonnet** (it looked best there), which is why the test split is the headline and dev was used only for tuning.
+- **The clean sets are older and calmer** (2025 commits with no fix touching them for a year), so false-alarm rates may be optimistic. The 0 false alarms is on 12 clean cases.
+- **The judge is mine to audit, not independent.** A rule plus an Opus fallback decides whether a finding matches the known bug. I hand-checked 20 judgements from the first set (14 agree, 0 disagree, 6 unsure); the second set's judgements are not hand-audited.
 - **No Fable arm.** Costs for Fable are calculated, not measured.
 
-Everything, including every case, the raw runs, the judgements and a usage-limit incident that was found and fixed before any metric was computed, is in [bench/results/RESULTS.md](bench/results/RESULTS.md). Reproduce with `npm run bench:build` and the commands at the bottom of that file (the full run is 190 `claude` calls).
+Everything, including every case, the raw runs, the judgements and a usage-limit incident that was found and fixed before any metric was computed, is in [bench/results/RESULTS.md](bench/results/RESULTS.md). Reproduce with `npm run bench:build` and the commands at the bottom of that file (the full runs are 255 `claude` calls).
 
 ## How it compares
 
@@ -164,17 +170,17 @@ Tiered routing on its own is not new, and tierview is not the first tiered revie
 
 ## FAQ
 
-**Is it really free?** There is no tierview fee and no API key on the default path; it spends your existing Claude plan's usage. `--dry-run` spends nothing. A real review makes about 2 `claude` calls (1.9 on average in the benchmark), and plans have limits.
+**Is it really free?** There is no tierview fee and no API key on the default path; it spends your existing Claude plan's usage. `--dry-run` spends nothing. A real review makes about 2 `claude` calls (1.8 on average in the benchmark), and plans have limits.
 
 **Does it send my code anywhere?** To Anthropic, through Claude Code (or the API, with `--backend api`), exactly as if you pasted the diff into Claude. tierview itself has no server and sends nothing else. On the default backend the `claude` process runs in an empty temp directory in safe mode, so the reviewed repo's CLAUDE.md, hooks and MCP servers never load.
 
-**Why not just use the best model on everything?** You can: the all-Opus arm is that. On this small test it cost 16% more per case and was no better (7 vs 9, within noise) and raised false alarms on 3 of 7 clean commits. With 13 bugs, I cannot tell you that the cascade is better, only that I did not see it be worse.
+**Why not just use the best model on everything?** On this benchmark, that was the better choice for catching bugs: all-Opus caught 16 of 23 against tierview's 12, though not significantly more (p = 0.29). tierview cost 18% less per case and raised no false alarms (all-Opus raised one on 3 of 12 clean commits), but it cost more per bug caught. If catching the most bugs matters more than spend, the all-Opus arm was ahead, and I would not claim otherwise.
 
 **Does the cost receipt show what I was billed?** On a plan, no: it is the API-equivalent cost of the tokens that ran, at the list prices in [`config/prices.json`](config/prices.json) (with an `as_of` date). Your plan billed nothing extra. On `--backend api` it is what your key was charged at list prices.
 
 **Can I make it review more or less carefully?** Yes: `.tierview.yml` sets thresholds, per-path `min_tier` and `max_tier`, signal weights and models. See [docs/CONFIG.md](docs/CONFIG.md). Weights and thresholds were tuned on the 10-case dev split only.
 
-**What does it miss?** 4 of the 13 test bugs, 3 C and 1 Rust: an int overflow, an ignored PTE bit, an address-space layout problem and a thread-startup race. A bug in a boring-looking hunk gets Sonnet at low effort; escalation is the mitigation, not a guarantee.
+**What does it miss?** 11 of the 23 held-out bugs. Many were logic bugs in code the risk rules score as boring (a crash on an unusual option, a handler that mishandles async views): they go to Sonnet at low effort, and on the second set that reviewer found nothing in all four of its misses. Escalation is the mitigation, not a guarantee.
 
 **Which Claude models does it use?** Sonnet 5.5 and Opus 5.5 by default, Fable 5.2 only if you opt in. The IDs are in `config/default-rules.yml`.
 

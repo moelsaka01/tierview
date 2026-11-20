@@ -1,0 +1,182 @@
+{
+  "case_id": "pandas-clean-mask-missing",
+  "arm": "tierview",
+  "arm_version": 4,
+  "batch": "2026-11-20T12-22-27",
+  "config_hash": "087925df358a",
+  "complete": true,
+  "calls": 2,
+  "wall_ms": 110930,
+  "review": {
+    "version": 1,
+    "findings": [
+      {
+        "file": "pandas/core/missing.py",
+        "start_line": 82,
+        "end_line": 85,
+        "side": "new",
+        "severity": "low",
+        "category": "api-contract",
+        "title": "mask_missing now crashes on list-like values that replace_list can still pass",
+        "explanation": "The old function accepted list-like values_to_mask and matched any of their elements. The new version assumes a scalar: `isna(value)` on an array result makes `if isna(value):` raise 'truth value of an array is ambiguous'. Block.replace_list still calls `missing.mask_missing(values, s[0])` for non-string dtypes, and it keeps any pair where `_can_hold_element(x)` is true. For numpy numeric blocks that check accepts list-likes (it infers their dtype via np.asarray). So `pd.Series([1,2,3]).replace([[1, 2]], [9])` matched before and now raises ValueError. A one-element inner list instead goes through broadcasting. The new docstring says the caller has ensured the value isn't list-like, but replace_list doesn't enforce that.",
+        "suggestion": "Make callers enforce the precondition: in Block.replace_list, skip pairs where `is_list_like(x)` (or raise a clear TypeError). Alternatively, raise a clear error inside mask_missing when `lib.is_list_like(value)`, so users don't get an 'ambiguous truth value' error.",
+        "evidence": "    if isna(value):",
+        "confidence": 0.4,
+        "id": "ee4aabbab73f",
+        "hunk_id": "pandas/core/missing.py#2",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      }
+    ],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "pandas/core/dtypes/common.py#1",
+        "score": 10,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "8 changed lines"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "80 source lines, no test file"
+          }
+        ]
+      },
+      {
+        "hunk_id": "pandas/core/missing.py#1",
+        "score": 10,
+        "tier": 1,
+        "reasons": [
+          {
+            "signal": "deletion_only",
+            "weight": 5,
+            "detail": "only deletions"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "80 source lines, no test file"
+          }
+        ]
+      },
+      {
+        "hunk_id": "pandas/core/missing.py#2",
+        "score": 40,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "boundary",
+            "weight": 25,
+            "detail": "comparison operator changed"
+          },
+          {
+            "signal": "size",
+            "weight": 10,
+            "detail": "71 changed lines"
+          },
+          {
+            "signal": "no_tests_changed",
+            "weight": 5,
+            "detail": "80 source lines, no test file"
+          },
+          {
+            "signal": "merge",
+            "weight": 0,
+            "detail": "Tier 2 and Tier 3 run the same model: one call at high effort"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 2,
+      "model_substitutions": [
+        {
+          "tier": 3,
+          "requested": "claude-fable-5-2",
+          "used": "claude-opus-5-5",
+          "reason": "Fable not enabled"
+        }
+      ],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 2,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 7604,
+          "cache_read_tokens": 994,
+          "output_tokens": 206,
+          "cache_write_1h_tokens": 7604,
+          "cost_usd": 0.0325794,
+          "direct_api_cost_usd": 0.01506
+        },
+        {
+          "tier": 2,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "hunks": 1,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 7037,
+          "cache_read_tokens": 994,
+          "output_tokens": 10827,
+          "cache_write_1h_tokens": 7037,
+          "cost_usd": 0.2730428,
+          "direct_api_cost_usd": 0.240272
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.30562219999999996,
+      "total_direct_api_cost_usd": 0.255332,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.6760056,
+        "direct_api_cost_usd": 0.540784
+      },
+      "savings_pct": 54.8,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "Tier 2 and Tier 3 both run claude-opus-5-5, so they ran as one tier at high effort.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 110929,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}

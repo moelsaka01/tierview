@@ -1,0 +1,198 @@
+{
+  "case_id": "uv-clean-format-unmanaged",
+  "arm": "all-opus",
+  "arm_version": 1,
+  "batch": "2026-11-20T12-28-44",
+  "config_hash": "087925df358a",
+  "complete": true,
+  "calls": 1,
+  "wall_ms": 19078,
+  "review": {
+    "version": 1,
+    "findings": [
+      {
+        "file": "crates/uv/tests/it/format.rs",
+        "start_line": 79,
+        "end_line": 80,
+        "side": "new",
+        "severity": "low",
+        "category": "test",
+        "title": "Test never creates pyproject.toml, so MissingProject path is untested",
+        "explanation": "assert_fs `ChildPath::child` only builds a path; it does not create the file. So `format_missing_project_in_pyproject_toml` runs with no pyproject.toml and repeats `format_missing_pyproject_toml`. The `WorkspaceError::MissingProject` fallback this test is named for is never tested, so a regression there would go unnoticed.",
+        "suggestion": "Create the file, e.g. `context.temp_dir.child(\"pyproject.toml\").touch()?;` or `.write_str(\"[tool.ruff]\\n\")?;`, and confirm discovery returns MissingProject.",
+        "evidence": "    context.temp_dir.child(\"pyproject.toml\");",
+        "confidence": 0.85,
+        "id": "908313869090",
+        "hunk_id": "crates/uv/tests/it/format.rs#1",
+        "model": "claude-opus-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      }
+    ],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "crates/uv/src/commands/project/format.rs#1",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "crates/uv/src/commands/project/format.rs#2",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "18 changed lines"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "crates/uv/src/commands/project/format.rs#3",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "crates/uv/tests/it/format.rs#1",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 15,
+            "detail": "102 changed lines"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "crates/uv/tests/it/format.rs#2",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 10,
+            "detail": "44 changed lines"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 1,
+      "model_substitutions": [],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 2,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "hunks": 5,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 17778,
+          "cache_read_tokens": 994,
+          "output_tokens": 1677,
+          "cache_write_1h_tokens": 17778,
+          "cost_usd": 0.17597079999999998,
+          "direct_api_cost_usd": 0.100236
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.17597079999999998,
+      "total_direct_api_cost_usd": 0.100236,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.35174279999999997,
+        "direct_api_cost_usd": 0.200472
+      },
+      "savings_pct": 50,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 19078,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}

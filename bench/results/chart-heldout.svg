@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 420" width="680" height="420" role="img" aria-labelledby="t d" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+<title id="t">Bugs caught vs cost per case, both held-out sets</title>
+<desc id="d">tierview: 12 of 23 bugs (52%, 95% range 30-74%), $0.229 per case; all-Sonnet: 10 of 23 bugs (43%, 95% range 22-65%), $0.127 per case; all-Opus: 16 of 23 bugs (70%, 95% range 48-87%), $0.278 per case.</desc>
+<style>
+  .bg{fill:#fcfcfb} .t1{fill:#0b0b0b} .t2{fill:#52514e} .grid{stroke:#e4e3df} .axis{stroke:#8c8b85}
+  .s1{fill:#2a78d6;stroke:#2a78d6} .s2{fill:#eb6834;stroke:#eb6834} .s3{fill:#1baf7a;stroke:#1baf7a} .ring{stroke:#fcfcfb}
+  @media (prefers-color-scheme: dark){
+    .bg{fill:#1a1a19} .t1{fill:#f0efec} .t2{fill:#c3c2b7} .grid{stroke:#33332f} .axis{stroke:#6f6e68}
+    .s1{fill:#3987e5;stroke:#3987e5} .s2{fill:#d95926;stroke:#d95926} .s3{fill:#199e70;stroke:#199e70} .ring{stroke:#1a1a19}
+  }
+  text{font-size:12px} .h{font-size:15px;font-weight:600} .lab{font-size:12.5px;font-weight:600}
+</style>
+<rect class="bg" x="0" y="0" width="680" height="420" rx="8"/>
+<text class="t1 h" x="64" y="26">Bugs caught vs cost per case (both held-out sets, 23 bugs)</text>
+<text class="t2" x="64" y="46">Bars: 95% bootstrap ranges · cost via Claude Code · tierview vs all-Opus: p = 0.2890625</text>
+<line class="grid" x1="64" x2="530" y1="364" y2="364" stroke-width="1"/>
+<text class="t2" x="56" y="368" text-anchor="end">0%</text>
+<line class="grid" x1="64" x2="530" y1="290.5" y2="290.5" stroke-width="1"/>
+<text class="t2" x="56" y="294.5" text-anchor="end">25%</text>
+<line class="grid" x1="64" x2="530" y1="217" y2="217" stroke-width="1"/>
+<text class="t2" x="56" y="221" text-anchor="end">50%</text>
+<line class="grid" x1="64" x2="530" y1="143.5" y2="143.5" stroke-width="1"/>
+<text class="t2" x="56" y="147.5" text-anchor="end">75%</text>
+<line class="grid" x1="64" x2="530" y1="70" y2="70" stroke-width="1"/>
+<text class="t2" x="56" y="74" text-anchor="end">100%</text>
+<text class="t2" x="64" y="382" text-anchor="middle">$0.00</text>
+<text class="t2" x="130.6" y="382" text-anchor="middle">$0.05</text>
+<text class="t2" x="197.1" y="382" text-anchor="middle">$0.10</text>
+<text class="t2" x="263.7" y="382" text-anchor="middle">$0.15</text>
+<text class="t2" x="330.3" y="382" text-anchor="middle">$0.20</text>
+<text class="t2" x="396.9" y="382" text-anchor="middle">$0.25</text>
+<text class="t2" x="463.4" y="382" text-anchor="middle">$0.30</text>
+<text class="t2" x="530" y="382" text-anchor="middle">$0.35</text>
+<line class="axis" x1="64" x2="530" y1="364" y2="364" stroke-width="1"/>
+<text class="t2" x="297" y="406" text-anchor="middle">API-equivalent cost per case (USD, via Claude Code)</text>
+<text class="t2" transform="translate(16 217) rotate(-90)" text-anchor="middle">bugs caught (recall)</text>
+<g><title>tierview: 12/23 bugs (52%), 95% range 30-74%; $0.229 per case via Claude Code, $0.140 direct API; false alarms on 0/12 clean cases</title>
+<line class="s1" x1="368.3" x2="368.3" y1="274.5" y2="146.7" stroke-width="2" stroke-linecap="round"/>
+<line class="s1" x1="362.3" x2="374.3" y1="274.5" y2="274.5" stroke-width="2" stroke-linecap="round"/>
+<line class="s1" x1="362.3" x2="374.3" y1="146.7" y2="146.7" stroke-width="2" stroke-linecap="round"/>
+<circle class="s1 ring" cx="368.3" cy="210.6" r="7" stroke-width="2"/>
+<text class="t1 lab" x="354.3" y="208.6" text-anchor="end">tierview</text>
+<text class="t2" x="354.3" y="224.6" text-anchor="end">12/23 · $0.229 · FP 0/12</text></g>
+<g><title>all-Sonnet: 10/23 bugs (43%), 95% range 22-65%; $0.127 per case via Claude Code, $0.072 direct API; false alarms on 1/12 clean cases</title>
+<line class="s3" x1="232.7" x2="232.7" y1="300.1" y2="172.3" stroke-width="2" stroke-linecap="round"/>
+<line class="s3" x1="226.7" x2="238.7" y1="300.1" y2="300.1" stroke-width="2" stroke-linecap="round"/>
+<line class="s3" x1="226.7" x2="238.7" y1="172.3" y2="172.3" stroke-width="2" stroke-linecap="round"/>
+<circle class="s3 ring" cx="232.7" cy="236.2" r="7" stroke-width="2"/>
+<text class="t1 lab" x="218.7" y="234.2" text-anchor="end">all-Sonnet</text>
+<text class="t2" x="218.7" y="250.2" text-anchor="end">10/23 · $0.127 · FP 1/12</text></g>
+<g><title>all-Opus: 16/23 bugs (70%), 95% range 48-87%; $0.278 per case via Claude Code, $0.161 direct API; false alarms on 3/12 clean cases</title>
+<line class="s2" x1="434.3" x2="434.3" y1="223.4" y2="108.3" stroke-width="2" stroke-linecap="round"/>
+<line class="s2" x1="428.3" x2="440.3" y1="223.4" y2="223.4" stroke-width="2" stroke-linecap="round"/>
+<line class="s2" x1="428.3" x2="440.3" y1="108.3" y2="108.3" stroke-width="2" stroke-linecap="round"/>
+<circle class="s2 ring" cx="434.3" cy="159.5" r="7" stroke-width="2"/>
+<text class="t1 lab" x="448.3" y="157.5">all-Opus</text>
+<text class="t2" x="448.3" y="173.5">16/23 · $0.278 · FP 3/12</text></g>
+</svg>

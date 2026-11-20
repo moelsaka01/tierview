@@ -1,0 +1,198 @@
+{
+  "case_id": "uv-clean-format-unmanaged",
+  "arm": "all-sonnet",
+  "arm_version": 1,
+  "batch": "2026-11-20T12-28-44",
+  "config_hash": "087925df358a",
+  "complete": true,
+  "calls": 1,
+  "wall_ms": 7519,
+  "review": {
+    "version": 1,
+    "findings": [
+      {
+        "file": "crates/uv/tests/it/format.rs",
+        "start_line": 80,
+        "end_line": 80,
+        "side": "new",
+        "severity": "medium",
+        "category": "test",
+        "title": "Empty pyproject.toml never created; test duplicates missing-file case",
+        "explanation": "`child(\"pyproject.toml\")` only builds a path and does not create the file. The test therefore runs with no pyproject.toml and does not exercise the MissingProject path it claims to cover.",
+        "suggestion": "Write the file, e.g. `context.temp_dir.child(\"pyproject.toml\").write_str(\"\")?;` (or a `[tool.foo]`-only table) so the MissingProject branch is tested.",
+        "evidence": "context.temp_dir.child(\"pyproject.toml\");",
+        "confidence": 0.9,
+        "id": "736e345aca3a",
+        "hunk_id": "crates/uv/tests/it/format.rs#1",
+        "model": "claude-sonnet-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      }
+    ],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "crates/uv/src/commands/project/format.rs#1",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "crates/uv/src/commands/project/format.rs#2",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "18 changed lines"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "crates/uv/src/commands/project/format.rs#3",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "crates/uv/tests/it/format.rs#1",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 15,
+            "detail": "102 changed lines"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "crates/uv/tests/it/format.rs#2",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 10,
+            "detail": "44 changed lines"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 1,
+      "model_substitutions": [],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 2,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 5,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 17786,
+          "cache_read_tokens": 994,
+          "output_tokens": 940,
+          "cache_write_1h_tokens": 17786,
+          "cost_usd": 0.0806474,
+          "direct_api_cost_usd": 0.042764
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.0806474,
+      "total_direct_api_cost_usd": 0.042764,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.3223908,
+        "direct_api_cost_usd": 0.171056
+      },
+      "savings_pct": 75,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 7519,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}

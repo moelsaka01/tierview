@@ -1,0 +1,107 @@
+{
+  "split": "heldout",
+  "config_hash": [
+    "087925df358a",
+    "4fe1abf9f1f3"
+  ],
+  "arms": [
+    {
+      "arm": "tierview",
+      "runs": 35,
+      "buggy_runs": 23,
+      "clean_runs": 12,
+      "caught": 12,
+      "recall": 0.5217391304347826,
+      "recall_ci95": [
+        0.30434782608695654,
+        0.7391304347826086
+      ],
+      "judge_pending_runs": 0,
+      "fp_per_clean_case": 0,
+      "clean_cases_with_fp": 0,
+      "unmatched_per_buggy_case": 1,
+      "mean_tokens_per_case": 37186.37142857143,
+      "mean_calls_per_case": 1.8,
+      "mean_cost_via_claude_code_usd": 0.22856451428571425,
+      "mean_cost_direct_api_usd": 0.14048662857142855,
+      "cost_per_bug_caught_via_claude_code_usd": 0.5140348666666666,
+      "cost_per_bug_caught_direct_api_usd": 0.3182858333333333,
+      "mean_fable_priced_via_claude_code_usd": 0.6361570628571427,
+      "mean_fable_priced_direct_api_usd": 0.37342788571428576,
+      "latency_p50_s": 38.527,
+      "latency_p90_s": 84.676,
+      "escalation_rate": 0.03524229074889868
+    },
+    {
+      "arm": "all-sonnet",
+      "runs": 35,
+      "buggy_runs": 23,
+      "clean_runs": 12,
+      "caught": 10,
+      "recall": 0.43478260869565216,
+      "recall_ci95": [
+        0.21739130434782608,
+        0.6521739130434783
+      ],
+      "judge_pending_runs": 0,
+      "fp_per_clean_case": 0.08333333333333333,
+      "clean_cases_with_fp": 1,
+      "unmatched_per_buggy_case": 0.43478260869565216,
+      "mean_tokens_per_case": 33111.31428571429,
+      "mean_calls_per_case": 1.1428571428571428,
+      "mean_cost_via_claude_code_usd": 0.1266790628571428,
+      "mean_cost_direct_api_usd": 0.0716928,
+      "cost_per_bug_caught_via_claude_code_usd": 0.33055145999999996,
+      "cost_per_bug_caught_direct_api_usd": 0.19197479999999997,
+      "mean_fable_priced_via_claude_code_usd": 0.506025782857143,
+      "mean_fable_priced_direct_api_usd": 0.2867712,
+      "latency_p50_s": 14.39,
+      "latency_p90_s": 23.473,
+      "escalation_rate": null
+    },
+    {
+      "arm": "all-opus",
+      "runs": 35,
+      "buggy_runs": 23,
+      "clean_runs": 12,
+      "caught": 16,
+      "recall": 0.6956521739130435,
+      "recall_ci95": [
+        0.4782608695652174,
+        0.8695652173913043
+      ],
+      "judge_pending_runs": 0,
+      "fp_per_clean_case": 0.25,
+      "clean_cases_with_fp": 3,
+      "unmatched_per_buggy_case": 0.9565217391304348,
+      "mean_tokens_per_case": 32294.22857142857,
+      "mean_calls_per_case": 1.1428571428571428,
+      "mean_cost_via_claude_code_usd": 0.2781237714285714,
+      "mean_cost_direct_api_usd": 0.16066948571428566,
+      "cost_per_bug_caught_via_claude_code_usd": 0.455178675,
+      "cost_per_bug_caught_direct_api_usd": 0.26557675,
+      "mean_fable_priced_via_claude_code_usd": 0.5559644571428572,
+      "mean_fable_priced_direct_api_usd": 0.3213389714285713,
+      "latency_p50_s": 28.843,
+      "latency_p90_s": 43.762,
+      "escalation_rate": null
+    }
+  ],
+  "mcnemar_tierview_vs_all_opus": {
+    "both": 10,
+    "tierview_only": 2,
+    "opus_only": 6,
+    "neither": 5,
+    "p": 0.2890625
+  },
+  "routing_recall": {
+    "faulty_at_tier2plus": 12,
+    "buggy_cases": 23,
+    "missed_bugs_routed_low": 5
+  },
+  "all_fable_calculated": {
+    "via_claude_code_mean_usd": 0.5559644571428572,
+    "direct_api_mean_usd": 0.3213389714285713,
+    "note": "Calculated, not measured: the all-opus arm's actual tokens priced at Fable 5.2 rates. No Fable calls were made (PLAN §9)."
+  }
+}

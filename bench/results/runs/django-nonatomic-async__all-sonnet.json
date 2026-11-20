@@ -1,0 +1,181 @@
+{
+  "case_id": "django-nonatomic-async",
+  "arm": "all-sonnet",
+  "arm_version": 1,
+  "batch": "2026-11-20T12-03-07",
+  "config_hash": "087925df358a",
+  "complete": true,
+  "calls": 1,
+  "wall_ms": 10454,
+  "review": {
+    "version": 1,
+    "findings": [
+      {
+        "file": "django/db/transaction.py",
+        "start_line": 345,
+        "end_line": 347,
+        "side": "new",
+        "severity": "high",
+        "category": "bug",
+        "title": "Sync wrapper breaks async views decorated with non_atomic_requests",
+        "explanation": "The wrapper is a plain sync function. For an async view, functools.wraps does not make it a coroutine function, so the handler treats it as sync. Under ASGI it is run via sync_to_async and returns an unawaited coroutine, which causes errors. Under WSGI the coroutine check also changes. Previously the original async view was returned unchanged, so this is a regression.",
+        "suggestion": "Create an async wrapper when the view is a coroutine function (use iscoroutinefunction), e.g. `async def wrapper(*a, **kw): return await view(*a, **kw)`. Otherwise copy the function instead of wrapping it.",
+        "evidence": "    def wrapper(*args, **kwargs):\n        return view(*args, **kwargs)",
+        "confidence": 0.7,
+        "id": "644e39f2b0bf",
+        "hunk_id": "django/db/transaction.py#2",
+        "model": "claude-sonnet-5-5",
+        "tier": 3,
+        "escalated_from": [],
+        "also_reported_by": []
+      }
+    ],
+    "refuted": [],
+    "not_reviewed": [],
+    "routing": [
+      {
+        "hunk_id": "django/db/transaction.py#1",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "django/db/transaction.py#2",
+        "score": 5,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "12 changed lines"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/handlers/tests.py#1",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      },
+      {
+        "hunk_id": "tests/handlers/tests.py#2",
+        "score": 0,
+        "tier": 3,
+        "reasons": [
+          {
+            "signal": "size",
+            "weight": 5,
+            "detail": "11 changed lines"
+          },
+          {
+            "signal": "test_file",
+            "weight": -15,
+            "detail": "test file with no test-weakening signal"
+          },
+          {
+            "signal": "rule",
+            "weight": 0,
+            "detail": "min_tier 3 (**)"
+          }
+        ]
+      }
+    ],
+    "receipt": {
+      "backend": "claude-code",
+      "cost_basis": "api_equivalent",
+      "calls": 1,
+      "model_substitutions": [],
+      "tiers": [
+        {
+          "tier": 1,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 2,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 0,
+          "escalated_in": 0,
+          "requests": 0,
+          "input_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "output_tokens": 0,
+          "cache_write_1h_tokens": 0,
+          "cost_usd": 0,
+          "direct_api_cost_usd": 0
+        },
+        {
+          "tier": 3,
+          "model": "claude-sonnet-5-5",
+          "effort": "low",
+          "hunks": 4,
+          "escalated_in": 0,
+          "requests": 1,
+          "input_tokens": 2,
+          "cache_write_tokens": 30631,
+          "cache_read_tokens": 994,
+          "output_tokens": 1156,
+          "cache_write_1h_tokens": 30631,
+          "cost_usd": 0.13418739999999998,
+          "direct_api_cost_usd": 0.070614
+        }
+      ],
+      "skipped_hunks": 0,
+      "not_reviewed_hunks": 0,
+      "total_cost_usd": 0.13418739999999998,
+      "total_direct_api_cost_usd": 0.070614,
+      "baseline": {
+        "model": "claude-fable-5-2",
+        "method": "actual_tokens_at_baseline_prices",
+        "cost_usd": 0.5365508,
+        "direct_api_cost_usd": 0.282456
+      },
+      "savings_pct": 75,
+      "budget": {
+        "max_cost_usd": null,
+        "degraded": false
+      },
+      "warnings": [
+        "benchmark: diff from bench/cases, file context from the commit, churn signals off.",
+        "claude-code backend: costs are API-equivalent (tokens at API list prices), not what your Claude plan bills."
+      ],
+      "wall_ms": 10453,
+      "prices_as_of": "2026-11-16"
+    }
+  },
+  "judge_pending": []
+}
