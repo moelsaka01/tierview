@@ -591,6 +591,8 @@ What the test split says, with the intervals in mind:
 **Issues.** The first npm publish failed with 403 because the account had no 2FA; after Mohamed enabled it, a publish needs a browser approval or one-time code that I do not handle, so Mohamed ran `npm publish` in his own terminal. The registry also shows a `0.0.0-stage` version that npm created. The pinned GIF and chart in the README use raw.githubusercontent URLs so they also render on npm. No `claude` calls, no API calls, $0 spent.
 **API spend this phase.** $0.
 
+**After Phase 6 (2026-11-20): `resilience_limits` signal.** A LinkedIn commenter pointed out that timeout and retry-limit changes pass tests and fail under load. Added a category (weight 25, so a hunk reaches Tier 2 on its own) with three regexes and 11 tests (6 positive, 5 negative). **Deviation from CLAUDE.md:** weights are meant to change only in Phase 4 on the dev split; this weight was set by judgement, not measured, and the benchmark config hash (`configHash()` hashes `default-rules.yml`) now differs from the one the published results ran under. The published numbers stay tied to git tag `bench-config-v2`; RESULTS.md was not changed. The signal has not been evaluated on the benchmark. $0 spent.
+
 ---
 
 *Template for each later phase:*

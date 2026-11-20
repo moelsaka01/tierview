@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- New risk signal `resilience_limits` (weight 25): changed timeouts, deadlines, TTLs, retry limits and backoff values now raise a hunk to Tier 2. These pass tests and fail under load. It is not part of the benchmarked config (`bench-config-v2`), so the published benchmark numbers were measured without it.
+
 ## 0.1.0 (2026-11-17)
 
 First release.

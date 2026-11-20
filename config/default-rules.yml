@@ -245,6 +245,15 @@ categories:
     path:
       - '(^|/)(package\.json|requirements[^/]*\.txt|pyproject\.toml|go\.mod|Cargo\.toml|pom\.xml|build\.gradle(\.kts)?|Gemfile)$'
 
+  # Added after the benchmark (v0.1.0 feedback): changed timeouts, deadlines, retry limits and backoff. These
+  # pass tests and fail under load. Not part of bench-config-v2, so the published benchmark ran without it.
+  resilience_limits:
+    weight: 25
+    content:
+      - '\b\w*(timeout|deadline|ttl)\w*["'']?\s*[:=]\s*(?:[\w.]*\d|none|null|nil|inf\w*|false)'
+      - '\b\w*(retr(y|ies)|attempts|backoff)\w*["'']?\s*[:=]\s*(?:[\w.*]*\d|none|null|nil|inf\w*|false)'
+      - '\b(set_?timeout|with_?timeout|with_?deadline|set_?(read_?|write_?)?deadline)\s*\('
+
   boundary:
     weight: 25                     # Phase 4 (P4-09, dev split): 10 -> 25
     logic:

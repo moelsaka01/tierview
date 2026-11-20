@@ -118,6 +118,7 @@ Rules for every phase: pure functions for scoring, routing, escalation, merge an
 | dependencies | path: `package.json`, `requirements*.txt`, `go.mod`, `Cargo.toml`, `pom.xml` | 15 |
 | boundary | a comparison operator or index arithmetic changed on a modified line; an if/while/for condition rewritten; a new `<`/`<=`/`>`/`>=` check against arithmetic or a size-like name (last two added in P4-09) | 25 (was 10; P4-09) |
 | memory | content: allocation, free and lifetime calls (`malloc`/`free`, `*_alloc(`/`*_free(`/`*_unref(`, `rte_*malloc`, `g_free`, `Box::into_raw`, `mem::forget`…) (added in P4-09) | 25 |
+| resilience-limits | content: a timeout, deadline, TTL, retry or backoff value assigned or changed, or `WithTimeout(`/`SetDeadline(`-style calls (added after v0.1.0, from user feedback; not in `bench-config-v2`) | 25 |
 
 Structure points (added to the category sum):
 

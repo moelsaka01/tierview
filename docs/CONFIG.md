@@ -63,6 +63,7 @@ Patterns are JavaScript regexes, matched case-insensitively against the file pat
 | `permissions` | 25 | role and permission checks, `chmod`, `sudo`, CORS, ACLs |
 | `concurrency` | 25 | locks, atomics, threads, goroutines, channels; `await` added or removed |
 | `boundary` | 25 | a comparison operator or index arithmetic changed; a rewritten `if`/`while`/`for` condition; a new bounds check |
+| `resilience_limits` | 25 | a timeout, deadline, TTL, retry limit, attempt count or backoff value assigned or changed (`timeout: 30`, `maxRetries = 10`, `timeout=None`), or `WithTimeout(`/`setTimeout(`-style calls. Added after v0.1.0; not part of the benchmarked config |
 | `memory` | 25 | allocation, free and lifetime calls (`kmalloc`, `g_free`, `*_unref(`, `Box::into_raw`, ...) |
 | `error_handling_removed` | 20 | removed `try`/`catch`/`except`, `if err != nil`, asserts or validation; added empty catch, `.unwrap()`, `@ts-ignore` |
 | `infra` | 20 | Dockerfile, CI workflows, Terraform, Kubernetes, Helm |
