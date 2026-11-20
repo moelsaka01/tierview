@@ -29,3 +29,21 @@ describe("audit file", () => {
     expect(parseCsv(`${row}\n`)).toEqual([["a", 'say "hi", then leave', ""]]);
   });
 });
+
+describe("signal report", () => {
+  it("finds where a category fires and how it moves tiers (dev split, no calls)", async () => {
+    const { summarise, withWeight } = await import("../bench/signal-report");
+    const { loadConfig } = await import("../src/config");
+    const base = loadConfig({ cwd: "bench" });
+    // boundary fires on the dev bnxt bug's faulty hunk and lifts it to Opus at its configured weight
+    const b = summarise(base, "boundary", base.categories.boundary!.weight, "dev");
+    const bnxt = b.fires.find((f) => f.caseId === "dpdk-bnxt-short-bd-checksum")!;
+    expect(bnxt).toMatchObject({ faulty: true, tierAt0: 1 });
+    expect(bnxt.tierAtW).toBeGreaterThanOrEqual(2);
+    // resilience_limits matches no changed line in the dev split, so its weight cannot move routing there
+    const r = summarise(base, "resilience_limits", 25, "dev");
+    expect(r.s.firesOn.hunks).toBe(0);
+    expect(summarise(base, "resilience_limits", 0, "dev").s).toMatchObject({ faultyHigh: r.s.faultyHigh, toOpus: r.s.toOpus });
+    expect(() => withWeight(base, "nope", 1)).toThrow(/unknown category/);
+  });
+});

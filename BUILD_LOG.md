@@ -593,6 +593,51 @@ What the test split says, with the intervals in mind:
 
 **After Phase 6 (2026-11-20): `resilience_limits` signal.** A LinkedIn commenter pointed out that timeout and retry-limit changes pass tests and fail under load. Added a category (weight 25, so a hunk reaches Tier 2 on its own) with three regexes and 11 tests (6 positive, 5 negative). **Deviation from CLAUDE.md:** weights are meant to change only in Phase 4 on the dev split; this weight was set by judgement, not measured, and the benchmark config hash (`configHash()` hashes `default-rules.yml`) now differs from the one the published results ran under. The published numbers stay tied to git tag `bench-config-v2`; RESULTS.md was not changed. The signal has not been evaluated on the benchmark. $0 spent.
 
+**Phase 4 follow-up (2026-11-20): `resilience_limits` measured on the dev split; `bench-config-v3`.**
+
+**Model.** Opus 5.5 (`claude-opus-5-5`). **Effort.** Not stated in the prompt (the app does not show it to the model).
+
+**Prompt.** Verbatim:
+
+<details>
+<summary>Prompt</summary>
+
+Read CLAUDE.md, PLAN.md §0–§3, §4 and §9, bench/results/RESULTS.md and the "After Phase 6 (2026-11-20)" note in BUILD_LOG.md. This is a Phase 4 follow-up: tuning only, on the dev split. No `claude` calls and no API calls; ask me first before anything that spends plan usage or money.
+
+Context: commit 18666af added a risk category `resilience_limits` (weight 25) to config/default-rules.yml. It fires on changed timeouts, deadlines, TTLs, retry limits, attempt counts and backoff values. I set the weight by judgement, which CLAUDE.md allows only in Phase 4 on the dev split. The published benchmark (bench-config-v2) ran without this signal, and its config hash no longer matches the current default-rules.yml.
+
+Tasks:
+1. Using only saved dev-split outputs and Tier 0 routing (bench/tune.ts, bench/tune-grid.ts, bench/routing.ts), measure what the signal does: which dev and test-split cases it fires on, how it moves each hunk's tier, how often it fires on clean cases, and its effect on routing recall and on the estimated cost. Do not use the test split to choose a weight or a regex.
+2. Decide from the dev data alone: keep weight 25, pick another value, narrow or loosen the regexes (regex refinement with tests is allowed), or revert the category. If it never fires on the dev bugs, say the dev split cannot support or reject it, and propose leaving it as an unmeasured signal with that stated, or setting it to a weight you can justify.
+3. If the config changes, freeze it under a new git tag (bench-config-v3). Do not edit or rerun the published results: RESULTS.md keeps the bench-config-v2 numbers, and add a short note saying the current default config differs and what changed. Do not claim any test-split effect.
+4. Update docs/CONFIG.md, PLAN.md §4, CHANGELOG.md and BUILD_LOG.md (model, effort, prompt, decision, what the dev data showed). Tick nothing in PLAN.md that is not true.
+5. npm run check must pass. Commit and push, then stop. Do not publish to npm and do not cut a release; tell me when a 0.1.1 is worth making.
+
+</details>
+
+**Method.** New `bench/signal-report.ts` (no calls): for one category and a list of weights, it routes every case with the tierview arm's config, lists the hunks where the category fires (with the matched line), each hunk's tier at weight 0 versus the chosen weight, whether a faulty hunk is among them, and per split the routing recall, the share of reviewable hunks routed to Opus (all and clean cases) and the dry-run estimated cost (claude-code backend). Weight 0 reproduces `bench-config-v2` exactly: `git diff bench-config-v2 HEAD -- config/ src/tier0/ src/tiers/ src/config.ts bench/judge.ts` shows only this category. Cross-check: the three regexes run directly over every `+`/`-` line of all 30 case diffs.
+
+**What the data showed.**
+
+| split | fires on hunks (cases) | faulty hunks | clean cases | routing recall, weight 0 / 25 | hunks to Opus, weight 0 / 25 | estimated cost (sum over cases), weight 0 / 25 |
+|---|---|---|---|---|---|---|
+| dev (7 buggy, 3 clean) | 0 (0) | 0 | 0 of 3 | 3/7 / 3/7 | 13/53 / 13/53 | $1.089 / $1.089 |
+| test (13 buggy, 7 clean; description only) | 0 (0) | 0 | 0 of 7 | 9/13 / 9/13 | 22/121 / 22/121 | $2.080 / $2.080 |
+
+Weights 0, 10, 15, 20, 25 and 30 give identical dev routing. No changed line in the dev split mentions timeouts, deadlines, TTLs, retries, attempts or backoff at all. The only lines in any split that mention the topic are in one test case (`qemu-colo-visitor-width`: a `compare_timeout` field changing from `uint32_t` to `uint64_t`, which is not that case's bug), and they do not match the regexes; they were not used to shape anything.
+
+**Decision.** The dev split can neither support nor reject `resilience_limits`: it never fires, so no weight can be tuned or tested on it. Kept as a **stated unmeasured signal at weight 25** (a judgement: same weight as `concurrency`, the other class that fails under load and timing rather than in tests; at 25 a hunk reaches the Opus tier on its own, which is the point of the signal). Not reverted, because the benchmark gives no evidence against it either, and its routing effect on all 30 benchmark cases is nil.
+
+**Regex refinement (allowed with tests; from reading the pattern, not from data).** The first pattern's `\w*(timeout|deadline|ttl)\w*` matched any word containing "ttl": `settled = 1`, `little_count = 3`, `bottle_size = 2`, `throttle = 10` all fired. `ttl` now has its own pattern and counts only at the end of a name or before a unit/segment (`ttl`, `cacheTtl`, `ttlMs`, `session_ttl`, `ttl_seconds`); `timeout` and `deadline` are unchanged. One test row added (4 positives, 4 negatives). The refined category still matches nothing in the 30 diffs.
+
+**Freeze.** Config hash `087925df358a` (`default-rules.yml` + `prices.json` + `estimates.json` + judge), git tag `bench-config-v3`. RESULTS.md keeps the `bench-config-v2` numbers, with a short config note that the default differs and that this benchmark does not evaluate the new category. No test-split effect is claimed. `ARM_VERSION` is unchanged: no run was redone, and v3 routes every benchmark case as v2 did.
+
+**Docs.** PLAN §4 row (unmeasured, ttl rule, weight rationale), PLAN §9 frozen-config note, docs/CONFIG.md, CHANGELOG (Unreleased). Nothing newly ticked in PLAN.md: this follow-up completes no task box.
+
+**Tests.** `test/signals.test.ts` (ttl rows), `test/bench-report.test.ts` (signal report: boundary lifts the dev bnxt faulty hunk to Opus; resilience_limits fires on nothing in dev and leaves routing unchanged). `npm run check`: 271 tests pass.
+
+**Spend.** $0. No `claude` calls, no API calls.
+
 ---
 
 *Template for each later phase:*

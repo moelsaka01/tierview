@@ -3,6 +3,8 @@
 ## Unreleased
 
 - New risk signal `resilience_limits` (weight 25): changed timeouts, deadlines, TTLs, retry limits and backoff values now raise a hunk to Tier 2. These pass tests and fail under load. It is not part of the benchmarked config (`bench-config-v2`), so the published benchmark numbers were measured without it.
+- `resilience_limits`: `ttl` now matches only as a name or name segment (`ttl`, `cacheTtl`, `ttlMs`, `session_ttl`); the first version also fired on words like `settled`, `little` and `throttle`.
+- The signal was checked against the benchmark's dev split with no model calls: it matches no changed line in any of the 30 benchmark diffs, so the benchmark can neither support nor reject it. Weight 25 is kept as a stated judgement. Default config frozen as `bench-config-v3` (git tag, config hash `087925df358a`).
 
 ## 0.1.0 (2026-11-17)
 

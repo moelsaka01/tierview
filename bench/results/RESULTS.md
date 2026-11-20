@@ -4,6 +4,8 @@
 
 ![Bugs caught vs cost per case, test split](chart.svg)
 
+> **Config note (2026-11-20).** These results were measured on `bench-config-v2` (hash `4fe1abf9f1f3`) and were not re-run. The current default config, `bench-config-v3` (hash `087925df358a`), adds one risk category, `resilience_limits` (changed timeouts, deadlines, TTLs, retry limits and backoff values; weight 25). It matches no changed line in the 30 benchmark diffs, so this benchmark does not evaluate it, and nothing here says how it affects bugs caught or cost.
+
 ## Test split (the headline)
 
 13 buggy and 7 clean cases, frozen config `bench-config-v2` (git tag; config hash `4fe1abf9f1f3`), run once per (case, arm) on the `claude-code` backend.

@@ -65,6 +65,8 @@ const cases: Case[] = [
   ["resilience_limits", "config/app.yml", ["-retry_limit: 3", "+retry_limit: 0"], ["+retry_policy: standard"]],
   ["resilience_limits", "src/a.go", ["+ctx, cancel := context.WithTimeout(ctx, 5*time.Second)"], ["+ctx := context.Background()"]],
   ["resilience_limits", "src/a.json", ['+  "backoffMs": 2000'], []],
+  // bench-config-v3: ttl as a name or name segment fires; words that merely contain "ttl" do not.
+  ["resilience_limits", "src/a.ts", ["+const cacheTtl = 300;", "+  ttlMs: 500,", "+session_ttl = 3600", "+ttl_seconds: 30"], ["+settled = 1", "+little_count = 3", "+bottle_size = 2", "+throttle = 10"]],
   ["dependencies", "package.json", ['+  "x": "1"'], []],
   ["dependencies", "requirements.txt", ["+requests==2"], []],
   ["boundary", "src/a.ts", ["-if (i < n) {", "+if (i <= n) {"], ["-const ok = i < n;", "+const ok = j < n;"]],

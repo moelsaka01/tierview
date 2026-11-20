@@ -250,7 +250,10 @@ categories:
   resilience_limits:
     weight: 25
     content:
-      - '\b\w*(timeout|deadline|ttl)\w*["'']?\s*[:=]\s*(?:[\w.]*\d|none|null|nil|inf\w*|false)'
+      - '\b\w*(timeout|deadline)\w*["'']?\s*[:=]\s*(?:[\w.]*\d|none|null|nil|inf\w*|false)'
+      # bench-config-v3: `ttl` only as the end of a name or with a unit/segment after it (ttl, cacheTtl, ttlMs,
+      # session_ttl, ttl_seconds); the old `\w*ttl\w*` also matched settled, little, bottle, throttle.
+      - '\b\w*ttl(?:_\w+|ms|s|secs?|seconds|millis\w*)?["'']?\s*[:=]\s*(?:[\w.]*\d|none|null|nil|inf\w*|false)'
       - '\b\w*(retr(y|ies)|attempts|backoff)\w*["'']?\s*[:=]\s*(?:[\w.*]*\d|none|null|nil|inf\w*|false)'
       - '\b(set_?timeout|with_?timeout|with_?deadline|set_?(read_?|write_?)?deadline)\s*\('
 
